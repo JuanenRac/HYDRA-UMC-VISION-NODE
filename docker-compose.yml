@@ -6,9 +6,8 @@
 # real containers once each one ships a buildable image. NOT functional yet:
 # HYDRA-UMC-VISION-STREAMER, HYDRA-UMC-DETECTION-HEF, HYDRA-UMC-SAFETY-ZONES
 # and HYDRA-UMC-VISUAL-SERVOING-API are still skeleton-stage Python projects
-# with no Dockerfile of their own (see each one's own
-# SONNET/<proyecto>/mejoras_futuras.txt - a Dockerfile is added when its own
-# turn comes up in SONNET/5.PLAN_EJECUCION_32_PROYECTOS_NUEVOS.txt).
+# with no Dockerfile of their own. A Dockerfile is added with each service's
+# production implementation.
 #
 # Layout assumption: the 5 repos are checked out as sibling folders under the
 # same GitHub/ parent directory, matching the rest of the HYDRA-UMC ecosystem.
@@ -34,8 +33,8 @@ services:
       - safety-zones
       - visual-servoing-api
 
-  # -- children (not yet real images - each builds a Dockerfile when its own
-  #    turn comes up in SONNET/5.PLAN_EJECUCION_32_PROYECTOS_NUEVOS.txt) --
+  # -- children (not yet real images; each supplies a Dockerfile with its
+  #    production implementation) --
 
   vision-streamer:
     build: ../HYDRA-UMC-VISION-STREAMER
