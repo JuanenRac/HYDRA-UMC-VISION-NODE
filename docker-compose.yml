@@ -1,0 +1,72 @@
+# HYDRA-UMC-VISION-NODE - docker-compose.yml: integration map (not functional yet)
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0 - see LICENSE
+#
+# Documents how this Vision AI Node is meant to integrate its 4 children as
+# real containers once each one ships a buildable image. NOT functional yet:
+# HYDRA-UMC-VISION-STREAMER, HYDRA-UMC-DETECTION-HEF, HYDRA-UMC-SAFETY-ZONES
+# and HYDRA-UMC-VISUAL-SERVOING-API are still skeleton-stage Python projects
+# with no Dockerfile of their own (see each one's own
+# SONNET/<proyecto>/mejoras_futuras.txt - a Dockerfile is added when its own
+# turn comes up in SONNET/5.PLAN_EJECUCION_32_PROYECTOS_NUEVOS.txt).
+#
+# Layout assumption: the 5 repos are checked out as sibling folders under the
+# same GitHub/ parent directory, matching the rest of the HYDRA-UMC ecosystem.
+# Run `docker compose config` once real Dockerfiles exist to validate this.
+
+version: "3.9"
+
+services:
+  vision-node:
+    build: .
+    image: hydra-umc-vision-node:1.0.0
+    container_name: hydra-umc-vision-node
+    restart: unless-stopped
+    devices:
+      - /dev/hailo0:/dev/hailo0        # Hailo-8 M.2 accelerator
+    volumes:
+      - ./models:/opt/hydra/models:ro  # compiled .hef models (this repo)
+    ports:
+      - "50051:50051"                  # gRPC control API towards HYDRA-UMC core
+    depends_on:
+      - vision-streamer
+      - detection-hef
+      - safety-zones
+      - visual-servoing-api
+
+  # -- children (not yet real images - each builds a Dockerfile when its own
+  #    turn comes up in SONNET/5.PLAN_EJECUCION_32_PROYECTOS_NUEVOS.txt) --
+
+  vision-streamer:
+    build: ../HYDRA-UMC-VISION-STREAMER
+    image: hydra-umc-vision-streamer:1.0.0
+    container_name: hydra-umc-vision-streamer
+    devices:
+      - /dev/video0:/dev/video0        # repeat per attached USB 3.0 camera
+    # GStreamer capture + pre-processing for up to 8x USB 3.0 cameras,
+    # feeds decoded frames to vision-node's Hailo-8 runtime.
+
+  detection-hef:
+    build: ../HYDRA-UMC-DETECTION-HEF
+    image: hydra-umc-detection-hef:1.0.0
+    container_name: hydra-umc-detection-hef
+    volumes:
+      - ../HYDRA-UMC-DETECTION-HEF/build:/opt/hydra/hef-library:ro
+    # Serves the curated library of compiled YOLO .hef models that
+    # vision-node loads onto the Hailo-8 NPU.
+
+  safety-zones:
+    build: ../HYDRA-UMC-SAFETY-ZONES
+    image: hydra-umc-safety-zones:1.0.0
+    container_name: hydra-umc-safety-zones
+    # Real-time 3D intrusion detection - triggers CAN E-STOP through
+    # vision-node when a Warning/Danger zone is breached.
+
+  visual-servoing-api:
+    build: ../HYDRA-UMC-VISUAL-SERVOING-API
+    image: hydra-umc-visual-servoing-api:1.0.0
+    container_name: hydra-umc-visual-servoing-api
+    ports:
+      - "50052:50052"                  # gRPC: closed-loop pose-correction feed
+    # Turns Hailo-8 visual feedback into real-time kinematic pose
+    # corrections consumed by the HYDRA-UMC core (STM32H745).

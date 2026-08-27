@@ -1,0 +1,26 @@
+[project]
+name = "hydra-umc-vision-node"
+version = "0.0.3"
+description = "High-speed perception edge AI node powered by Hailo-8 and Raspberry Pi CM5. Integration parent of the Vision AI Node family (Vision-Streamer, Detection-HEF, Safety-Zones, Visual-Servoing-API)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-only" }
+authors = [{ name = "JuanenRac", email = "electrohobby3d@gmail.com" }]
+# No runtime dependencies yet - v0's family-readiness check is stdlib
+# only. Planned once real business logic lands: hailo-platform (Hailo-8
+# runtime), grpcio (control API towards HYDRA-UMC core), pyyaml (node
+# configuration).
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+hydra-umc-vision-node = "hydra_umc_vision_node.main:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
