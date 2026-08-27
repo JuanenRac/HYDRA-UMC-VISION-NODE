@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="26 TOPS">
   <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf-yellow.svg" alt="gRPC">
-  <img src="https://img.shields.io/badge/Stage-Skeleton-lightgrey.svg" alt="Skeleton stage">
+  <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Functional v0 stage">
 </p>
 
 ---
@@ -40,17 +40,15 @@ Raspberry Pi Compute Module 5 に Hailo-8 M.2 AI アクセラレーターを組�
 
 ### 要点
 
+* 🧩 **ファミリーレディネスチェック（v0）：** 実際の `family-status` サブコマンドが 4 つの実際の子プロジェクトそれぞれの実際の `hydra-umc.project.json` を読み取り、存在/バージョン/成熟度/役割を報告します——自分自身はまだ Hailo-8 ランタイムもカメラパイプラインも動かしていない統合親プロジェクトとして正直な機能です。下記「正直な現状確認」を参照してください。
 * 🚀 **ハードウェアアクセラレーション（計画中）：** Hailo-8（26 TOPS）上での HEF モデルのネイティブ実行を目標に設計されています——これらのモデルをコンパイルするツールチェーンは別プロジェクト（[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)）であり、本ノード自体が構築するものではありません。
 * 📷 **マルチストリーム処理（計画中）：** [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) が上流でキャプチャした、最大 8 台の高解像度カメラフィードを同時分析します。
 * 🎯 **精密知覚（計画中）：** 産業用部品検出のために YOLO 系アーキテクチャを中心に設計されています。
 * 🛡️ **アクティブセーフティ（計画中）：** リアルタイムの占有マッピングを [HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES) に供給し、人の侵入を検知します。
 * 🧩 **存在理由：** 専用ノードがなければ、知覚処理は [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部の STM32H745 リアルタイムコア（これに割く余剰サイクルはありません）を過負荷にするか、あるいはすべてのカメラフレームをリモート GPU へ送信せざるを得ず、安全ループが許容できない遅延を追加することになります。ロボット本体のすぐそばで CM5 + Hailo-8 上で実行することで、検知 → 補正 →（必要であれば）E-STOP のループをローカルかつ高速に保ちます。
 
-**正直な現状確認 —— 今日実際に動くもの：** 本リポジトリは現在スケルトン
-段階にあります。実際のエントリポイント（`src/hydra_umc_vision_node/main.py`）
-は、プロジェクト名、インストール済みバージョン、そして役割を説明する 1 行を
-表示し、終了コード 0 で終了します。上記で説明した Hailo-8 ランタイム、
-gRPC 制御 API、子プロセス監督ロジックはいずれもまだコードとして存在して
+**正直な現状確認 —— 今日実際に動くもの：** 引数なしの呼び出しは引き続き識別情報/バージョン/役割を表示しますが、今では実際の `family-status [--workspace パス]` サブコマンドもあります：ローカルチェックアウトから `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API` それぞれの実際のマニフェストを読み取り、見つけたものを正直に報告します。上記で説明した Hailo-8 ランタイム、
+gRPC 制御 API、実際の子プロセス監督ロジックはいずれもまだ存在して
 いません——それらは本プロジェクトが存在する理由であり、現在行っている
 ことではありません。実際に出荷済みの内容は [`CHANGELOG.md`](CHANGELOG.md)
 を、まだ残っている作業は下記の「現在の状況と次のステップ」セクションを
@@ -107,6 +105,8 @@ Vision AI Node ファミリーの 5 つのプロジェクトの中で、本プ�
 * **バージョンはハードコードではなく、インストール済みパッケージのメタデータから読み取られます。** `main.py` はパッケージ内のどこかに 2 つ目の `__version__` 文字列を保持する代わりに `importlib.metadata.version("hydra-umc-vision-node")` を呼び出します。これにより、`bump_version.py` が編集すべき箇所は常に 1 か所（`pyproject.toml`）だけとなり、表示されるバージョンがそれと静かにずれることは決してありません。
 * **オドメーター式のインクリメントは自動的に `PATCH`/`MINOR` にのみ触れます。** `bump_version.py` は実際のビルドごとに `PATCH` を増加させ、9 を超えると `MINOR` に繰り上がり、`MINOR` も 9 を超えると `MAJOR` に繰り上がりますが、`MAJOR` 自体を自動で増加させることは決してありません。`MAJOR` は意図的な、人間による意味的な決定（実際のアーキテクチャ上のマイルストーン）であり、ビルドスクリプトが自ら決めるべきことではありません。これはエコシステム全体で既に使われている慣例と同じです（`HYDRA-UMC-EDITOR-URDF/bump_version.py` と `HYDRA-UMC-SUITE/bump_version.py` を参照）。
 * **計画中の制御 API には REST ではなく gRPC/Protobuf を採用**（上記のバッジ参照）——本ノードが位置する知覚 → 補正 → ファームウェアのループは遅延に敏感であり、同一 LAN 内の他の Python/組み込みサービスと通信するため、gRPC のバイナリフレーミングとストリーミングサポートが JSON-over-HTTP よりも適しているという理由で選択されました。まだ実装されていませんが、コードが実現する前に方向性を明確にするためここに記録しています。
+* **`family-status` が手作業で管理するリストではなく、各子プロジェクト自身のマニフェストを読み取る理由。** `hydra-umc.project.json` は、エコシステム全体のダッシュボードとアップデーターがすでに信頼している唯一の真実の情報源です——ここに第 2 のリストを持つと、子プロジェクトの実際の成熟度が変わった瞬間、誰も更新を忘れずに済むとは限らず、すぐに食い違いが生じてしまいます。
+* **兄弟プロジェクトのローカルチェックアウトが見つからない場合、実際の正直な「見つかりません」になる理由（クラッシュではなく）。** 統合親プロジェクトは、開発者が実際に 4 つの子プロジェクトすべてをローカルにチェックアウトしているかどうかを本当には知り得ません——`manifest.py` は実際に起こりうるあらゆる失敗（リポジトリなし、マニフェストなし、不正な JSON）に対して `None` を返すため、`family-status` は例外を発生させる代わりにそれを明確に報告します。
 
 ---
 
@@ -114,7 +114,11 @@ Vision AI Node ファミリーの 5 つのプロジェクトの中で、本プ�
 
 ```text
 HYDRA-UMC-VISION-NODE/
-├── src/                 # ソースコード（hydra_umc_vision_node パッケージ）
+├── src/hydra_umc_vision_node/
+│   ├── manifest.py       # 兄弟プロジェクト自身のマニフェストの実際の防御的リーダー
+│   ├── family.py          # 4 つの実際の子プロジェクトに対する実際のファミリーレディネスチェック
+│   └── main.py              # エントリポイント + 実際の `family-status` サブコマンド
+├── tests/               # 実際のテスト：マニフェスト読み込み、ファミリーステータス、CLI
 ├── docs/                # ドキュメントと API リファレンス
 ├── os/                  # HydraOS システムイメージ設定（CM5）——親プロジェクト専用
 ├── models/               # Hailo-8 NPU に配信されるコンパイル済み .hef モデル——親プロジェクト専用
@@ -123,8 +127,8 @@ HYDRA-UMC-VISION-NODE/
 ├── scripts/             # ユーティリティスクリプト（デプロイ、セットアップ）
 ├── pyproject.toml       # パッケージメタデータ、依存関係、オドメーターバージョン
 ├── bump_version.py      # オドメーター式バージョンインクリメント（build.sh/.bat が実行）
-├── build.sh / build.bat # venv + editable インストール + コンパイルチェック
-├── run.sh / run.bat     # ローカル venv からエントリポイントを実行
+├── build.sh / build.bat # venv + editable インストール（dev エクストラ付き） + コンパイルチェック + テスト
+├── run.sh / run.bat     # ローカル venv からエントリポイントを実行（引数を転送）
 ├── docker-compose.yml   # Vision AI Node の 4 つの子プロジェクトの統合マップ（まだ機能しません）
 └── CHANGELOG.md         # バージョンごとの履歴（オドメーター方式、日付なし）
 ```
@@ -141,7 +145,7 @@ HYDRA-UMC-VISION-NODE/
 ### 前提条件
 
 * `PATH` 上に **Python 3.10 以降**があること（`python3`/`python` の両方を試すスクリプトで確認済み）。
-* システムレベルの Hailo SDK、GStreamer、その他のネイティブ依存関係は現時点では不要です——本スケルトンには**サードパーティのランタイム依存関係が一切ありません**（`pyproject.toml` の `dependencies = []`）。対応する実際のロジックが実装され次第、これらは追加されます。
+* システムレベルの Hailo SDK、GStreamer、その他のネイティブ依存関係は現時点では不要です——**サードパーティのランタイム依存関係が一切ありません**（`pyproject.toml` の `dependencies = []`）。`pytest` は開発専用のエクストラであり、実際のテストスイートのためだけに使用されます。対応する実際のロジックが実装され次第、これらのランタイム依存関係は追加されます。
 * ローカル仮想環境用の十分なディスク容量（この段階では `.venv/` 下に作成され、数十 MB 程度です）。
 
 ### ステップバイステップ —— 各コマンドが実際に行うこと
@@ -153,11 +157,12 @@ HYDRA-UMC-VISION-NODE/
 
 1. **オドメーター式バージョンインクリメント** — `bump_version.py` を実行し、`pyproject.toml` 内の `PATCH` を増加させます（上記のオドメーター規則に従って `MINOR`/`MAJOR` に繰り上がります）。これは今から実行しようとしているこのビルドを含め、*毎回*のビルドで発生するため、バージョンが 1 つ上がることを想定してください。
 2. **仮想環境** — `.venv/` がまだ存在しない場合は作成します（再実行しても安全です。既存の `.venv/` は再作成されず再利用されます）。
-3. **Editable インストール** — `pip install -e .` は本パッケージを「editable」モードで `.venv` にインストールするため、`src/` 下のソース変更は再インストールなしに即座に反映され、`run.sh` が使用する `hydra-umc-vision-node` コンソールエントリポイントが登録されます。
+3. **Editable インストール（dev エクストラ付き）** — `pip install -e ".[dev]"` は本パッケージを「editable」モードで `.venv` にインストールするため、`src/` 下のソース変更は再インストールなしに即座に反映され、`pytest` がインストールされ、`run.sh` が使用する `hydra-umc-vision-node` コンソールエントリポイントが登録されます。
 4. **コンパイルチェック** — `python -m compileall -q src` は `src/` 下のすべての `.py` ファイルをバイトコンパイルし、`main.py` から一度も実際にインポートされないファイルであっても、パッケージ全体にわたる構文エラーを検出します。
+5. **実際のテストスイート** — `pytest tests/` が全 12 件のテストを実行します。
 
 スクリプトは `set -euo pipefail` を使用し、最初に失敗したステップで停止
-します。4 つのステップすべてが成功した場合にのみ `== Build OK ==` を
+します。すべてのステップが成功した場合にのみ `== Build OK ==` を
 表示します。
 
 ```bash
@@ -167,8 +172,30 @@ HYDRA-UMC-VISION-NODE/
 `.venv` 内の Python インタープリタを特定し（本リポジトリはクロス
 プラットフォームで開発されているため、POSIX の `.venv/bin/python` と
 Windows 形式の `.venv/Scripts/python.exe` の両方のレイアウトに対応）、
-`python -m hydra_umc_vision_node.main` を実行します。これはプロジェクト
-名、今しがた増加したバージョン、そして 1 行の役割説明を表示します。
+`python -m hydra_umc_vision_node.main` を実行し、あらゆる引数を転送します。
+
+引数なしで呼び出すと名前 + バージョン + 役割を表示します：
+
+```text
+HYDRA-UMC-VISION-NODE v0.0.3
+High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
+```
+
+実際の `family-status` サブコマンドは、実際のローカルチェックアウトを
+確認します：
+
+```bash
+./run.sh family-status
+./run.sh family-status --workspace /path/to/some/other/checkout
+
+# Windows
+run.bat family-status
+```
+
+デフォルトでは、本リポジトリ自身の親ディレクトリを使用します——これは
+このエコシステムの実際のチェックアウトがすでに使用しているのと同じ
+レイアウトです。実際の子プロジェクトが 1 つでも見つからない場合は `1`
+で終了します。
 
 ```bat
 :: Windows - 手順は同じ、バッチ構文
@@ -187,17 +214,14 @@ run.bat
 
 ## 🚀 現在の状況と次のステップ
 
-**今日実現していること：** 検証済みのエントリポイントを持つ実際のインストール
-可能な Python パッケージ（実際に取得されたビルド/実行出力については
-[`CHANGELOG.md`](CHANGELOG.md) を参照）、ビルドに組み込まれたオドメーター式
-バージョンインクリメント、そして `docker-compose.yml` における 4 つの
-子プロジェクトの完全な（ただしまだ機能しない）統合マップの文書化。
+**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際の `family-status` CLI サブコマンド、通過した 12 件のテスト、そして `docker-compose.yml` における 4 つの
+子プロジェクトの完全な（ただしまだ機能しない）統合マップの文書化——実際の完全なビルド/実行出力は [`CHANGELOG.md`](CHANGELOG.md) を参照してください。
 
 **まだ残っている作業（順不同、確定した期限なし）：**
 
 * 実際の Hailo-8 ランタイム初期化と推論ループ。
 * HYDRA-UMC コアへの gRPC 制御 API。
-* 4 つの子サービスの実際の監督（現在の `docker-compose.yml` は意図された形を文書化しているだけです）。
+* 4 つの子サービスの実際の監督（現在の `family-status` は存在/成熟度のみを確認し、ランタイムの健全性は確認しません。`docker-compose.yml` は意図された形を文書化しているだけです）。
 * [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) が実際のキャプチャパイプラインを持ち次第、マルチカメラパイプラインの同期。
 * `docker-compose.yml` を実際に実行可能なスタックに変換すること。これは 4 つの子プロジェクトがそれぞれ独自の `Dockerfile` を先に提供することに依存します。
 
