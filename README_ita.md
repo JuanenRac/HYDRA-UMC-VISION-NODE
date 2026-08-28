@@ -33,13 +33,15 @@ Questo progetto è il **genitore di integrazione** della famiglia Vision AI Node
 
 ### Punti Chiave
 
+* 🧩 **Verifica di disponibilità della famiglia (v0):** il vero sottocomando `family-status` legge il proprio `hydra-umc.project.json` di ciascuno dei 4 veri figli e riporta presenza/versione/maturità/ruolo - onesto per un genitore di integrazione che non esegue ancora alcun runtime Hailo-8 o pipeline camera in proprio.
+* 🩺 **Manifesto della pipeline, validazione dei frame e modalità degradata (v0):** un manifesto reale e ispezionabile della forma della pipeline di percezione di questo nodo (quali fasi richiedono una camera, un acceleratore, o nessuno dei due), una validazione reale e strutturale della corruzione di un buffer di frame grezzo, e un rilevamento reale della modalità degradata che sonda onestamente hardware camera/Hailo-8 reale e riporta esattamente quali fasi possono girare ora - tramite i nuovi sottocomandi `pipeline-status` e `validate-frame`.
 * 🚀 **Accelerazione hardware (previsto):** l'obiettivo è l'esecuzione nativa di modelli HEF su Hailo-8 (26 TOPS) - la toolchain che compila questi modelli è un progetto separato ([HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)), non qualcosa che questo nodo costruisce da sé.
 * 📷 **Elaborazione multi-flusso (previsto):** analisi simultanea fino a 8 flussi camera ad alta risoluzione, catturati a monte da [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER).
 * 🎯 **Percezione di precisione (previsto):** progettato attorno ad architetture della famiglia YOLO per il rilevamento di componenti industriali.
 * 🛡️ **Sicurezza attiva (previsto):** mappatura dell'occupazione in tempo reale che alimenta [HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES) per il rilevamento di intrusioni umane.
 * 🧩 **Perché esiste:** senza un nodo dedicato, il lavoro di percezione sovraccaricherebbe il core real-time STM32H745 dentro [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (che non ha cicli liberi per questo), oppure costringerebbe ogni fotogramma a viaggiare verso una GPU remota, aggiungendo una latenza che il loop di sicurezza non può permettersi. Eseguirlo su CM5 + Hailo-8, fisicamente accanto al robot, mantiene il ciclo rileva → correggi → (se serve) E-STOP locale e veloce.
 
-**Verifica di onestà - cosa funziona davvero oggi:** questo repository è in fase scheletro. L'entry point reale (`src/hydra_umc_vision_node/main.py`) stampa il nome del progetto, la sua versione installata e una descrizione di una riga del suo ruolo, quindi esce con codice 0. Nulla del runtime Hailo-8, dell'API di controllo gRPC o della logica di supervisione dei figli descritta sopra esiste ancora nel codice - sono la ragione d'essere di questo progetto, non qualcosa che fa oggi. Vedi [`CHANGELOG.md`](CHANGELOG.md) per ciò che è stato consegnato esattamente finora, e la sezione "Stato Attuale e Prossimi Passi" più sotto per ciò che resta aperto.
+**Verifica di onestà - cosa funziona davvero oggi:** l'invocazione senza argomenti stampa ancora identità/versione/ruolo, ma ora esistono tre sottocomandi reali: `family-status [--workspace PERCORSO]` (legge i manifesti reali propri dei 4 figli reali), `pipeline-status` (sonda hardware reale e riporta il modo reale e onesto - `full`, oppure un modo degradato onesto su una macchina senza camera/Hailo-8, come questa macchina di sviluppo) e `validate-frame <percorso> --width --height` (verifica reale di corruzione strutturale di un buffer di frame). Nulla del runtime Hailo-8, dell'API di controllo gRPC o della supervisione reale dei figli esiste ancora - sono la ragione d'essere di questo progetto, non qualcosa che fa oggi. Vedi [`CHANGELOG.md`](CHANGELOG.md) per ciò che è stato consegnato esattamente finora, e la sezione "Stato Attuale e Prossimi Passi" più sotto per ciò che resta aperto.
 
 ---
 
@@ -151,7 +153,7 @@ run.bat
 
 ## 🚀 Stato Attuale e Prossimi Passi
 
-**Cosa funziona oggi:** un vero pacchetto Python installabile con un entry point verificato (vedi [`CHANGELOG.md`](CHANGELOG.md) per l'output esatto di build/run catturato), un incremento di versione contachilometri integrato nel build, e una mappa di integrazione completamente documentata (ma non ancora funzionante) per i 4 figli in `docker-compose.yml`.
+**Cosa funziona oggi:** una vera verifica di disponibilità della famiglia (`manifest.py`/`family.py`), un vero manifesto della pipeline e un vero rilevamento del modo degradato (`pipeline.py`/`hardware.py`) che sonda onestamente hardware camera/Hailo-8 reale, una vera validazione di corruzione dei frame indipendente dall'hardware (`frame.py`), i sottocomandi CLI `family-status`/`pipeline-status`/`validate-frame`, 38 test reali che passano (vedi [`CHANGELOG.md`](CHANGELOG.md) per l'output esatto di build/run catturato), un incremento di versione contachilometri integrato nel build, e una mappa di integrazione completamente documentata (ma non ancora funzionante) per i 4 figli in `docker-compose.yml`.
 
 **Cosa resta aperto, senza ordine particolare e senza calendario impegnato:**
 

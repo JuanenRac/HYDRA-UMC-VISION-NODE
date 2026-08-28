@@ -34,6 +34,7 @@ Este proyecto es el **padre de integración** de la familia Vision AI Node: no h
 ### Puntos Clave
 
 * 🧩 **Chequeo de Disponibilidad de Familia (v0):** el subcomando real `family-status` lee el propio `hydra-umc.project.json` de cada uno de los 4 hijos reales y reporta presencia/versión/madurez/rol - honesto para un padre de integración que todavía no ejecuta ningún runtime Hailo-8 ni pipeline de cámara por sí mismo. Ver "Comprobación de honestidad" abajo.
+* 🩺 **Manifiesto de Pipeline, Validación de Frames y Modo Degradado (v0):** un manifiesto real e inspeccionable de la forma del pipeline de percepción de este nodo (qué etapas necesitan cámara, acelerador, o ninguno de los dos), validación real y estructural de corrupción de un buffer de frame crudo, y detección real de modo degradado que sondea honestamente hardware real de cámara/Hailo-8 y reporta exactamente qué etapas pueden correr ahora mismo - via los nuevos subcomandos `pipeline-status` y `validate-frame`.
 * 🚀 **Aceleración por Hardware (previsto):** el diseño apunta a ejecución nativa de modelos HEF en Hailo-8 (26 TOPS) - el toolchain que compila esos modelos es un proyecto aparte ([HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)), no algo que construya este nodo.
 * 📷 **Procesamiento Multi-flujo (previsto):** análisis simultáneo de hasta 8 fuentes de cámara de alta resolución, capturadas aguas arriba por [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER).
 * 🎯 **Percepción de Precisión (previsto):** diseñado en torno a arquitecturas de la familia YOLO para detección de componentes industriales.
@@ -83,6 +84,8 @@ Ninguno de los 5 proyectos lleva carpeta `hardware/` ni `firmware/`: CM5 + Hailo
 * **gRPC/Protobuf, no REST, para la API de control prevista** (ver badge arriba) - elegido porque el bucle percepción → corrección → firmware en el que vive este nodo es sensible a la latencia y habla con otros servicios Python/embebidos dentro de la misma LAN, donde el framing binario y el soporte de streaming de gRPC encajan mejor que JSON sobre HTTP. Todavía no implementado; documentado aquí para que la dirección quede clara antes de que llegue el código.
 * **`family-status` lee el manifiesto propio de cada hijo en vez de una lista mantenida a mano.** `hydra-umc.project.json` ya es la única fuente de verdad en la que confían el dashboard/updater del ecosistema - una segunda lista aquí se desincronizaría en cuanto la madurez real de un hijo cambiara y nadie recordara actualizarla.
 * **Un checkout hermano ausente es un "no encontrado" real y honesto, en vez de un crash.** Un padre de integración genuinamente no puede saber si un desarrollador tiene los 4 hijos clonados localmente - `manifest.py` devuelve `None` ante cualquier fallo real (repo ausente, fichero ausente, JSON malformado) para que `family-status` pueda reportarlo con claridad en vez de lanzar una excepción.
+* **Por qué la detección de modo degradado se divide en un sondeo y una función de decisión pura.** `camera_available()`/`accelerator_available()` de `hardware.py` son las únicas partes que tocan hardware real (un device node de Linux); `determine_mode()`/`active_stages()` reciben booleanos planos y contienen la logica de decision real. Esa division es lo que permite probar cada combinacion real de hardware (completo, sin camara, sin acelerador, sin hardware) de forma directa y determinista, sin mockear un sistema de archivos ni necesitar hardware CM5+Hailo-8 real para probar que la logica es correcta.
+* **Por qué la validación de frames solo revisa estructura, no contenido de píxeles.** Detectar un buffer truncado/sobredimensionado o uno sospechosamente uniforme (un sensor congelado, una captura en blanco) es validacion real, util y independiente de hardware que no necesita ninguna imagen de referencia ni camara para probarse con honestidad. Decidir si el CONTENIDO real de un frame se ve mal (desenfoque, exposicion, una metrica real de calidad de vision) es un problema fundamentalmente distinto y mucho mas dificil que necesitaria frames reales capturados para calibrarse - explicitamente fuera de alcance para esta v0.
 
 ---
 
@@ -93,8 +96,11 @@ HYDRA-UMC-VISION-NODE/
 ├── src/hydra_umc_vision_node/
 │   ├── manifest.py       # Lector real y defensivo del manifiesto propio de un hermano
 │   ├── family.py          # Chequeo real de disponibilidad de familia sobre los 4 hijos reales
-│   └── main.py              # Entry point + subcomando real `family-status`
-├── tests/               # Tests reales: lectura de manifiesto, family status, CLI
+│   ├── pipeline.py          # Manifiesto real del pipeline de percepcion (etapas + necesidades de hardware)
+│   ├── frame.py                # Validacion real de corrupcion de frames, independiente de hardware
+│   ├── hardware.py               # Sondeos reales de camara/acelerador + logica de modo degradado
+│   └── main.py                     # Entry point + `family-status`/`pipeline-status`/`validate-frame`
+├── tests/               # Tests reales: manifiesto, family status, pipeline, frame, hardware, CLI
 ├── docs/                # Documentación y referencia de API
 ├── os/                  # Configuración de la imagen HydraOS (CM5) - solo aquí
 ├── models/              # Modelos .hef compilados servidos a la NPU Hailo-8 - solo aquí
@@ -132,7 +138,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Entorno virtual** — crea `.venv/` si no existe ya (seguro re-ejecutar; un `.venv/` existente se reutiliza, no se recrea).
 3. **Instalación editable (con extras dev)** — `pip install -e ".[dev]"` instala este paquete en `.venv` en modo "editable", así que los cambios de código bajo `src/` tienen efecto inmediato sin reinstalar, instala `pytest`, y registra el entry point de consola `hydra-umc-vision-node` que usa `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` compila a bytecode cada archivo `.py` bajo `src/`, detectando errores de sintaxis en todo el paquete incluso en archivos que `main.py` nunca importa realmente.
-5. **Suite de tests real** — `pytest tests/` ejecuta los 12 tests.
+5. **Suite de tests real** — `pytest tests/` ejecuta los 38 tests.
 
 El script usa `set -euo pipefail` y se detiene en el primer paso que falle, imprimiendo `== Build OK ==` solo si todos los pasos tuvieron éxito.
 
@@ -161,6 +167,33 @@ run.bat family-status
 
 Por defecto usa el propio directorio padre de este repositorio - la disposición real de checkout-hermano que ya usa este ecosistema. Sale con `1` si falta algún hijo real.
 
+El subcomando real `pipeline-status` sondea hardware real y reporta el resultado real y honesto:
+
+```bash
+./run.sh pipeline-status
+```
+```json
+{
+  "manifest": { "version": "0.1.0", "stages": [ "..." ] },
+  "camera_present": false,
+  "accelerator_present": false,
+  "mode": "degraded_no_hardware",
+  "runnable_stages": ["preprocess", "postprocess", "publish"],
+  "skipped_stages": ["capture", "inference"]
+}
+```
+
+En esta máquina de desarrollo (sin CM5, sin Hailo-8, sin cámara) esa es la respuesta real y honesta - código de salida `1` (cualquier cosa distinta de modo `full`). El subcomando real `validate-frame` revisa un archivo de buffer de frame crudo en busca de corrupción estructural:
+
+```bash
+./run.sh validate-frame ruta/al/frame.raw --width 1920 --height 1080
+# Frame OK: ruta/al/frame.raw matches 1920x1080x3 (6220800 bytes)
+
+./run.sh validate-frame ruta/al/truncado.raw --width 1920 --height 1080
+# Frame INVALID: ruta/al/truncado.raw
+#   [size_mismatch] frame buffer is ... bytes, expected 6220800 bytes ... - likely truncated or corrupt
+```
+
 ```bat
 :: Windows - mismos pasos, sintaxis batch
 build.bat
@@ -178,7 +211,7 @@ run.bat
 
 ## 🚀 Estado Actual y Próximos Pasos
 
-**Qué funciona hoy:** un chequeo real de disponibilidad de familia (`manifest.py`/`family.py`) que lee el manifiesto propio de cada uno de los 4 hijos reales y reporta presencia/versión/madurez/rol, un subcomando CLI real `family-status`, 12 tests pasando, y un mapa de integración completamente documentado (pero todavía no funcional) para los 4 hijos en `docker-compose.yml` - ver [`CHANGELOG.md`](CHANGELOG.md) para la salida completa real de build/run.
+**Qué funciona hoy:** un chequeo real de disponibilidad de familia (`manifest.py`/`family.py`) que lee el manifiesto propio de cada uno de los 4 hijos reales y reporta presencia/versión/madurez/rol, un manifiesto real de pipeline y detección real de modo degradado (`pipeline.py`/`hardware.py`) que sondea honestamente hardware real de cámara/Hailo-8 y reporta exactamente qué etapas del pipeline pueden correr, validación real de corrupción de frames independiente de hardware (`frame.py`), los subcomandos CLI `family-status`/`pipeline-status`/`validate-frame`, 38 tests pasando, y un mapa de integración completamente documentado (pero todavía no funcional) para los 4 hijos en `docker-compose.yml` - ver [`CHANGELOG.md`](CHANGELOG.md) para la salida completa real de build/run.
 
 **Qué sigue abierto, sin orden particular y sin calendario comprometido:**
 
