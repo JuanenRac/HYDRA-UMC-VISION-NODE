@@ -10,6 +10,12 @@ by 1 instead (e.g. `0.0.9` -> `0.1.0`), the same carry cascading into
 `MAJOR` if `MINOR` also exceeds 9. `MAJOR` is otherwise only ever bumped by
 hand.
 
+## Unreleased - strict sibling-manifest fields
+
+- The family manifest reader now accepts only non-empty text values for
+  `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
+  silently coerced into strings and represented as a real child contract.
+
 ## [0.0.4] - Real pipeline manifest, frame validation, and degraded-mode detection
 ### Added
 - `pipeline.py` - a real, inspectable manifest of this node's perception pipeline shape (`capture` -> `preprocess` -> `inference` -> `postprocess` -> `publish`), with each stage honestly declaring whether it needs a camera, a Hailo-8 accelerator, or neither. Documents the pipeline's shape, not the pipeline itself - no real capture loop or Hailo-8 runtime behind it (see `main.py`'s docstring for why).

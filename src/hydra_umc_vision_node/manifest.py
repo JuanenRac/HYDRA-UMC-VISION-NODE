@@ -40,11 +40,16 @@ def read_child_manifest(repo_path: Path) -> ChildManifest | None:
         return None
     try:
         data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return None
+        required = ("name", "version", "maturity", "role")
+        if any(not isinstance(data.get(field), str) or not data[field].strip() for field in required):
+            return None
         return ChildManifest(
-            name=str(data["name"]),
-            version=str(data["version"]),
-            maturity=str(data["maturity"]),
-            role=str(data["role"]),
+            name=data["name"],
+            version=data["version"],
+            maturity=data["maturity"],
+            role=data["role"],
         )
     except (OSError, json.JSONDecodeError, KeyError, TypeError):
         return None

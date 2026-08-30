@@ -63,3 +63,12 @@ def test_missing_required_field_returns_none(tmp_path: Path) -> None:
     (repo / "hydra-umc.project.json").write_text(json.dumps({"name": "X"}), encoding="utf-8")
 
     assert read_child_manifest(repo) is None
+
+
+def test_non_text_or_empty_required_manifest_field_returns_none(tmp_path: Path) -> None:
+    repo = tmp_path / "invalid-types"
+    _write_manifest(repo, version=42)  # type: ignore[arg-type]
+    assert read_child_manifest(repo) is None
+
+    _write_manifest(repo, maturity="   ")
+    assert read_child_manifest(repo) is None
