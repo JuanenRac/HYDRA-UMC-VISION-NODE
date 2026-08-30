@@ -14,7 +14,7 @@
   "maturity": "established",
   "family": "Vision AI Node",
   "parent": null,
-  "build": "",
+  "build": "python tools/build_test.py",
   "notes": "Real v0 family-readiness check (`family-status` subcommand): reads each of the 4 real children's own hydra-umc.project.json and reports presence/version/maturity/role. Real pipeline manifest (pipeline.py) describing the perception pipeline's shape and per-stage hardware needs, real hardware-independent frame corruption validation (frame.py), and real degraded-mode detection (hardware.py) that honestly probes for a real camera/Hailo-8 device and reports exactly which stages can run - `pipeline-status` and `validate-frame` subcommands. Honest for an integration parent that runs no Hailo-8 runtime or camera pipeline itself - the real capture loop and Hailo-8 inference runtime stay future work, blocked on real CM5+Hailo-8 hardware this environment does not have.",
   "native_version": {
     "file": "pyproject.toml",
