@@ -1,6 +1,6 @@
 [project]
 name = "hydra-umc-vision-node"
-version = "0.0.5"
+version = "0.0.6"
 description = "High-speed perception edge AI node powered by Hailo-8 and Raspberry Pi CM5. Integration parent of the Vision AI Node family (Vision-Streamer, Detection-HEF, Safety-Zones, Visual-Servoing-API)."
 readme = "README.md"
 requires-python = ">=3.10"

@@ -16,6 +16,21 @@ hand.
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
 
+## [0.0.6] - The 0.0.5 workspace approach was unreadable by its own service account
+
+- **`systemd/hydra-umc-vision-node.service`** - `--workspace` no longer
+  points at a symlink to the real sibling-repo checkout root. Live-
+  verified failure on the real CM5 this was first installed on: that
+  checkout root lives under the operator's own home directory, itself
+  `0700` (Debian's own default) - unreadable by this service's own
+  unprivileged account no matter how `ProtectHome` is set (`read-only`
+  still respects the real underlying permission bits; it only controls
+  whether systemd hides `/home` from the unit, not who is allowed to
+  read what's under it). `install_vision_node.sh` now copies out just
+  the small `hydra-umc.project.json` for each expected child into a real
+  `root:root 0755` tree under `/opt` instead - `ProtectHome` reverts to
+  this family's usual `true`.
+
 ## [0.0.5] - Real v0: JSON/HTTP server mode, plus CM5 deployment
 
 - **`api.py`** (new) - `GET /family-status`, `GET /pipeline-status`, and
