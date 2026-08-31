@@ -1,0 +1,36 @@
+# =============================================================================
+# HYDRA-UMC-VISION-NODE - Local CM5 family/pipeline-status API systemd unit
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+# --workspace points at the real sibling-repo checkout root on this CM5
+# (/opt/hydra-umc/vision-node/workspace, a symlink to it - see
+# install_vision_node.sh) so GET /family-status has a real, non-empty
+# default to check without a caller having to pass ?workspace= on every
+# request. That checkout root lives under the operator's home directory,
+# so ProtectHome is "read-only" here, not the usual "true" (which would
+# make /home/ - and this symlink's real target - inaccessible, not just
+# unwritable) - this service never writes to it either way.
+[Unit]
+Description=HYDRA-UMC-VISION-NODE real family/pipeline-status API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hydra-umc-vision-node
+Group=hydra-umc-vision-node
+WorkingDirectory=/opt/hydra-umc/vision-node
+Environment=PYTHONPATH=/opt/hydra-umc/vision-node/src
+ExecStart=/usr/bin/python3 -m hydra_umc_vision_node.main serve --addr 127.0.0.1 --port 8094 --workspace /opt/hydra-umc/vision-node/workspace
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=read-only
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

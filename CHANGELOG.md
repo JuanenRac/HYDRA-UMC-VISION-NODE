@@ -16,6 +16,31 @@ hand.
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
 
+## [0.0.5] - Real v0: JSON/HTTP server mode, plus CM5 deployment
+
+- **`api.py`** (new) - `GET /family-status`, `GET /pipeline-status`, and
+  `POST /validate-frame` reach the exact same `family.py`/`hardware.py`/
+  `frame.py` functions the CLI's own subcommands already run.
+  `POST /validate-frame` takes the raw frame bytes as the request body
+  rather than a server-side file path - the CLI's own `validate-frame`
+  reads a *local* file because it runs on the same machine as the frame;
+  a real remote caller has no such local path on this server's own
+  filesystem to hand it. Real gap this closes: this project's own
+  readiness/pipeline/frame-validation logic was only ever reachable as a
+  one-shot CLI.
+- **`main.py`** - new `serve` subcommand (`--workspace`/`--addr`/`--port`,
+  default `127.0.0.1:8094`).
+- **`systemd/hydra-umc-vision-node.service`** (new) - unit for
+  `HYDRA-UMC-OS/provisioning/install_vision_node.sh` (new, that repo).
+  `--workspace` points at a symlink to the real sibling-checkout root
+  already on the CM5, rather than a second copy of those repos - real bug
+  caught before deploying: that root lives under the operator's home
+  directory, so `ProtectHome` is `read-only` here, not the family's usual
+  `true` (which would make `/home/` - and this symlink's real target -
+  inaccessible outright).
+- 9 new tests (`tests/test_api.py`, real end-to-end HTTP, reusing this
+  repo's own `tests/test_family.py` fixture shapes) - 48 total.
+
 ## [0.0.4] - Real pipeline manifest, frame validation, and degraded-mode detection
 ### Added
 - `pipeline.py` - a real, inspectable manifest of this node's perception pipeline shape (`capture` -> `preprocess` -> `inference` -> `postprocess` -> `publish`), with each stage honestly declaring whether it needs a camera, a Hailo-8 accelerator, or neither. Documents the pipeline's shape, not the pipeline itself - no real capture loop or Hailo-8 runtime behind it (see `main.py`'s docstring for why).

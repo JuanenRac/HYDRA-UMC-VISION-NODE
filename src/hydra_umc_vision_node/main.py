@@ -26,6 +26,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
+from .api import VisionNodeServer
 from .family import check_family_status
 from .frame import FrameSpec, validate_frame
 from .hardware import PipelineMode, accelerator_available, active_stages, camera_available, determine_mode
@@ -123,6 +124,20 @@ def _run_validate_frame(path: Path, width: int, height: int, channels: int) -> i
     return 1
 
 
+def _run_serve(addr: str, port: int, workspace: Path) -> int:
+    server = VisionNodeServer((addr, port), workspace)
+    print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace})")
+    print("[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+        print("[vision-node] shutting down")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hydra-umc-vision-node", description=ROLE)
     subparsers = parser.add_subparsers(dest="command")
@@ -150,6 +165,21 @@ def build_parser() -> argparse.ArgumentParser:
     validate_frame_parser.add_argument("--height", type=int, required=True)
     validate_frame_parser.add_argument("--channels", type=int, default=3, help="Default: 3 (RGB).")
 
+    serve_parser = subparsers.add_parser(
+        "serve",
+        help="Run family-status/pipeline-status/validate-frame as a JSON/HTTP API "
+             "(GET /family-status, GET /pipeline-status, POST /validate-frame) - the "
+             "exact same functions the CLI subcommands above already run.",
+    )
+    serve_parser.add_argument("--addr", default="127.0.0.1", help="address to bind the HTTP API to")
+    serve_parser.add_argument("--port", type=int, default=8094, help="port for the HTTP API")
+    serve_parser.add_argument(
+        "--workspace",
+        type=Path,
+        default=_DEFAULT_WORKSPACE,
+        help="Default workspace for GET /family-status when it is not overridden per-request.",
+    )
+
     return parser
 
 
@@ -163,6 +193,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_pipeline_status()
     if args.command == "validate-frame":
         return _run_validate_frame(args.path, args.width, args.height, args.channels)
+    if args.command == "serve":
+        return _run_serve(args.addr, args.port, args.workspace)
 
     _print_identity()
     return 0
