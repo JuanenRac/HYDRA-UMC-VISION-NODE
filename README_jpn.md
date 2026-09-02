@@ -165,7 +165,7 @@ HYDRA-UMC-VISION-NODE/
 2. **仮想環境** — `.venv/` がまだ存在しない場合は作成します（再実行しても安全です。既存の `.venv/` は再作成されず再利用されます）。
 3. **Editable インストール（dev エクストラ付き）** — `pip install -e ".[dev]"` は本パッケージを「editable」モードで `.venv` にインストールするため、`src/` 下のソース変更は再インストールなしに即座に反映され、`pytest` がインストールされ、`run.sh` が使用する `hydra-umc-vision-node` コンソールエントリポイントが登録されます。
 4. **コンパイルチェック** — `python -m compileall -q src` は `src/` 下のすべての `.py` ファイルをバイトコンパイルし、`main.py` から一度も実際にインポートされないファイルであっても、パッケージ全体にわたる構文エラーを検出します。
-5. **実際のテストスイート** — `pytest tests/` が全 38 件のテストを実行します。
+5. **実際のテストスイート** — `pytest tests/` が全 48 件のテストを実行します。
 
 スクリプトは `set -euo pipefail` を使用し、最初に失敗したステップで停止
 します。すべてのステップが成功した場合にのみ `== Build OK ==` を
@@ -183,7 +183,7 @@ Windows 形式の `.venv/Scripts/python.exe` の両方のレイアウトに対�
 引数なしで呼び出すと名前 + バージョン + 役割を表示します：
 
 ```text
-HYDRA-UMC-VISION-NODE v0.0.3
+HYDRA-UMC-VISION-NODE v0.0.6
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
@@ -251,7 +251,7 @@ run.bat
 
 ## 🚀 現在の状況と次のステップ
 
-**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際のパイプラインマニフェストと実際のデグレードモード検出（`pipeline.py`/`hardware.py`）——実際のカメラ/Hailo-8 ハードウェアを正直に探索し、どのパイプラインステージが実行可能かを正確に報告します——、実際の、ハードウェアに依存しないフレーム破損検証（`frame.py`）、`family-status`/`pipeline-status`/`validate-frame` の各 CLI サブコマンド、通過した 38 件のテスト、そして `docker-compose.yml` における 4 つの
+**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際のパイプラインマニフェストと実際のデグレードモード検出（`pipeline.py`/`hardware.py`）——実際のカメラ/Hailo-8 ハードウェアを正直に探索し、どのパイプラインステージが実行可能かを正確に報告します——、実際の、ハードウェアに依存しないフレーム破損検証（`frame.py`）、`family-status`/`pipeline-status`/`validate-frame` の各 CLI サブコマンド、通過した 48 件のテスト、そして `docker-compose.yml` における 4 つの
 子プロジェクトの完全な（ただしまだ機能しない）統合マップの文書化——実際の完全なビルド/実行出力は [`CHANGELOG.md`](CHANGELOG.md) を参照してください。
 
 **まだ残っている作業（順不同、確定した期限なし）：**

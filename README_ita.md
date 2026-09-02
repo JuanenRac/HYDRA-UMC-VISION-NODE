@@ -93,7 +93,14 @@ Nessuno dei 5 progetti contiene cartelle `hardware/` o `firmware/`: CM5 + Hailo-
 
 ```text
 HYDRA-UMC-VISION-NODE/
-├── src/                 # Codice sorgente (pacchetto hydra_umc_vision_node)
+├── src/hydra_umc_vision_node/
+│   ├── manifest.py       # Vero lettore difensivo del manifesto di un progetto fratello
+│   ├── family.py          # Vera verifica di prontezza della famiglia sui 4 figli reali
+│   ├── pipeline.py          # Vero manifesto della pipeline di percezione (stadi + esigenze hardware)
+│   ├── frame.py               # Vera validazione di corruzione del frame, indipendente dall'hardware
+│   ├── hardware.py              # Vere sonde fotocamera/acceleratore + logica di modalità degradata
+│   └── main.py                    # Entry point + sottocomandi reali `family-status`/`pipeline-status`/`validate-frame`
+├── tests/               # Test reali: lettura manifesto, stato famiglia, pipeline, frame, hardware, CLI
 ├── docs/                # Documentazione e riferimento API
 ├── os/                  # Configurazione immagine HydraOS (CM5) - solo qui
 ├── models/              # Modelli .hef compilati serviti alla NPU Hailo-8 - solo qui
@@ -131,14 +138,61 @@ HYDRA-UMC-VISION-NODE/
 2. **Ambiente virtuale** — crea `.venv/` se non esiste già (sicuro da rieseguire; un `.venv/` esistente viene riutilizzato, non ricreato).
 3. **Installazione editabile** — `pip install -e .` installa questo pacchetto in `.venv` in modalità "editabile", quindi le modifiche al codice sotto `src/` hanno effetto immediato senza reinstallare, e registra l'entry point da console `hydra-umc-vision-node` usato da `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` compila in bytecode ogni file `.py` sotto `src/`, individuando errori di sintassi in tutto il pacchetto anche in file mai realmente importati da `main.py`.
+5. **Suite di test reale** — `pytest tests/` esegue tutti i 48 test.
 
-Lo script usa `set -euo pipefail` e si ferma al primo passo che fallisce, stampando `== Build OK ==` solo se tutti e 4 i passi hanno avuto successo.
+Lo script usa `set -euo pipefail` e si ferma al primo passo che fallisce, stampando `== Build OK ==` solo se tutti e 5 i passi hanno avuto successo.
 
 ```bash
 ./run.sh
 ```
 
-Individua l'interprete Python dentro `.venv` (gestisce sia il layout POSIX `.venv/bin/python` sia quello Windows `.venv/Scripts/python.exe`, poiché questo repo è sviluppato in modo cross-platform) ed esegue `python -m hydra_umc_vision_node.main`, che stampa il nome del progetto, la versione appena incrementata e la sua descrizione di ruolo in una riga.
+Individua l'interprete Python dentro `.venv` (gestisce sia il layout POSIX `.venv/bin/python` sia quello Windows `.venv/Scripts/python.exe`, poiché questo repo è sviluppato in modo cross-platform) ed esegue `python -m hydra_umc_vision_node.main`, inoltrando eventuali argomenti.
+
+L'invocazione nuda stampa nome + versione + ruolo:
+
+```text
+HYDRA-UMC-VISION-NODE v0.0.6
+High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
+```
+
+Il sottocomando reale `family-status` controlla il checkout locale effettivo:
+
+```bash
+./run.sh family-status
+./run.sh family-status --workspace /path/to/some/other/checkout
+
+# Windows
+run.bat family-status
+```
+
+Per default usa la directory padre di questo repo - il vero layout a checkout fratelli già usato da questo ecosistema. Esce con `1` se manca un vero figlio.
+
+Il sottocomando reale `pipeline-status` sonda l'hardware reale e riporta il risultato reale e onesto:
+
+```bash
+./run.sh pipeline-status
+```
+```json
+{
+  "manifest": { "version": "0.1.0", "stages": [ "..." ] },
+  "camera_present": false,
+  "accelerator_present": false,
+  "mode": "degraded_no_hardware",
+  "runnable_stages": ["preprocess", "postprocess", "publish"],
+  "skipped_stages": ["capture", "inference"]
+}
+```
+
+Su questa macchina di sviluppo (nessun CM5, nessun Hailo-8, nessuna fotocamera) questa è la risposta reale e onesta - codice di uscita `1` (qualsiasi cosa tranne la modalità `full`). Il sottocomando reale `validate-frame` controlla un file di buffer frame grezzo per corruzione strutturale:
+
+```bash
+./run.sh validate-frame path/to/frame.raw --width 1920 --height 1080
+# Frame OK: path/to/frame.raw matches 1920x1080x3 (6220800 bytes)
+
+./run.sh validate-frame path/to/truncated.raw --width 1920 --height 1080
+# Frame INVALID: path/to/truncated.raw
+#   [size_mismatch] frame buffer is ... bytes, expected 6220800 bytes ... - likely truncated or corrupt
+```
 
 ```bat
 :: Windows - stessi passi, sintassi batch
@@ -157,7 +211,7 @@ run.bat
 
 ## 🚀 Stato Attuale e Prossimi Passi
 
-**Cosa funziona oggi:** una vera verifica di disponibilità della famiglia (`manifest.py`/`family.py`), un vero manifesto della pipeline e un vero rilevamento del modo degradato (`pipeline.py`/`hardware.py`) che sonda onestamente hardware camera/Hailo-8 reale, una vera validazione di corruzione dei frame indipendente dall'hardware (`frame.py`), i sottocomandi CLI `family-status`/`pipeline-status`/`validate-frame`, 38 test reali che passano (vedi [`CHANGELOG.md`](CHANGELOG.md) per l'output esatto di build/run catturato), un incremento di versione contachilometri integrato nel build, e una mappa di integrazione completamente documentata (ma non ancora funzionante) per i 4 figli in `docker-compose.yml`.
+**Cosa funziona oggi:** una vera verifica di disponibilità della famiglia (`manifest.py`/`family.py`), un vero manifesto della pipeline e un vero rilevamento del modo degradato (`pipeline.py`/`hardware.py`) che sonda onestamente hardware camera/Hailo-8 reale, una vera validazione di corruzione dei frame indipendente dall'hardware (`frame.py`), i sottocomandi CLI `family-status`/`pipeline-status`/`validate-frame`, 48 test reali che passano (vedi [`CHANGELOG.md`](CHANGELOG.md) per l'output esatto di build/run catturato), un incremento di versione contachilometri integrato nel build, e una mappa di integrazione completamente documentata (ma non ancora funzionante) per i 4 figli in `docker-compose.yml`.
 
 **Cosa resta aperto, senza ordine particolare e senza calendario impegnato:**
 

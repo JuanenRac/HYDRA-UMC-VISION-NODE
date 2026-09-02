@@ -93,7 +93,14 @@ Aucun des 5 projets ne contient de dossier `hardware/` ni `firmware/` : CM5 + Ha
 
 ```text
 HYDRA-UMC-VISION-NODE/
-├── src/                 # Code source (paquet hydra_umc_vision_node)
+├── src/hydra_umc_vision_node/
+│   ├── manifest.py       # Vrai lecteur défensif du manifeste d'un projet frère
+│   ├── family.py          # Vraie vérification de disponibilité de la famille sur les 4 vrais enfants
+│   ├── pipeline.py          # Vrai manifeste de pipeline de perception (étapes + besoins matériels)
+│   ├── frame.py               # Vraie validation de corruption de frame, indépendante du matériel
+│   ├── hardware.py              # Vraies sondes caméra/accélérateur + logique de mode dégradé
+│   └── main.py                    # Point d'entrée + sous-commandes réelles `family-status`/`pipeline-status`/`validate-frame`
+├── tests/               # Vrais tests : lecture de manifeste, statut famille, pipeline, frame, matériel, CLI
 ├── docs/                # Documentation et référence API
 ├── os/                  # Configuration de l'image HydraOS (CM5) - ici uniquement
 ├── models/              # Modèles .hef compilés servis au NPU Hailo-8 - ici uniquement
@@ -131,16 +138,61 @@ HYDRA-UMC-VISION-NODE/
 2. **Environnement virtuel** — crée `.venv/` s'il n'existe pas déjà (sûr à ré-exécuter ; un `.venv/` existant est réutilisé, pas recréé).
 3. **Installation éditable** — `pip install -e .` installe ce paquet dans `.venv` en mode « éditable », donc les modifications de code sous `src/` prennent effet immédiatement sans réinstallation, et enregistre le point d'entrée console `hydra-umc-vision-node` utilisé par `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` compile en bytecode chaque fichier `.py` sous `src/`, détectant les erreurs de syntaxe dans tout le paquet, même dans des fichiers jamais réellement importés par `main.py`.
+5. **Vraie suite de tests** — `pytest tests/` exécute les 48 tests.
 
-Le script utilise `set -euo pipefail` et s'arrête à la première étape en échec, n'affichant `== Build OK ==` que si les 4 étapes ont réussi.
+Le script utilise `set -euo pipefail` et s'arrête à la première étape en échec, n'affichant `== Build OK ==` que si les 5 étapes ont réussi.
 
 ```bash
 ./run.sh
 ```
 
-Localise l'interpréteur Python à l'intérieur de `.venv` (gère à la fois la disposition POSIX `.venv/bin/python` et celle de Windows `.venv/Scripts/python.exe`, car ce dépôt est développé de façon multiplateforme) et exécute `python -m hydra_umc_vision_node.main`, qui affiche le nom du projet, la version qui vient d'être incrémentée et sa description de rôle en une ligne.
+Localise l'interpréteur Python à l'intérieur de `.venv` (gère à la fois la disposition POSIX `.venv/bin/python` et celle de Windows `.venv/Scripts/python.exe`, car ce dépôt est développé de façon multiplateforme) et exécute `python -m hydra_umc_vision_node.main`, qui transmet tous les arguments.
 
-Trois vraies sous-commandes existent aussi : `family-status [--workspace CHEMIN]` (vérifie les 4 vrais enfants), `pipeline-status` (sonde le matériel réel et rapporte le mode réel - `full`, ou un mode dégradé honnête sur une machine sans caméra/Hailo-8, comme cette machine de développement) et `validate-frame <chemin> --width --height` (vérification réelle de corruption structurelle d'un buffer de frame). Voir le README anglais pour les exemples de sortie complets.
+L'invocation nue affiche le nom, la version et le rôle :
+
+```text
+HYDRA-UMC-VISION-NODE v0.0.6
+High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
+```
+
+La vraie sous-commande `family-status` vérifie le checkout local réel :
+
+```bash
+./run.sh family-status
+./run.sh family-status --workspace /path/to/some/other/checkout
+
+# Windows
+run.bat family-status
+```
+
+Utilise par défaut le répertoire parent de ce dépôt - la vraie disposition en checkouts frères déjà utilisée par cet écosystème. Se termine avec `1` si un vrai enfant manque.
+
+La vraie sous-commande `pipeline-status` sonde le matériel réel et rapporte le résultat réel, honnête :
+
+```bash
+./run.sh pipeline-status
+```
+```json
+{
+  "manifest": { "version": "0.1.0", "stages": [ "..." ] },
+  "camera_present": false,
+  "accelerator_present": false,
+  "mode": "degraded_no_hardware",
+  "runnable_stages": ["preprocess", "postprocess", "publish"],
+  "skipped_stages": ["capture", "inference"]
+}
+```
+
+Sur cette machine de développement (pas de CM5, pas de Hailo-8, pas de caméra) c'est la réponse réelle et honnête - code de sortie `1` (tout sauf le mode `full`). La vraie sous-commande `validate-frame` vérifie un fichier de buffer de frame brut à la recherche d'une corruption structurelle :
+
+```bash
+./run.sh validate-frame path/to/frame.raw --width 1920 --height 1080
+# Frame OK: path/to/frame.raw matches 1920x1080x3 (6220800 bytes)
+
+./run.sh validate-frame path/to/truncated.raw --width 1920 --height 1080
+# Frame INVALID: path/to/truncated.raw
+#   [size_mismatch] frame buffer is ... bytes, expected 6220800 bytes ... - likely truncated or corrupt
+```
 
 ```bat
 :: Windows - mêmes étapes, syntaxe batch
@@ -159,7 +211,7 @@ run.bat
 
 ## 🚀 État Actuel et Prochaines Étapes
 
-**Ce qui fonctionne aujourd'hui :** un vrai paquet Python installable avec un point d'entrée vérifié, une vraie vérification de disponibilité de la famille (`family-status`), un vrai manifeste de pipeline et une vraie détection de mode dégradé qui sonde honnêtement le matériel caméra/Hailo-8 réel (`pipeline-status`), une vraie validation structurelle de corruption de frame indépendante du matériel (`validate-frame`), 38 tests réels qui passent (voir [`CHANGELOG.md`](CHANGELOG.md) pour la sortie exacte de build/run capturée), un incrément de version compteur kilométrique intégré au build, et une carte d'intégration entièrement documentée (mais pas encore fonctionnelle) pour les 4 enfants dans `docker-compose.yml`.
+**Ce qui fonctionne aujourd'hui :** un vrai paquet Python installable avec un point d'entrée vérifié, une vraie vérification de disponibilité de la famille (`family-status`), un vrai manifeste de pipeline et une vraie détection de mode dégradé qui sonde honnêtement le matériel caméra/Hailo-8 réel (`pipeline-status`), une vraie validation structurelle de corruption de frame indépendante du matériel (`validate-frame`), 48 tests réels qui passent (voir [`CHANGELOG.md`](CHANGELOG.md) pour la sortie exacte de build/run capturée), un incrément de version compteur kilométrique intégré au build, et une carte d'intégration entièrement documentée (mais pas encore fonctionnelle) pour les 4 enfants dans `docker-compose.yml`.
 
 **Ce qui reste ouvert, sans ordre particulier et sans calendrier engagé :**
 

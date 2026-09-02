@@ -138,7 +138,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Entorno virtual** — crea `.venv/` si no existe ya (seguro re-ejecutar; un `.venv/` existente se reutiliza, no se recrea).
 3. **Instalación editable (con extras dev)** — `pip install -e ".[dev]"` instala este paquete en `.venv` en modo "editable", así que los cambios de código bajo `src/` tienen efecto inmediato sin reinstalar, instala `pytest`, y registra el entry point de consola `hydra-umc-vision-node` que usa `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` compila a bytecode cada archivo `.py` bajo `src/`, detectando errores de sintaxis en todo el paquete incluso en archivos que `main.py` nunca importa realmente.
-5. **Suite de tests real** — `pytest tests/` ejecuta los 38 tests.
+5. **Suite de tests real** — `pytest tests/` ejecuta los 48 tests.
 
 El script usa `set -euo pipefail` y se detiene en el primer paso que falle, imprimiendo `== Build OK ==` solo si todos los pasos tuvieron éxito.
 
@@ -151,7 +151,7 @@ Localiza el intérprete de Python dentro de `.venv` (soporta tanto el layout POS
 La invocación sin argumentos imprime nombre + versión + rol:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.0.3
+HYDRA-UMC-VISION-NODE v0.0.6
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
@@ -211,7 +211,7 @@ run.bat
 
 ## 🚀 Estado Actual y Próximos Pasos
 
-**Qué funciona hoy:** un chequeo real de disponibilidad de familia (`manifest.py`/`family.py`) que lee el manifiesto propio de cada uno de los 4 hijos reales y reporta presencia/versión/madurez/rol, un manifiesto real de pipeline y detección real de modo degradado (`pipeline.py`/`hardware.py`) que sondea honestamente hardware real de cámara/Hailo-8 y reporta exactamente qué etapas del pipeline pueden correr, validación real de corrupción de frames independiente de hardware (`frame.py`), los subcomandos CLI `family-status`/`pipeline-status`/`validate-frame`, 38 tests pasando, y un mapa de integración completamente documentado (pero todavía no funcional) para los 4 hijos en `docker-compose.yml` - ver [`CHANGELOG.md`](CHANGELOG.md) para la salida completa real de build/run.
+**Qué funciona hoy:** un chequeo real de disponibilidad de familia (`manifest.py`/`family.py`) que lee el manifiesto propio de cada uno de los 4 hijos reales y reporta presencia/versión/madurez/rol, un manifiesto real de pipeline y detección real de modo degradado (`pipeline.py`/`hardware.py`) que sondea honestamente hardware real de cámara/Hailo-8 y reporta exactamente qué etapas del pipeline pueden correr, validación real de corrupción de frames independiente de hardware (`frame.py`), los subcomandos CLI `family-status`/`pipeline-status`/`validate-frame`, 48 tests pasando, y un mapa de integración completamente documentado (pero todavía no funcional) para los 4 hijos en `docker-compose.yml` - ver [`CHANGELOG.md`](CHANGELOG.md) para la salida completa real de build/run.
 
 **Qué sigue abierto, sin orden particular y sin calendario comprometido:**
 
