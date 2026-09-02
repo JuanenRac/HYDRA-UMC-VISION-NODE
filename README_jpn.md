@@ -123,16 +123,22 @@ HYDRA-UMC-VISION-NODE/
 │   ├── pipeline.py          # 実際の知覚パイプラインマニフェスト（ステージ + ハードウェア要件）
 │   ├── frame.py                # 実際の、ハードウェアに依存しないフレーム破損検証
 │   ├── hardware.py               # 実際のカメラ/アクセラレータ探索 + デグレードモードロジック
+│   ├── api.py                      # シンプルなJSON/HTTPサーフェス(stdlibのhttp.server)。実際の3つのサブコマンドを橋渡し
 │   └── main.py                     # エントリポイント + `family-status`/`pipeline-status`/`validate-frame`
-├── tests/               # 実際のテスト：マニフェスト読み込み、ファミリーステータス、CLI
+├── tests/               # 実際のテスト：マニフェスト読み込み、ファミリーステータス、pipeline、frame、hardware、api、CLI
 ├── docs/                # ドキュメントと API リファレンス
-├── os/                  # HydraOS システムイメージ設定（CM5）——親プロジェクト専用
-├── models/               # Hailo-8 NPU に配信されるコンパイル済み .hef モデル——親プロジェクト専用
+├── os/                  # HydraOS システムイメージ設定（CM5）——親プロジェクト専用、デプロイ時に配置(gitには含まれない)
+├── models/               # Hailo-8 NPU に配信されるコンパイル済み .hef モデル——親プロジェクト専用、デプロイ時に配置(gitには含まれない)
 ├── build/               # ビルド出力（ローカルの .venv もここに存在）
 ├── images/              # メディアと図表
-├── scripts/             # ユーティリティスクリプト（デプロイ、セットアップ）
+├── systemd/
+│   └── hydra-umc-vision-node.service # ローカルCM5知覚APIのsystemdユニット
+├── tools/
+│   ├── build_test.py    # バージョンを増やさないビルドチェック
+│   └── ci_validate.py   # CI が使用するマニフェスト/CHANGELOG/ドキュメント検証
 ├── pyproject.toml       # パッケージメタデータ、依存関係、オドメーターバージョン
-├── bump_version.py      # オドメーター式バージョンインクリメント（build.sh/.bat が実行）
+├── bump_version.py      # ネイティブバージョンのオドメーター式インクリメント（build.sh/.bat が実行）
+├── bump_manifest_version.py # hydra-umc.project.json のバージョンをネイティブ版と同期(--sync)
 ├── build.sh / build.bat # venv + editable インストール（dev エクストラ付き） + コンパイルチェック + テスト
 ├── run.sh / run.bat     # ローカル venv からエントリポイントを実行（引数を転送）
 ├── docker-compose.yml   # Vision AI Node の 4 つの子プロジェクトの統合マップ（まだ機能しません）

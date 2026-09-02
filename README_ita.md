@@ -99,16 +99,22 @@ HYDRA-UMC-VISION-NODE/
 │   ├── pipeline.py          # Vero manifesto della pipeline di percezione (stadi + esigenze hardware)
 │   ├── frame.py               # Vera validazione di corruzione del frame, indipendente dall'hardware
 │   ├── hardware.py              # Vere sonde fotocamera/acceleratore + logica di modalità degradata
+│   ├── api.py                     # Superficie JSON/HTTP semplice (http.server di stdlib) sui 3 sottocomandi reali
 │   └── main.py                    # Entry point + sottocomandi reali `family-status`/`pipeline-status`/`validate-frame`
-├── tests/               # Test reali: lettura manifesto, stato famiglia, pipeline, frame, hardware, CLI
+├── tests/               # Test reali: lettura manifesto, stato famiglia, pipeline, frame, hardware, api, CLI
 ├── docs/                # Documentazione e riferimento API
-├── os/                  # Configurazione immagine HydraOS (CM5) - solo qui
-├── models/              # Modelli .hef compilati serviti alla NPU Hailo-8 - solo qui
+├── os/                  # Configurazione immagine HydraOS (CM5) - solo qui, popolata al deployment (non in git)
+├── models/              # Modelli .hef compilati serviti alla NPU Hailo-8 - solo qui, popolata al deployment (non in git)
 ├── build/               # Output di build (qui vive anche il .venv locale)
 ├── images/              # Media e diagrammi
-├── scripts/             # Script di utilità (deployment, setup)
+├── systemd/
+│   └── hydra-umc-vision-node.service # Unità systemd della API locale di percezione sulla CM5
+├── tools/
+│   ├── build_test.py    # Controllo build senza versionamento
+│   └── ci_validate.py   # Validazione manifest/CHANGELOG/docs usata dalla CI
 ├── pyproject.toml       # Metadati pacchetto, dipendenze, versione contachilometri
-├── bump_version.py      # Incremento versione tipo contachilometri (build.sh/.bat)
+├── bump_version.py      # Incremento versione nativa tipo contachilometri (build.sh/.bat)
+├── bump_manifest_version.py # Sincronizza la versione di hydra-umc.project.json con quella nativa (--sync)
 ├── build.sh / build.bat # venv + installazione editabile + compile-check
 ├── run.sh / run.bat     # Esegue l'entry point dal venv locale
 ├── docker-compose.yml   # Mappa di integrazione dei 4 figli (non ancora funzionante)

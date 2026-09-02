@@ -99,16 +99,22 @@ HYDRA-UMC-VISION-NODE/
 │   ├── pipeline.py          # Echtes Wahrnehmungs-Pipeline-Manifest (Stufen + Hardware-Bedarf)
 │   ├── frame.py               # Echte, hardwareunabhängige Frame-Beschädigungsprüfung
 │   ├── hardware.py              # Echte Kamera-/Beschleuniger-Sonden + Logik für degradierten Modus
+│   ├── api.py                     # Einfache JSON/HTTP-Oberfläche (stdlib http.server) über die 3 echten Subbefehle
 │   └── main.py                    # Einstiegspunkt + `family-status`/`pipeline-status`/`validate-frame`
-├── tests/               # Echte Tests: Manifest-Lesen, Familienstatus, Pipeline, Frame, Hardware, CLI
+├── tests/               # Echte Tests: Manifest-Lesen, Familienstatus, Pipeline, Frame, Hardware, api, CLI
 ├── docs/                # Dokumentation und API-Referenz
-├── os/                  # HydraOS-Systemabbild-Konfiguration (CM5) - nur hier
-├── models/              # Kompilierte .hef-Modelle für die Hailo-8-NPU - nur hier
+├── os/                  # HydraOS-Systemabbild-Konfiguration (CM5) - nur hier, wird beim Deployment befüllt (nicht in git)
+├── models/              # Kompilierte .hef-Modelle für die Hailo-8-NPU - nur hier, wird beim Deployment befüllt (nicht in git)
 ├── build/               # Build-Ausgabe (hier lebt auch das lokale .venv)
 ├── images/              # Medien und Diagramme
-├── scripts/             # Hilfsskripte (Deployment, Setup)
+├── systemd/
+│   └── hydra-umc-vision-node.service # systemd-Unit der lokalen CM5-Wahrnehmungs-API
+├── tools/
+│   ├── build_test.py    # Nicht-versionierender Build-Check
+│   └── ci_validate.py   # Manifest/CHANGELOG/Docs-Validierung, von CI genutzt
 ├── pyproject.toml       # Paketmetadaten, Abhängigkeiten, Kilometerzähler-Version
-├── bump_version.py      # Kilometerzähler-artiger Versions-Bump (build.sh/.bat)
+├── bump_version.py      # Native Kilometerzähler-artige Versions-Bump (build.sh/.bat)
+├── bump_manifest_version.py # Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)
 ├── build.sh / build.bat # venv + editierbare Installation + Compile-Check
 ├── run.sh / run.bat     # Führt den Einstiegspunkt aus dem lokalen venv aus
 ├── docker-compose.yml   # Integrationskarte der 4 Kinder (noch nicht funktionsfähig)

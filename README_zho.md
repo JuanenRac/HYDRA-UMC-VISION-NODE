@@ -113,16 +113,22 @@ HYDRA-UMC-VISION-NODE/
 │   ├── pipeline.py          # 真实的感知流水线清单（阶段 + 硬件需求）
 │   ├── frame.py                # 真实的、与硬件无关的帧损坏校验
 │   ├── hardware.py               # 真实的摄像头/加速器探测 + 降级模式逻辑
+│   ├── api.py                      # 简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 3 个子命令
 │   └── main.py                     # 入口点 + `family-status`/`pipeline-status`/`validate-frame`
-├── tests/               # 真实测试：清单读取、家族状态、CLI
+├── tests/               # 真实测试：清单读取、家族状态、pipeline、frame、hardware、api、CLI
 ├── docs/                # 文档与 API 参考
-├── os/                  # HydraOS 系统镜像配置（CM5）——仅父项目拥有
-├── models/               # 提供给 Hailo-8 NPU 的已编译 .hef 模型——仅父项目拥有
+├── os/                  # HydraOS 系统镜像配置（CM5）——仅父项目拥有,部署时填充(不在 git 中)
+├── models/               # 提供给 Hailo-8 NPU 的已编译 .hef 模型——仅父项目拥有,部署时填充(不在 git 中)
 ├── build/               # 构建输出（本地 .venv 也存放于此）
 ├── images/              # 媒体与图表
-├── scripts/             # 实用脚本（部署、设置）
+├── systemd/
+│   └── hydra-umc-vision-node.service # 本地 CM5 感知 API 的 systemd 单元
+├── tools/
+│   ├── build_test.py    # 不递增版本号的构建检查
+│   └── ci_validate.py   # CI 使用的清单/CHANGELOG/文档校验
 ├── pyproject.toml       # 包元数据、依赖项、里程表版本号
-├── bump_version.py      # 里程表式版本递增（由 build.sh/.bat 运行）
+├── bump_version.py      # 原生版本的里程表式递增（由 build.sh/.bat 运行）
+├── bump_manifest_version.py # 将 hydra-umc.project.json 的版本与原生版本同步(--sync)
 ├── build.sh / build.bat # venv + 可编辑安装（含 dev 附加依赖） + 编译检查 + 测试
 ├── run.sh / run.bat     # 从本地 venv 运行入口点（转发参数）
 ├── docker-compose.yml   # Vision AI Node 4 个子项目的集成蓝图（尚未可运行）

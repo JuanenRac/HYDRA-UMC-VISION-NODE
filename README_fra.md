@@ -99,16 +99,22 @@ HYDRA-UMC-VISION-NODE/
 │   ├── pipeline.py          # Vrai manifeste de pipeline de perception (étapes + besoins matériels)
 │   ├── frame.py               # Vraie validation de corruption de frame, indépendante du matériel
 │   ├── hardware.py              # Vraies sondes caméra/accélérateur + logique de mode dégradé
+│   ├── api.py                     # Surface JSON/HTTP simple (http.server de stdlib) sur les 3 vraies sous-commandes
 │   └── main.py                    # Point d'entrée + sous-commandes réelles `family-status`/`pipeline-status`/`validate-frame`
-├── tests/               # Vrais tests : lecture de manifeste, statut famille, pipeline, frame, matériel, CLI
+├── tests/               # Vrais tests : lecture de manifeste, statut famille, pipeline, frame, matériel, api, CLI
 ├── docs/                # Documentation et référence API
-├── os/                  # Configuration de l'image HydraOS (CM5) - ici uniquement
-├── models/              # Modèles .hef compilés servis au NPU Hailo-8 - ici uniquement
+├── os/                  # Configuration de l'image HydraOS (CM5) - ici uniquement, peuplé au déploiement (absent de git)
+├── models/              # Modèles .hef compilés servis au NPU Hailo-8 - ici uniquement, peuplé au déploiement (absent de git)
 ├── build/               # Sortie de build (le .venv local y vit aussi)
 ├── images/              # Médias et diagrammes
-├── scripts/             # Scripts utilitaires (déploiement, configuration)
+├── systemd/
+│   └── hydra-umc-vision-node.service # Unité systemd de l'API locale de perception sur la CM5
+├── tools/
+│   ├── build_test.py    # Vérification de build sans versionnage
+│   └── ci_validate.py   # Validation manifeste/CHANGELOG/docs utilisée par CI
 ├── pyproject.toml       # Métadonnées du paquet, dépendances, version compteur kilométrique
-├── bump_version.py      # Incrément de version type compteur kilométrique (build.sh/.bat)
+├── bump_version.py      # Incrément de version native type compteur kilométrique (build.sh/.bat)
+├── bump_manifest_version.py # Synchronise la version de hydra-umc.project.json avec la version native (--sync)
 ├── build.sh / build.bat # venv + installation éditable + compile-check
 ├── run.sh / run.bat     # Exécute le point d'entrée depuis le venv local
 ├── docker-compose.yml   # Carte d'intégration des 4 enfants (pas encore fonctionnelle)

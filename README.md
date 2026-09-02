@@ -99,16 +99,22 @@ HYDRA-UMC-VISION-NODE/
 │   ├── pipeline.py          # Real perception pipeline manifest (stages + hardware needs)
 │   ├── frame.py               # Real hardware-independent frame corruption validation
 │   ├── hardware.py              # Real camera/accelerator probes + degraded-mode logic
+│   ├── api.py                     # Plain JSON/HTTP surface (stdlib http.server) over the 3 real subcommands
 │   └── main.py                    # Entry point + `family-status`/`pipeline-status`/`validate-frame`
-├── tests/               # Real tests: manifest reading, family status, pipeline, frame, hardware, CLI
+├── tests/               # Real tests: manifest reading, family status, pipeline, frame, hardware, api, CLI
 ├── docs/                # Documentation and API reference
-├── os/                  # HydraOS system image configuration (CM5) - parent-only
-├── models/              # Compiled .hef models served to the Hailo-8 NPU - parent-only
+├── os/                  # HydraOS system image configuration (CM5) - parent-only, deploy-time populated (not in git)
+├── models/              # Compiled .hef models served to the Hailo-8 NPU - parent-only, deploy-time populated (not in git)
 ├── build/               # Build output (local .venv lives here too)
 ├── images/              # Media and diagrams
-├── scripts/             # Utility scripts (deployment, setup)
+├── systemd/
+│   └── hydra-umc-vision-node.service # Local CM5 perception API systemd unit
+├── tools/
+│   ├── build_test.py    # Non-versioning build/compile check
+│   └── ci_validate.py   # Manifest/CHANGELOG/docs validation used by CI
 ├── pyproject.toml       # Package metadata, dependencies, odometer version
-├── bump_version.py      # Odometer-style version bump (run by build.sh/.bat)
+├── bump_version.py      # Odometer-style native version bump (run by build.sh/.bat)
+├── bump_manifest_version.py # Syncs hydra-umc.project.json's version to the native one (--sync)
 ├── build.sh / build.bat # venv + editable install (dev extras) + compile-check + tests
 ├── run.sh / run.bat     # Runs the entry point from the local venv (forwards arguments)
 ├── docker-compose.yml   # Integration map of the 4 Vision AI Node children (not functional yet)
