@@ -35,6 +35,7 @@ Questo progetto è il **genitore di integrazione** della famiglia Vision AI Node
 
 * 🧩 **Verifica di disponibilità della famiglia (v0):** il vero sottocomando `family-status` legge il proprio `hydra-umc.project.json` di ciascuno dei 4 veri figli e riporta presenza/versione/maturità/ruolo - onesto per un genitore di integrazione che non esegue ancora alcun runtime Hailo-8 o pipeline camera in proprio.
 * 🩺 **Manifesto della pipeline, validazione dei frame e modalità degradata (v0):** un manifesto reale e ispezionabile della forma della pipeline di percezione di questo nodo (quali fasi richiedono una camera, un acceleratore, o nessuno dei due), una validazione reale e strutturale della corruzione di un buffer di frame grezzo, e un rilevamento reale della modalità degradata che sonda onestamente hardware camera/Hailo-8 reale e riporta esattamente quali fasi possono girare ora - tramite i nuovi sottocomandi `pipeline-status` e `validate-frame`.
+* 🌐 **API JSON/HTTP (v0):** il sottocomando reale `serve` espone `family-status`/`pipeline-status`/`validate-frame` come API HTTP (`GET /family-status`, `GET /pipeline-status`, `POST /validate-frame`, più `GET /stats`) - esattamente le stesse funzioni eseguite dai sottocomandi CLI, sopra `http.server`, senza alcuna dipendenza extra. Vedi "L'API JSON/HTTP" più sotto e [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md).
 * 🚀 **Accelerazione hardware (previsto):** l'obiettivo è l'esecuzione nativa di modelli HEF su Hailo-8 (26 TOPS) - la toolchain che compila questi modelli è un progetto separato ([HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)), non qualcosa che questo nodo costruisce da sé.
 * 📷 **Elaborazione multi-flusso (previsto):** analisi simultanea fino a 8 flussi camera ad alta risoluzione, catturati a monte da [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER).
 * 🎯 **Percezione di precisione (previsto):** progettato attorno ad architetture della famiglia YOLO per il rilevamento di componenti industriali.
@@ -206,6 +207,30 @@ build.bat
 run.bat
 ```
 
+### L'API JSON/HTTP
+
+Il sottocomando reale `serve` esegue `family-status`/`pipeline-status`/`validate-frame` come una API JSON/HTTP invece di una singola chiamata CLI - la stessa convenzione già usata dagli altri `api.py` di questa famiglia, costruita su `http.server` della libreria standard (`ThreadingHTTPServer`), senza alcuna dipendenza di runtime aggiuntiva:
+
+```bash
+./run.sh serve --addr 127.0.0.1 --port 8094
+```
+
+| Rotta | Metodo | Note |
+|---|---|---|
+| `/family-status` | `GET` | Uguale al sottocomando `family-status`. Il parametro opzionale `?workspace=PERCORSO` sovrascrive il workspace predefinito del server solo per quella richiesta. |
+| `/pipeline-status` | `GET` | Uguale al sottocomando `pipeline-status`. |
+| `/validate-frame` | `POST` | Stessa verifica del sottocomando `validate-frame`, ma i byte grezzi del frame viaggiano nel corpo della richiesta invece che come percorso file lato server - un chiamante remoto non ha nessun percorso locale sul filesystem di questo server da passargli. Richiede i parametri `?width=W&height=H` (`channels` opzionale, default `3`). |
+| `/stats` | `GET` | Riporta il percorso del workspace predefinito del server. |
+
+Esempio di `/validate-frame`, con lo stesso fixture variato di 48 byte del percorso CLI sopra:
+
+```bash
+curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" --data-binary @vn_good_frame.raw
+# {"valid": true, "expectedBytes": 48, "actualBytes": 48, "issues": []}
+```
+
+Ogni rotta risponde con un corpo di errore onesto (`{"error": "..."}`) e il codice HTTP corrispondente - `400` per parametri di query errati o mancanti, `404` per una rotta sconosciuta - invece di fallire in silenzio. Riferimento completo rotta per rotta: [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md).
+
 ### Risoluzione dei problemi
 
 * **`python`/`python3` non trovato** — installa Python 3.10+ e assicurati che sia nel `PATH`; entrambi gli script provano prima `python3`, con `python` come fallback.
@@ -217,7 +242,7 @@ run.bat
 
 ## 🚀 Stato Attuale e Prossimi Passi
 
-**Cosa funziona oggi:** una vera verifica di disponibilità della famiglia (`manifest.py`/`family.py`), un vero manifesto della pipeline e un vero rilevamento del modo degradato (`pipeline.py`/`hardware.py`) che sonda onestamente hardware camera/Hailo-8 reale, una vera validazione di corruzione dei frame indipendente dall'hardware (`frame.py`), i sottocomandi CLI `family-status`/`pipeline-status`/`validate-frame`, 48 test reali che passano (vedi [`CHANGELOG.md`](CHANGELOG.md) per l'output esatto di build/run catturato), un incremento di versione contachilometri integrato nel build, e una mappa di integrazione completamente documentata (ma non ancora funzionante) per i 4 figli in `docker-compose.yml`.
+**Cosa funziona oggi:** una vera verifica di disponibilità della famiglia (`manifest.py`/`family.py`), un vero manifesto della pipeline e un vero rilevamento del modo degradato (`pipeline.py`/`hardware.py`) che sonda onestamente hardware camera/Hailo-8 reale, una vera validazione di corruzione dei frame indipendente dall'hardware (`frame.py`), i sottocomandi CLI `family-status`/`pipeline-status`/`validate-frame` più un sottocomando `serve` che espone i tre come API JSON/HTTP (`api.py`), 48 test reali che passano (vedi [`CHANGELOG.md`](CHANGELOG.md) per l'output esatto di build/run catturato), un incremento di versione contachilometri integrato nel build, e una mappa di integrazione completamente documentata (ma non ancora funzionante) per i 4 figli in `docker-compose.yml`.
 
 **Cosa resta aperto, senza ordine particolare e senza calendario impegnato:**
 
@@ -315,6 +340,7 @@ Questo progetto fa parte dell'ecosistema robotico HYDRA-UMC dello stesso autore 
 
 ## 📚 Documentazione e Comunità
 
+- **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** — ogni sottocomando (`family-status`, `pipeline-status`, `validate-frame`, `serve`) e ogni rotta dell'API JSON/HTTP, con output reale catturato.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — stack tecnologico e linee guida di codifica per una pull request.
 - **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — gli standard di comportamento attesi in questa comunità.
 - **[SECURITY.md](SECURITY.md)** — come segnalare una vulnerabilità, e le reali aree di attenzione sulla sicurezza di questo progetto.

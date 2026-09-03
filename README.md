@@ -35,6 +35,7 @@ This project is the **integration parent** of the Vision AI Node family: it does
 
 * 🧩 **Family Readiness Check (v0):** the real `family-status` subcommand reads each of the 4 real children's own `hydra-umc.project.json` and reports presence/version/maturity/role - honest for an integration parent that runs no Hailo-8 runtime or camera pipeline itself yet. See "Honesty check" below.
 * 🩺 **Pipeline Manifest, Frame Validation & Degraded Mode (v0):** a real, inspectable manifest of this node's perception pipeline shape (which stages need a camera, an accelerator, or neither), real structural corruption checking of a raw frame buffer, and real degraded-mode detection that honestly probes for actual camera/Hailo-8 hardware and reports exactly which stages can run right now - via the new `pipeline-status` and `validate-frame` subcommands.
+* 🌐 **JSON/HTTP API (v0):** the real `serve` subcommand exposes `family-status`/`pipeline-status`/`validate-frame` as an HTTP API (`GET /family-status`, `GET /pipeline-status`, `POST /validate-frame`, plus `GET /stats`) - the exact same functions the CLI subcommands run, over `http.server` with zero extra dependencies. See "The JSON/HTTP API" below and [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md).
 * 🚀 **Hardware Acceleration (planned):** the design targets native execution of HEF models on Hailo-8 (26 TOPS) - the toolchain that compiles those models is a separate project ([HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)), not something this node builds itself.
 * 📷 **Multi-Stream Processing (planned):** simultaneous analysis of up to 8 high-resolution camera feeds, captured upstream by [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER).
 * 🎯 **Precision Perception (planned):** designed around YOLO-family architectures for industrial component detection.
@@ -206,6 +207,30 @@ build.bat
 run.bat
 ```
 
+### The JSON/HTTP API
+
+The real `serve` subcommand runs `family-status`/`pipeline-status`/`validate-frame` as a plain JSON/HTTP API instead of a one-shot CLI call - the same convention this family's other `api.py` files already use, built on the standard library's `http.server` (`ThreadingHTTPServer`), no extra runtime dependency:
+
+```bash
+./run.sh serve --addr 127.0.0.1 --port 8094
+```
+
+| Route | Method | Notes |
+|---|---|---|
+| `/family-status` | `GET` | Same as the `family-status` subcommand. Optional `?workspace=PATH` query param overrides the server's default workspace for that one request. |
+| `/pipeline-status` | `GET` | Same as the `pipeline-status` subcommand. |
+| `/validate-frame` | `POST` | Same check as the `validate-frame` subcommand, but the raw frame bytes travel as the request body instead of a server-side file path - a remote caller has no local path on this server's own filesystem to hand it. Requires `?width=W&height=H` query params (`channels` optional, default `3`). |
+| `/stats` | `GET` | Reports the server's own default workspace path. |
+
+`/validate-frame` example, using the same 48-byte varied fixture as the CLI walkthrough above:
+
+```bash
+curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" --data-binary @vn_good_frame.raw
+# {"valid": true, "expectedBytes": 48, "actualBytes": 48, "issues": []}
+```
+
+Every route replies with an honest error body (`{"error": "..."}`) and the matching HTTP status - `400` for bad/missing query params, `404` for an unknown path - instead of failing silently. Full route-by-route reference: [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md).
+
 ### Troubleshooting
 
 * **`python`/`python3` not found** — install Python 3.10+ and make sure it is on `PATH`; both scripts try `python3` first, falling back to `python`.
@@ -217,7 +242,7 @@ run.bat
 
 ## 🚀 Current Status & Next Steps
 
-**What works today:** a real family-readiness check (`manifest.py`/`family.py`) that reads each of the 4 real children's own manifest and reports presence/version/maturity/role, a real pipeline manifest and degraded-mode detection (`pipeline.py`/`hardware.py`) that honestly probes for real camera/Hailo-8 hardware and reports exactly which pipeline stages can run, real hardware-independent frame corruption validation (`frame.py`), the `family-status`/`pipeline-status`/`validate-frame` CLI subcommands, 48 passing tests, and a fully documented (but not yet functional) integration map for the 4 children in `docker-compose.yml` - see [`CHANGELOG.md`](CHANGELOG.md) for the full real build/run output.
+**What works today:** a real family-readiness check (`manifest.py`/`family.py`) that reads each of the 4 real children's own manifest and reports presence/version/maturity/role, a real pipeline manifest and degraded-mode detection (`pipeline.py`/`hardware.py`) that honestly probes for real camera/Hailo-8 hardware and reports exactly which pipeline stages can run, real hardware-independent frame corruption validation (`frame.py`), the `family-status`/`pipeline-status`/`validate-frame` CLI subcommands plus a `serve` subcommand exposing all three as a JSON/HTTP API (`api.py`), 48 passing tests, and a fully documented (but not yet functional) integration map for the 4 children in `docker-compose.yml` - see [`CHANGELOG.md`](CHANGELOG.md) for the full real build/run output.
 
 **What is still open, in no particular order and with no committed timeline:**
 
@@ -315,6 +340,7 @@ This project is part of the HYDRA-UMC robotics ecosystem by the same author (Jua
 
 ## 📚 Documentation & Community
 
+- **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** — every subcommand (`family-status`, `pipeline-status`, `validate-frame`, `serve`) and every JSON/HTTP API route, with real captured output.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — tech stack and coding guidelines for a pull request.
 - **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — the standards of behavior expected in this community.
 - **[SECURITY.md](SECURITY.md)** — how to report a vulnerability, and this project's own real security focus areas.

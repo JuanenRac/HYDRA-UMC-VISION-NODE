@@ -15,19 +15,23 @@ run of the installed CLI — not written from memory.
 ```
 $ hydra-umc-vision-node -h
 usage: hydra-umc-vision-node [-h]
-                             {family-status,pipeline-status,validate-frame} ...
+                             {family-status,pipeline-status,validate-frame,serve} ...
 
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of
 Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 
 positional arguments:
-  {family-status,pipeline-status,validate-frame}
+  {family-status,pipeline-status,validate-frame,serve}
     family-status       Real readiness check of this node's four real
                         children.
     pipeline-status     Real pipeline manifest plus real degraded-mode
                         detection for this node's actual hardware.
     validate-frame      Real structural corruption check of a raw frame buffer
                         file.
+    serve               Run family-status/pipeline-status/validate-frame as a
+                        JSON/HTTP API (GET /family-status, GET /pipeline-
+                        status, POST /validate-frame) - the exact same
+                        functions the CLI subcommands above already run.
 
 options:
   -h, --help            show this help message and exit
@@ -37,7 +41,7 @@ Bare invocation (no subcommand) prints identity/version/role and exits `0`:
 
 ```
 $ hydra-umc-vision-node
-HYDRA-UMC-VISION-NODE v0.0.4
+HYDRA-UMC-VISION-NODE v0.0.6
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
@@ -65,10 +69,10 @@ machine:
 ```
 $ hydra-umc-vision-node family-status
 Vision AI Node family status (workspace: C:\Users\juane\Documents\GitHub):
-  HYDRA-UMC-VISION-STREAMER: v0.0.4, maturity=established, role=service
-  HYDRA-UMC-DETECTION-HEF: v0.0.4, maturity=established, role=library
-  HYDRA-UMC-SAFETY-ZONES: v0.0.4, maturity=established, role=service
-  HYDRA-UMC-VISUAL-SERVOING-API: v0.0.3, maturity=established, role=api
+  HYDRA-UMC-VISION-STREAMER: v0.1.0, maturity=established, role=service
+  HYDRA-UMC-DETECTION-HEF: v0.0.6, maturity=established, role=library
+  HYDRA-UMC-SAFETY-ZONES: v0.0.5, maturity=established, role=service
+  HYDRA-UMC-VISUAL-SERVOING-API: v0.0.5, maturity=established, role=api
 
 All 4 children present.
 ```
@@ -241,6 +245,75 @@ $ hydra-umc-vision-node validate-frame vn_does_not_exist.raw --width 4 --height 
 $ echo $?
 2
 ```
+
+### `serve [--addr ADDR] [--port PORT] [--workspace PATH]`
+
+```
+$ hydra-umc-vision-node serve -h
+usage: hydra-umc-vision-node serve [-h] [--addr ADDR] [--port PORT]
+                                   [--workspace WORKSPACE]
+
+options:
+  -h, --help            show this help message and exit
+  --addr ADDR           address to bind the HTTP API to
+  --port PORT           port for the HTTP API
+  --workspace WORKSPACE
+                        Default workspace for GET /family-status when it is
+                        not overridden per-request.
+```
+
+Runs `family-status`/`pipeline-status`/`validate-frame` as a plain JSON/HTTP
+API (`src/hydra_umc_vision_node/api.py`) instead of a one-shot CLI call — a
+real `http.server.ThreadingHTTPServer`, no extra runtime dependency, the same
+convention this family's other `api.py` files already use. Defaults to
+`127.0.0.1:8094`; runs until `Ctrl+C`:
+
+```
+$ hydra-umc-vision-node serve --port 8094
+[vision-node] HTTP API listening on 127.0.0.1:8094 (workspace=C:\Users\juane\Documents\GitHub)
+[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats
+```
+
+| Route | Method | Query params | Notes |
+|---|---|---|---|
+| `/family-status` | `GET` | `workspace` (optional) | Same check as the `family-status` subcommand. `workspace` overrides the server's own default for that one request only. |
+| `/pipeline-status` | `GET` | — | Same check as the `pipeline-status` subcommand. |
+| `/validate-frame` | `POST` | `width`, `height` (required), `channels` (optional, default `3`) | Same check as the `validate-frame` subcommand, but the raw frame bytes travel as the request body instead of a local file path — the only thing a real remote caller can hand this server. |
+| `/stats` | `GET` | — | Reports the server's own default workspace path. |
+
+`GET /family-status` (all 4 children present, same real checkout as the CLI example above):
+
+```
+$ curl http://127.0.0.1:8094/family-status
+{"workspace": "C:\\Users\\juane\\Documents\\GitHub", "children": [{"name": "HYDRA-UMC-VISION-STREAMER", "present": true, "manifest": {"name": "HYDRA-UMC-VISION-STREAMER", "version": "0.1.0", "maturity": "established", "role": "service"}}, {"name": "HYDRA-UMC-DETECTION-HEF", "present": true, "manifest": {"name": "HYDRA-UMC-DETECTION-HEF", "version": "0.0.6", "maturity": "established", "role": "library"}}, {"name": "HYDRA-UMC-SAFETY-ZONES", "present": true, "manifest": {"name": "HYDRA-UMC-SAFETY-ZONES", "version": "0.0.5", "maturity": "established", "role": "service"}}, {"name": "HYDRA-UMC-VISUAL-SERVOING-API", "present": true, "manifest": {"name": "HYDRA-UMC-VISUAL-SERVOING-API", "version": "0.0.5", "maturity": "established", "role": "api"}}], "missing": [], "allPresent": true}
+```
+
+`GET /pipeline-status` (same honest `degraded_no_hardware` result as the CLI, on this dev machine with no camera/Hailo-8):
+
+```
+$ curl http://127.0.0.1:8094/pipeline-status
+{"manifest": {"version": "0.1.0", "stages": [...]}, "cameraPresent": false, "acceleratorPresent": false, "mode": "degraded_no_hardware", "runnableStages": ["preprocess", "postprocess", "publish"], "skippedStages": ["capture", "inference"]}
+```
+
+`POST /validate-frame` (same 48-byte varied fixture as the CLI walkthrough above, sent as the request body):
+
+```
+$ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" --data-binary @vn_good_frame.raw
+{"valid": true, "expectedBytes": 48, "actualBytes": 48, "issues": []}
+```
+
+`GET /stats`:
+
+```
+$ curl http://127.0.0.1:8094/stats
+{"workspace": "C:\\Users\\juane\\Documents\\GitHub"}
+```
+
+An unknown route or a bad/missing query param never crashes the server — it
+gets a real error body and the matching HTTP status: `404` with
+`{"error": "not found"}` for an unknown path, `400` with a descriptive
+`{"error": "..."}` for a `/validate-frame` request missing `width`/`height`
+or a repeated query parameter.
 
 ## Exit codes
 

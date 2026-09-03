@@ -42,6 +42,7 @@ Raspberry Pi Compute Module 5 に Hailo-8 M.2 AI アクセラレーターを組�
 
 * 🧩 **ファミリーレディネスチェック（v0）：** 実際の `family-status` サブコマンドが 4 つの実際の子プロジェクトそれぞれの実際の `hydra-umc.project.json` を読み取り、存在/バージョン/成熟度/役割を報告します——自分自身はまだ Hailo-8 ランタイムもカメラパイプラインも動かしていない統合親プロジェクトとして正直な機能です。下記「正直な現状確認」を参照してください。
 * 🩺 **パイプラインマニフェスト、フレーム検証、デグレードモード（v0）：** このノードの知覚パイプラインの形状(どのステージがカメラ、アクセラレータ、あるいはどちらも必要としないか)についての実際の、検査可能なマニフェスト、生のフレームバッファに対する実際の構造的破損チェック、そして実際のカメラ/Hailo-8 ハードウェアを正直に探索し、今どのステージが実際に実行可能かを正確に報告する実際のデグレードモード検出——新しい `pipeline-status` と `validate-frame` サブコマンド経由です。
+* 🌐 **JSON/HTTP API（v0）：** 実際の `serve` サブコマンドが `family-status`/`pipeline-status`/`validate-frame` を HTTP API として公開します（`GET /family-status`、`GET /pipeline-status`、`POST /validate-frame`、加えて `GET /stats`）——CLI サブコマンドが実行するのと全く同じ関数を、追加の依存関係なしに `http.server` の上で動かします。詳しくは下記の「JSON/HTTP API」と [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) を参照してください。
 * 🚀 **ハードウェアアクセラレーション（計画中）：** Hailo-8（26 TOPS）上での HEF モデルのネイティブ実行を目標に設計されています——これらのモデルをコンパイルするツールチェーンは別プロジェクト（[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)）であり、本ノード自体が構築するものではありません。
 * 📷 **マルチストリーム処理（計画中）：** [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) が上流でキャプチャした、最大 8 台の高解像度カメラフィードを同時分析します。
 * 🎯 **精密知覚（計画中）：** 産業用部品検出のために YOLO 系アーキテクチャを中心に設計されています。
@@ -246,6 +247,30 @@ build.bat
 run.bat
 ```
 
+### JSON/HTTP API
+
+実際の `serve` サブコマンドは、単発の CLI 呼び出しの代わりに `family-status`/`pipeline-status`/`validate-frame` を JSON/HTTP API として実行します——この系列の他の `api.py` ファイルがすでに使っているのと同じ慣習で、標準ライブラリの `http.server`（`ThreadingHTTPServer`）の上に構築されており、追加のランタイム依存はありません。
+
+```bash
+./run.sh serve --addr 127.0.0.1 --port 8094
+```
+
+| ルート | メソッド | 備考 |
+|---|---|---|
+| `/family-status` | `GET` | `family-status` サブコマンドと同じです。オプションのクエリパラメータ `?workspace=PATH` はそのリクエストに限りサーバーのデフォルトワークスペースを上書きします。 |
+| `/pipeline-status` | `GET` | `pipeline-status` サブコマンドと同じです。 |
+| `/validate-frame` | `POST` | `validate-frame` サブコマンドと同じチェックですが、生のフレームバイト列はサーバー側のファイルパスではなくリクエストボディとして送られます——実際のリモート呼び出し元には、このサーバー自身のファイルシステム上のローカルパスを渡す手段がないためです。`?width=W&height=H` クエリパラメータが必須です（`channels` は省略可、デフォルト `3`）。 |
+| `/stats` | `GET` | サーバーのデフォルトワークスペースのパスを報告します。 |
+
+`/validate-frame` の例。上記の CLI の解説と同じ、48 バイトの多様な値を持つフィクスチャを使用しています。
+
+```bash
+curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" --data-binary @vn_good_frame.raw
+# {"valid": true, "expectedBytes": 48, "actualBytes": 48, "issues": []}
+```
+
+どのルートも、サイレントに失敗する代わりに正直なエラー本文（`{"error": "..."}`）と対応する HTTP ステータスを返します——クエリパラメータが不正/不足していれば `400`、未知のパスなら `404` です。ルートごとの完全なリファレンス: [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md)。
+
 ### トラブルシューティング
 
 * **`python`/`python3` が見つからない** — Python 3.10+ をインストールし `PATH` に含まれていることを確認してください。両スクリプトとも先に `python3` を試し、次に `python` にフォールバックします。
@@ -257,7 +282,7 @@ run.bat
 
 ## 🚀 現在の状況と次のステップ
 
-**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際のパイプラインマニフェストと実際のデグレードモード検出（`pipeline.py`/`hardware.py`）——実際のカメラ/Hailo-8 ハードウェアを正直に探索し、どのパイプラインステージが実行可能かを正確に報告します——、実際の、ハードウェアに依存しないフレーム破損検証（`frame.py`）、`family-status`/`pipeline-status`/`validate-frame` の各 CLI サブコマンド、通過した 48 件のテスト、そして `docker-compose.yml` における 4 つの
+**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際のパイプラインマニフェストと実際のデグレードモード検出（`pipeline.py`/`hardware.py`）——実際のカメラ/Hailo-8 ハードウェアを正直に探索し、どのパイプラインステージが実行可能かを正確に報告します——、実際の、ハードウェアに依存しないフレーム破損検証（`frame.py`）、`family-status`/`pipeline-status`/`validate-frame` の各 CLI サブコマンドに加えてこの 3 つを JSON/HTTP API として公開する `serve` サブコマンド（`api.py`）、通過した 48 件のテスト、そして `docker-compose.yml` における 4 つの
 子プロジェクトの完全な（ただしまだ機能しない）統合マップの文書化——実際の完全なビルド/実行出力は [`CHANGELOG.md`](CHANGELOG.md) を参照してください。
 
 **まだ残っている作業（順不同、確定した期限なし）：**
@@ -356,6 +381,7 @@ run.bat
 
 ## 📚 ドキュメント & コミュニティ
 
+- **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** —— 各サブコマンド（`family-status`、`pipeline-status`、`validate-frame`、`serve`）と JSON/HTTP API の各ルート、実際に取得した出力付き。
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** —— プルリクエストのための技術スタックとコーディング指針。
 - **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** —— このコミュニティで期待される行動規範。
 - **[SECURITY.md](SECURITY.md)** —— 脆弱性の報告方法と、このプロジェクトの実際のセキュリティ重点領域。
