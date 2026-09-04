@@ -16,6 +16,25 @@ hand.
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
 
+## [0.0.7]
+
+- **`docker-compose.yml` updated: all 4 children now have a real
+  Dockerfile of their own** (HYDRA-UMC-VISION-STREAMER,
+  HYDRA-UMC-DETECTION-HEF, HYDRA-UMC-SAFETY-ZONES,
+  HYDRA-UMC-VISUAL-SERVOING-API) - the "still skeleton-stage... no
+  Dockerfile" comment this file carried is now stale, removed. Fixed a
+  real path mismatch found in the same pass: `detection-hef`'s own
+  volume mounted `../HYDRA-UMC-DETECTION-HEF/build` at
+  `/opt/hydra/hef-library`, but that repo's real CLI (and its new
+  Dockerfile's own `CMD`) expects `--models-dir /opt/hydra/models` -
+  corrected, and a real `registry.json` mount added alongside it.
+  `vision-streamer`'s own service now sets a real per-camera `command:`
+  (its image ships no default - `--device`/`--port` are real, required,
+  per-invocation flags). `docker-compose.yml` parses as valid YAML;
+  `docker compose config` itself not run (no Docker runtime on this dev
+  machine). `vision-node` itself (this repo) still has no real
+  Dockerfile/gRPC server of its own - the one real gap left in this file.
+
 ## [0.0.6] - The 0.0.5 workspace approach was unreadable by its own service account
 
 - **`systemd/hydra-umc-vision-node.service`** - `--workspace` no longer

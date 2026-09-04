@@ -1,17 +1,20 @@
-# HYDRA-UMC-VISION-NODE - docker-compose.yml: integration map (not functional yet)
+# HYDRA-UMC-VISION-NODE - docker-compose.yml: integration map
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 # GPL-3.0 - see LICENSE
 #
-# Documents how this Vision AI Node is meant to integrate its 4 children as
-# real containers once each one ships a buildable image. NOT functional yet:
-# HYDRA-UMC-VISION-STREAMER, HYDRA-UMC-DETECTION-HEF, HYDRA-UMC-SAFETY-ZONES
-# and HYDRA-UMC-VISUAL-SERVOING-API are still skeleton-stage Python projects
-# with no Dockerfile of their own. A Dockerfile is added with each service's
-# production implementation.
+# Documents how this Vision AI Node integrates its 4 children as real
+# containers. All 4 (HYDRA-UMC-VISION-STREAMER, HYDRA-UMC-DETECTION-HEF,
+# HYDRA-UMC-SAFETY-ZONES, HYDRA-UMC-VISUAL-SERVOING-API) now ship a real
+# Dockerfile of their own, matching the exact CLI/ports their real CM5
+# systemd units already run (see each one's own systemd/*.service) - not
+# build-tested here (no Docker runtime on this dev machine), but every
+# path/flag is the same one already verified live on the real CM5.
+# vision-node itself (this repo) still has no real Dockerfile/gRPC server
+# of its own - that remains the one real gap in this file.
 #
 # Layout assumption: the 5 repos are checked out as sibling folders under the
 # same GitHub/ parent directory, matching the rest of the HYDRA-UMC ecosystem.
-# Run `docker compose config` once real Dockerfiles exist to validate this.
+# Run `docker compose config` to validate this on a real Docker host.
 
 version: "3.9"
 
@@ -33,8 +36,7 @@ services:
       - safety-zones
       - visual-servoing-api
 
-  # -- children (not yet real images; each supplies a Dockerfile with its
-  #    production implementation) --
+  # -- children - each a real image now (see each one's own Dockerfile) --
 
   vision-streamer:
     build: ../HYDRA-UMC-VISION-STREAMER
@@ -42,30 +44,43 @@ services:
     container_name: hydra-umc-vision-streamer
     devices:
       - /dev/video0:/dev/video0        # repeat per attached USB 3.0 camera
-    # GStreamer capture + pre-processing for up to 8x USB 3.0 cameras,
-    # feeds decoded frames to vision-node's Hailo-8 runtime.
+    # Real MJPEG capture+serve (mjpeg_server.py) - GStreamer/full pipeline
+    # integration and the Hailo-8 hand-off itself are still future work
+    # (see this repo's own README). --device/--port are real, required,
+    # per-camera CLI flags (main.py's own `stream serve`), so a real
+    # deployment overrides `command:` per camera rather than relying on
+    # any default this image ships (there isn't one - see its Dockerfile).
+    command: ["stream", "serve", "--device", "0", "--addr", "0.0.0.0", "--port", "8110"]
 
   detection-hef:
     build: ../HYDRA-UMC-DETECTION-HEF
     image: hydra-umc-detection-hef:1.0.0
     container_name: hydra-umc-detection-hef
     volumes:
-      - ../HYDRA-UMC-DETECTION-HEF/build:/opt/hydra/hef-library:ro
+      - ../HYDRA-UMC-DETECTION-HEF/build:/opt/hydra/models:ro
+      - ../HYDRA-UMC-DETECTION-HEF/registry.json:/etc/hydra-umc-detection-hef/registry.json:ro
     # Serves the curated library of compiled YOLO .hef models that
-    # vision-node loads onto the Hailo-8 NPU.
+    # vision-node loads onto the Hailo-8 NPU. Real HTTP API (stdlib
+    # http.server) on 8093, matching the real CM5 systemd unit - see
+    # this repo's own Dockerfile for why /opt/hydra/models (not the
+    # hef-library path this line used before real Dockerfiles existed).
 
   safety-zones:
     build: ../HYDRA-UMC-SAFETY-ZONES
     image: hydra-umc-safety-zones:1.0.0
     container_name: hydra-umc-safety-zones
     # Real-time 3D intrusion detection - triggers CAN E-STOP through
-    # vision-node when a Warning/Danger zone is breached.
+    # vision-node when a Warning/Danger zone is breached. Real HTTP API
+    # (stdlib http.server) on 8108, matching the real CM5 systemd unit.
 
   visual-servoing-api:
     build: ../HYDRA-UMC-VISUAL-SERVOING-API
     image: hydra-umc-visual-servoing-api:1.0.0
     container_name: hydra-umc-visual-servoing-api
     ports:
-      - "50052:50052"                  # gRPC: closed-loop pose-correction feed
+      - "50052:50052"                  # gRPC: closed-loop pose-correction feed - still future work, see main.py's own docstring
     # Turns Hailo-8 visual feedback into real-time kinematic pose
-    # corrections consumed by the HYDRA-UMC core (STM32H745).
+    # corrections consumed by the HYDRA-UMC core (STM32H745). Real HTTP
+    # API (stdlib http.server) on 8091 today, matching the real CM5
+    # systemd unit - the gRPC feed above is the aspirational future path
+    # this repo's own README/main.py docstring already name as not built yet.
