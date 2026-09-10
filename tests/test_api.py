@@ -138,7 +138,7 @@ def test_validate_frame_missing_params(tmp_path: Path) -> None:
 
 
 def test_validate_frame_oversized_body_is_rejected_before_reading_it_all(tmp_path: Path) -> None:
-    # Found in an ecosystem-wide software-improvements audit: this used to
+    # Found while auditing the code: this used to
     # read a caller-controlled Content-Length with no upper bound at all -
     # a lying/oversized header could force unbounded memory buffering. The
     # request's own declared width/height/channels already say exactly how
