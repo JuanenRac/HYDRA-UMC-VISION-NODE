@@ -141,7 +141,7 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError as e:
             _write_error(self, 400, f"Content-Length must be an integer: {e}")
             return
-        # Found in an ecosystem-wide software-improvements audit: this used
+        # Found while auditing the code: this used
         # to read a caller-controlled Content-Length with no upper bound at
         # all before this fix - a lying/oversized header could force
         # unbounded memory buffering. Unlike a JSON endpoint there is no one
