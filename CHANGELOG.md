@@ -13,8 +13,8 @@ hand.
 ## Unreleased - strict sibling-manifest fields
 
 - **`api.py`'s `POST /validate-frame` no longer trusts a caller-controlled
-  `Content-Length` with no upper bound** - found in an ecosystem-wide
-  software-improvements audit. Unlike the sibling JSON endpoints this fix
+  `Content-Length` with no upper bound** - found while auditing the
+  code. Unlike the sibling JSON endpoints this fix
   landed on elsewhere (HYDRA-UMC-ANOMALY-DETECTOR and others), there is no
   one fixed byte cap that makes sense for a raw frame buffer, since an
   honest frame's size varies with resolution - the request's own declared
