@@ -35,6 +35,13 @@ hand.
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
 
+## [0.0.8] - H047: no more personal absolute paths in public docs
+
+- `docs/CLI_REFERENCE.md`'s own real captured CLI/HTTP output examples
+  named this machine's real local checkout path outright
+  (`C:\Users\juane\Documents\GitHub`) - replaced with `<workspace-root>`
+  throughout, keeping every example's actual output format unchanged.
+
 ## [0.0.7]
 
 - **`docker-compose.yml` updated: all 4 children now have a real

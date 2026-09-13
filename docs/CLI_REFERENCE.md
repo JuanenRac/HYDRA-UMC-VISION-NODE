@@ -8,7 +8,9 @@ run the real Hailo-8/CM5 runtime, but it does real, hardware-independent
 work: checking its children are present, inspecting its own pipeline
 shape against whatever hardware is actually attached, and validating raw
 frame buffers structurally. Every example below was captured from a real
-run of the installed CLI — not written from memory.
+run of the installed CLI — not written from memory (`<workspace-root>`
+below stands for that real run's own absolute path, not a placeholder
+value the CLI itself prints).
 
 ## Usage
 
@@ -68,7 +70,7 @@ machine:
 
 ```
 $ hydra-umc-vision-node family-status
-Vision AI Node family status (workspace: C:\Users\juane\Documents\GitHub):
+Vision AI Node family status (workspace: <workspace-root>):
   HYDRA-UMC-VISION-STREAMER: v0.1.0, maturity=established, role=service
   HYDRA-UMC-DETECTION-HEF: v0.0.6, maturity=established, role=library
   HYDRA-UMC-SAFETY-ZONES: v0.0.5, maturity=established, role=service
@@ -270,7 +272,7 @@ convention this family's other `api.py` files already use. Defaults to
 
 ```
 $ hydra-umc-vision-node serve --port 8094
-[vision-node] HTTP API listening on 127.0.0.1:8094 (workspace=C:\Users\juane\Documents\GitHub)
+[vision-node] HTTP API listening on 127.0.0.1:8094 (workspace=<workspace-root>)
 [vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats
 ```
 
@@ -285,7 +287,7 @@ $ hydra-umc-vision-node serve --port 8094
 
 ```
 $ curl http://127.0.0.1:8094/family-status
-{"workspace": "C:\\Users\\juane\\Documents\\GitHub", "children": [{"name": "HYDRA-UMC-VISION-STREAMER", "present": true, "manifest": {"name": "HYDRA-UMC-VISION-STREAMER", "version": "0.1.0", "maturity": "established", "role": "service"}}, {"name": "HYDRA-UMC-DETECTION-HEF", "present": true, "manifest": {"name": "HYDRA-UMC-DETECTION-HEF", "version": "0.0.6", "maturity": "established", "role": "library"}}, {"name": "HYDRA-UMC-SAFETY-ZONES", "present": true, "manifest": {"name": "HYDRA-UMC-SAFETY-ZONES", "version": "0.0.5", "maturity": "established", "role": "service"}}, {"name": "HYDRA-UMC-VISUAL-SERVOING-API", "present": true, "manifest": {"name": "HYDRA-UMC-VISUAL-SERVOING-API", "version": "0.0.5", "maturity": "established", "role": "api"}}], "missing": [], "allPresent": true}
+{"workspace": "<workspace-root>", "children": [{"name": "HYDRA-UMC-VISION-STREAMER", "present": true, "manifest": {"name": "HYDRA-UMC-VISION-STREAMER", "version": "0.1.0", "maturity": "established", "role": "service"}}, {"name": "HYDRA-UMC-DETECTION-HEF", "present": true, "manifest": {"name": "HYDRA-UMC-DETECTION-HEF", "version": "0.0.6", "maturity": "established", "role": "library"}}, {"name": "HYDRA-UMC-SAFETY-ZONES", "present": true, "manifest": {"name": "HYDRA-UMC-SAFETY-ZONES", "version": "0.0.5", "maturity": "established", "role": "service"}}, {"name": "HYDRA-UMC-VISUAL-SERVOING-API", "present": true, "manifest": {"name": "HYDRA-UMC-VISUAL-SERVOING-API", "version": "0.0.5", "maturity": "established", "role": "api"}}], "missing": [], "allPresent": true}
 ```
 
 `GET /pipeline-status` (same honest `degraded_no_hardware` result as the CLI, on this dev machine with no camera/Hailo-8):
@@ -306,7 +308,7 @@ $ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3
 
 ```
 $ curl http://127.0.0.1:8094/stats
-{"workspace": "C:\\Users\\juane\\Documents\\GitHub"}
+{"workspace": "<workspace-root>"}
 ```
 
 An unknown route or a bad/missing query param never crashes the server — it
