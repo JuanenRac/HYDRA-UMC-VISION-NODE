@@ -158,7 +158,7 @@ Sucht den Python-Interpreter innerhalb von `.venv` (unterstützt sowohl das POSI
 Der bloße Aufruf gibt Name + Version + Rolle aus:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.0.8
+HYDRA-UMC-VISION-NODE v0.0.9
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
