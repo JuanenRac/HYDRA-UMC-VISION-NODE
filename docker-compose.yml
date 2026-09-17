@@ -9,8 +9,9 @@
 # systemd units already run (see each one's own systemd/*.service) - not
 # build-tested here (no Docker runtime on this dev machine), but every
 # path/flag is the same one already verified live on the real CM5.
-# vision-node itself (this repo) still has no real Dockerfile/gRPC server
-# of its own - that remains the one real gap in this file.
+# vision-node itself (this repo) now has a real Dockerfile too - the real
+# gRPC control API on port 50051 is still future work (v0 is the
+# family-readiness HTTP API only, see this repo's own README/main.py).
 #
 # Layout assumption: the 5 repos are checked out as sibling folders under the
 # same GitHub/ parent directory, matching the rest of the HYDRA-UMC ecosystem.
@@ -29,7 +30,14 @@ services:
     volumes:
       - ./models:/opt/hydra/models:ro  # compiled .hef models (this repo)
     ports:
-      - "50051:50051"                  # gRPC control API towards HYDRA-UMC core
+      - "50051:50051"                  # gRPC control API towards HYDRA-UMC core (not real yet - see this repo's own README)
+    mem_limit: 384m                    # matches systemd/hydra-umc-vision-node.service's own MemoryMax
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8094/stats', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
       - vision-streamer
       - detection-hef

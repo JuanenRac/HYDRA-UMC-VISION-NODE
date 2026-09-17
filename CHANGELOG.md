@@ -35,6 +35,14 @@ hand.
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
 
+## [0.0.9] - This repo's own Dockerfile, plus real resource limits and a healthcheck for it
+
+`docker-compose.yml`'s own `vision-node` service declared `build: .`, but this repo never actually had
+a `Dockerfile` at its root - its own header comment already named this as the one remaining real gap
+after all 4 children gained their own. New `Dockerfile` mirrors the real `--addr`/`--port` (8094) the
+CM5 systemd unit already runs, non-root. Also added a real `mem_limit` (mirroring the same unit's own
+`MemoryMax`) and a `healthcheck` against the real, already-existing `GET /stats` route.
+
 ## [0.0.8] - H047: no more personal absolute paths in public docs
 
 - `docs/CLI_REFERENCE.md`'s own real captured CLI/HTTP output examples
