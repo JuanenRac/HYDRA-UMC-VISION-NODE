@@ -43,7 +43,7 @@ after all 4 children gained their own. New `Dockerfile` mirrors the real `--addr
 CM5 systemd unit already runs, non-root. Also added a real `mem_limit` (mirroring the same unit's own
 `MemoryMax`) and a `healthcheck` against the real, already-existing `GET /stats` route.
 
-## [0.0.8] - H047: no more personal absolute paths in public docs
+## [0.0.8] - No more personal absolute paths in public docs
 
 - `docs/CLI_REFERENCE.md`'s own real captured CLI/HTTP output examples
   named this machine's real local checkout path outright
