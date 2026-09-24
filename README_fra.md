@@ -158,7 +158,7 @@ Localise l'interpréteur Python à l'intérieur de `.venv` (gère à la fois la 
 L'invocation nue affiche le nom, la version et le rôle :
 
 ```text
-HYDRA-UMC-VISION-NODE v0.0.9
+HYDRA-UMC-VISION-NODE v0.1.0
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 

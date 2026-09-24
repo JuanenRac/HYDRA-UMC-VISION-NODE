@@ -190,7 +190,7 @@ Windows 形式の `.venv/Scripts/python.exe` の両方のレイアウトに対�
 引数なしで呼び出すと名前 + バージョン + 役割を表示します：
 
 ```text
-HYDRA-UMC-VISION-NODE v0.0.9
+HYDRA-UMC-VISION-NODE v0.1.0
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
