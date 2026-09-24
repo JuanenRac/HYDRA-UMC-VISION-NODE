@@ -35,6 +35,10 @@ hand.
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
 
+## [0.1.0] - Compatibility record
+
+- Added a compatibility record (model name, version and SHA-256, Hailo architecture, pipeline version) that round-trips through JSON and reports every reason it does not fit the node using it: architecture, pipeline version and, when given, the registry's recorded digest.
+
 ## [0.0.9] - This repo's own Dockerfile, plus real resource limits and a healthcheck for it
 
 `docker-compose.yml`'s own `vision-node` service declared `build: .`, but this repo never actually had
