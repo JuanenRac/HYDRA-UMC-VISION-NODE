@@ -161,7 +161,7 @@ HYDRA-UMC-VISION-NODE/
 2. **虚拟环境** —— 若 `.venv/` 尚不存在则创建它（可安全重复运行；已存在的 `.venv/` 会被复用，而非重新创建）。
 3. **可编辑安装（含 dev 附加依赖）** —— `pip install -e ".[dev]"` 以"可编辑"模式将本包安装到 `.venv` 中，因此对 `src/` 下源代码的修改会立即生效而无需重新安装，安装 `pytest`，并注册 `run.sh` 所使用的 `hydra-umc-vision-node` 控制台入口点。
 4. **编译检查** —— `python -m compileall -q src` 对 `src/` 下的每个 `.py` 文件进行字节码编译，即使某个文件从未被 `main.py` 实际导入，也能捕获整个包中的语法错误。
-5. **真实测试套件** —— `pytest tests/` 运行全部 48 个测试。
+5. **真实测试套件** —— `pytest tests/` 运行全部 60 个测试。
 
 脚本使用 `set -euo pipefail`，在第一个失败步骤处停止，只有全部步骤
 均成功时才打印 `== Build OK ==`。
@@ -244,7 +244,7 @@ run.bat
 | `/validate-frame` | `POST` | 与 `validate-frame` 子命令相同的校验，但原始帧字节通过请求体传输，而不是服务器端的文件路径——真实的远程调用方根本没有本服务器自身文件系统上的本地路径可以传递。需要 `?width=W&height=H` 查询参数（`channels` 可选，默认 `3`）。 |
 | `/stats` | `GET` | 报告服务器默认的工作区路径。 |
 
-`/validate-frame` 示例，使用与上文 CLI 演示相同的 48 字节多样化测试数据：
+`/validate-frame` 示例，使用与上文 CLI 演示相同的 60 字节多样化测试数据：
 
 ```bash
 curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" --data-binary @vn_good_frame.raw
@@ -264,7 +264,7 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 
 ## 🚀 当前状态与后续步骤
 
-**今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），48 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
+**今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），60 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
 项目的完整（但尚未可运行的）集成蓝图文档——具体的真实构建/运行输出见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 **仍待完成的内容（顺序不分先后，无既定时间表）：**
