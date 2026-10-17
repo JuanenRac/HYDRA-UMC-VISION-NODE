@@ -164,3 +164,24 @@ def test_not_found(tmp_path: Path) -> None:
     with running_server(tmp_path) as base:
         status, body = _get(f"{base}/nope")
         assert status == 404
+
+
+def test_a_client_that_sends_nothing_is_dropped_instead_of_holding_a_thread(tmp_path: Path, monkeypatch) -> None:
+    import socket
+    import time
+
+    from hydra_umc_vision_node.api import Handler
+
+    monkeypatch.setattr(Handler, "timeout", 0.3)
+    server = VisionNodeServer(("127.0.0.1", 0), tmp_path)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        with socket.create_connection(("127.0.0.1", server.server_address[1]), timeout=5) as client:
+            started = time.monotonic()
+            assert client.recv(1) == b""  # sends nothing; the server closes the connection by itself
+            assert time.monotonic() - started < 3
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)

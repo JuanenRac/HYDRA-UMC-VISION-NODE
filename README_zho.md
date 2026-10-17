@@ -83,14 +83,15 @@ flowchart TB
 5 个项目中没有一个携带 `hardware/` 或 `firmware/` 文件夹：CM5 + Hailo-8 是现
 成硬件，没有需要自行设计的板卡，这与（例如）[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部定制的 STM32H745/STM32G474 板卡不同。
 
-### `docker-compose.yml`：一份已记录的集成蓝图，而非（目前）一个可运行的栈
+### `docker-compose.yml`：集成蓝图，由各子项目自己的 Dockerfile 构建（在此从未用 Docker 运行过）
 
 项目根目录下的 `docker-compose.yml` 定义了本节点自身的服务以及全部 4 个子
 项目，并将它们各自预期所需的设备/卷/端口（Hailo-8 设备节点、每个摄像头的
 V4L2 设备、通往 HYDRA-UMC 核心的 gRPC 端口）连接在一起。文件中有大量注释
-解释*为什么*每个部分存在。它**目前并不可运行**——4 个子项目均尚未提供
-`Dockerfile`，因此 `docker compose up` 会失败。它先于代码存在，是为了让
-集成方案先被决定和记录一次，而不是由每个子项目日后各自零散地摸索。
+解释*为什么*每个部分存在。4 个子项目现在都提供了自己的
+`Dockerfile`，该栈由它们构建，但它**从未在装有 Docker 的环境中构建或运行过**（开发环境里没有）：
+它的形态和命令只是对照这些 Dockerfile 和 CM5 上真实的 systemd 单元手工检查过。它的存在，是为了让
+集成方案先被决定和记录一次，而不是由每个子项目各自零散地摸索。
 
 ### 本骨架中已做出的设计决策
 
@@ -132,7 +133,7 @@ HYDRA-UMC-VISION-NODE/
 ├── bump_manifest_version.py # 将 hydra-umc.project.json 的版本与原生版本同步(--sync)
 ├── build.sh / build.bat # venv + 可编辑安装（含 dev 附加依赖） + 编译检查 + 测试
 ├── run.sh / run.bat     # 从本地 venv 运行入口点（转发参数）
-├── docker-compose.yml   # Vision AI Node 4 个子项目的集成蓝图（尚未可运行）
+├── docker-compose.yml   # Vision AI Node 4 个子项目的集成蓝图（未用 Docker 验证）
 └── CHANGELOG.md         # 逐版本历史（里程表方案，无日期）
 ```
 
@@ -161,7 +162,7 @@ HYDRA-UMC-VISION-NODE/
 2. **虚拟环境** —— 若 `.venv/` 尚不存在则创建它（可安全重复运行；已存在的 `.venv/` 会被复用，而非重新创建）。
 3. **可编辑安装（含 dev 附加依赖）** —— `pip install -e ".[dev]"` 以"可编辑"模式将本包安装到 `.venv` 中，因此对 `src/` 下源代码的修改会立即生效而无需重新安装，安装 `pytest`，并注册 `run.sh` 所使用的 `hydra-umc-vision-node` 控制台入口点。
 4. **编译检查** —— `python -m compileall -q src` 对 `src/` 下的每个 `.py` 文件进行字节码编译，即使某个文件从未被 `main.py` 实际导入，也能捕获整个包中的语法错误。
-5. **真实测试套件** —— `pytest tests/` 运行全部 60 个测试。
+5. **真实测试套件** —— `pytest tests/` 运行全部 61 个测试。
 
 脚本使用 `set -euo pipefail`，在第一个失败步骤处停止，只有全部步骤
 均成功时才打印 `== Build OK ==`。
@@ -177,7 +178,7 @@ Windows 风格的 `.venv/Scripts/python.exe` 目录结构，因为本仓库是�
 无参数调用会打印名称 + 版本 + 角色：
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.0
+HYDRA-UMC-VISION-NODE v0.1.1
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
@@ -244,7 +245,7 @@ run.bat
 | `/validate-frame` | `POST` | 与 `validate-frame` 子命令相同的校验，但原始帧字节通过请求体传输，而不是服务器端的文件路径——真实的远程调用方根本没有本服务器自身文件系统上的本地路径可以传递。需要 `?width=W&height=H` 查询参数（`channels` 可选，默认 `3`）。 |
 | `/stats` | `GET` | 报告服务器默认的工作区路径。 |
 
-`/validate-frame` 示例，使用与上文 CLI 演示相同的 60 字节多样化测试数据：
+`/validate-frame` 示例，使用与上文 CLI 演示相同的 48 字节多样化测试数据：
 
 ```bash
 curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" --data-binary @vn_good_frame.raw
@@ -264,8 +265,8 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 
 ## 🚀 当前状态与后续步骤
 
-**今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），60 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
-项目的完整（但尚未可运行的）集成蓝图文档——具体的真实构建/运行输出见 [`CHANGELOG.md`](CHANGELOG.md)。
+**今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），61 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
+项目的完整集成蓝图文档（由各子项目自己的 Dockerfile 构建，从未用 Docker 运行过）——具体的真实构建/运行输出见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 **仍待完成的内容（顺序不分先后，无既定时间表）：**
 
@@ -273,7 +274,7 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 * 面向 HYDRA-UMC 核心的 gRPC 控制 API。
 * 对 4 个子服务的真实监督（今天的 `family-status` 只检查是否存在/成熟度，不检查运行时健康状况；`docker-compose.yml` 仅记录了预期形态）。
 * 一旦 [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) 拥有真实的采集流水线，即进行多摄像头流水线同步。
-* 将 `docker-compose.yml` 转化为真正可运行的技术栈，这取决于 4 个子项目率先各自提供自己的 `Dockerfile`。
+* 在装有 Docker 的环境中真正构建并运行 `docker-compose.yml`（4 个子项目已经提供了各自的 `Dockerfile`）。
 
 ---
 

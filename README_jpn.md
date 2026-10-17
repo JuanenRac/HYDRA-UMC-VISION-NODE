@@ -90,17 +90,18 @@ Vision AI Node ファミリーの 5 つのプロジェクトの中で、本プ�
 5 つのプロジェクトのいずれも `hardware/` や `firmware/` フォルダを持って
 いません。CM5 + Hailo-8 は市販のハードウェアであり、[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部のカスタム STM32H745/STM32G474 基板とは異なり、独自に設計する基板はありません。
 
-### `docker-compose.yml`：文書化された統合マップであり、（まだ）動作するスタックではない
+### `docker-compose.yml`：統合マップ。子プロジェクト自身の Dockerfile から構築される（ここでは Docker で実行したことはない）
 
 プロジェクトルートの `docker-compose.yml` は、本ノード自身のサービスと
 4 つの子プロジェクトすべてを定義し、それぞれが必要とすると想定される
 デバイス/ボリューム/ポート（Hailo-8 デバイスノード、カメラごとの V4L2
 デバイス、HYDRA-UMC コアへの gRPC ポート）を結び付けています。各要素が
-なぜそこにあるのかを説明する詳細なコメントが付いています。**今日の時点
-では機能しません**——4 つの子プロジェクトはいずれもまだ `Dockerfile` を
-提供していないため、`docker compose up` は失敗します。これはコードに
-先行して存在しており、統合の形が一度だけ決定・文書化され、後で各子
-プロジェクトがばらばらに即興で対応することのないようにするためです。
+なぜそこにあるのかを説明する詳細なコメントが付いています。4 つの子プロジェクトはいずれも
+独自の `Dockerfile` を提供しており、スタックはそれらから構築されますが、**Docker のある環境で構築・
+実行されたことは一度もありません**（開発環境にはありません）。その形とコマンドは、
+それらの Dockerfile と CM5 の実際の systemd ユニットに照らして手作業で確認しただけです。
+これは、統合の形が一度だけ決定・文書化され、各子プロジェクトがばらばらに即興で対応することの
+ないようにするために存在します。
 
 ### 本スケルトンで既に行われた設計上の決定
 
@@ -142,7 +143,7 @@ HYDRA-UMC-VISION-NODE/
 ├── bump_manifest_version.py # hydra-umc.project.json のバージョンをネイティブ版と同期(--sync)
 ├── build.sh / build.bat # venv + editable インストール（dev エクストラ付き） + コンパイルチェック + テスト
 ├── run.sh / run.bat     # ローカル venv からエントリポイントを実行（引数を転送）
-├── docker-compose.yml   # Vision AI Node の 4 つの子プロジェクトの統合マップ（まだ機能しません）
+├── docker-compose.yml   # Vision AI Node の 4 つの子プロジェクトの統合マップ（Docker では未検証）
 └── CHANGELOG.md         # バージョンごとの履歴（オドメーター方式、日付なし）
 ```
 
@@ -172,7 +173,7 @@ HYDRA-UMC-VISION-NODE/
 2. **仮想環境** — `.venv/` がまだ存在しない場合は作成します（再実行しても安全です。既存の `.venv/` は再作成されず再利用されます）。
 3. **Editable インストール（dev エクストラ付き）** — `pip install -e ".[dev]"` は本パッケージを「editable」モードで `.venv` にインストールするため、`src/` 下のソース変更は再インストールなしに即座に反映され、`pytest` がインストールされ、`run.sh` が使用する `hydra-umc-vision-node` コンソールエントリポイントが登録されます。
 4. **コンパイルチェック** — `python -m compileall -q src` は `src/` 下のすべての `.py` ファイルをバイトコンパイルし、`main.py` から一度も実際にインポートされないファイルであっても、パッケージ全体にわたる構文エラーを検出します。
-5. **実際のテストスイート** — `pytest tests/` が全 60 件のテストを実行します。
+5. **実際のテストスイート** — `pytest tests/` が全 61 件のテストを実行します。
 
 スクリプトは `set -euo pipefail` を使用し、最初に失敗したステップで停止
 します。すべてのステップが成功した場合にのみ `== Build OK ==` を
@@ -190,7 +191,7 @@ Windows 形式の `.venv/Scripts/python.exe` の両方のレイアウトに対�
 引数なしで呼び出すと名前 + バージョン + 役割を表示します：
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.0
+HYDRA-UMC-VISION-NODE v0.1.1
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
@@ -282,8 +283,8 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 
 ## 🚀 現在の状況と次のステップ
 
-**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際のパイプラインマニフェストと実際のデグレードモード検出（`pipeline.py`/`hardware.py`）——実際のカメラ/Hailo-8 ハードウェアを正直に探索し、どのパイプラインステージが実行可能かを正確に報告します——、実際の、ハードウェアに依存しないフレーム破損検証（`frame.py`）、`family-status`/`pipeline-status`/`validate-frame` の各 CLI サブコマンドに加えてこの 3 つを JSON/HTTP API として公開する `serve` サブコマンド（`api.py`）、通過した 60 件のテスト、そして `docker-compose.yml` における 4 つの
-子プロジェクトの完全な（ただしまだ機能しない）統合マップの文書化——実際の完全なビルド/実行出力は [`CHANGELOG.md`](CHANGELOG.md) を参照してください。
+**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際のパイプラインマニフェストと実際のデグレードモード検出（`pipeline.py`/`hardware.py`）——実際のカメラ/Hailo-8 ハードウェアを正直に探索し、どのパイプラインステージが実行可能かを正確に報告します——、実際の、ハードウェアに依存しないフレーム破損検証（`frame.py`）、`family-status`/`pipeline-status`/`validate-frame` の各 CLI サブコマンドに加えてこの 3 つを JSON/HTTP API として公開する `serve` サブコマンド（`api.py`）、通過した 61 件のテスト、そして `docker-compose.yml` における 4 つの
+子プロジェクトの完全な統合マップの文書化（子プロジェクト自身の Dockerfile から構築され、Docker では実行されていない）——実際の完全なビルド/実行出力は [`CHANGELOG.md`](CHANGELOG.md) を参照してください。
 
 **まだ残っている作業（順不同、確定した期限なし）：**
 
@@ -291,7 +292,7 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 * HYDRA-UMC コアへの gRPC 制御 API。
 * 4 つの子サービスの実際の監督（現在の `family-status` は存在/成熟度のみを確認し、ランタイムの健全性は確認しません。`docker-compose.yml` は意図された形を文書化しているだけです）。
 * [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) が実際のキャプチャパイプラインを持ち次第、マルチカメラパイプラインの同期。
-* `docker-compose.yml` を実際に実行可能なスタックに変換すること。これは 4 つの子プロジェクトがそれぞれ独自の `Dockerfile` を先に提供することに依存します。
+* `docker-compose.yml` を Docker のある環境で実際に構築・実行すること（4 つの子プロジェクトはすでに `Dockerfile` を提供しています）。
 
 ---
 

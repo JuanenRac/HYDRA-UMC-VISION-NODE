@@ -74,9 +74,9 @@ De los 5 proyectos de la familia Vision AI Node, este es el único que:
 
 Ninguno de los 5 proyectos lleva carpeta `hardware/` ni `firmware/`: CM5 + Hailo-8 es hardware ya existente sin placa propia que diseñar, a diferencia (por ejemplo) de las placas STM32H745/STM32G474 a medida dentro de [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC).
 
-### `docker-compose.yml`: un mapa de integración documentado, todavía no un stack funcional
+### `docker-compose.yml`: el mapa de integración, construido con los Dockerfile de los hijos (nunca ejecutado con Docker aquí)
 
-`docker-compose.yml` en la raíz del proyecto define el propio servicio de este nodo más los 4 hijos, conectados con los devices/volumes/ports que se espera que cada uno necesite (el nodo de dispositivo Hailo-8, los devices V4L2 por cámara, los puertos gRPC hacia el core HYDRA-UMC). Está muy comentado explicando *por qué* está cada pieza. **No es funcional hoy** - ninguno de los 4 hijos tiene todavía `Dockerfile` propio, así que `docker compose up` fallaría. Existe ya, antes que ese código, para que la forma de la integración quede decidida y documentada una sola vez en vez de improvisada por separado por cada hijo más adelante.
+`docker-compose.yml` en la raíz del proyecto define el propio servicio de este nodo más los 4 hijos, conectados con los devices/volumes/ports que se espera que cada uno necesite (el nodo de dispositivo Hailo-8, los devices V4L2 por cámara, los puertos gRPC hacia el core HYDRA-UMC). Está muy comentado explicando *por qué* está cada pieza. Los 4 hijos tienen ya su propio `Dockerfile` y el stack se construye a partir de ellos, pero **nunca se ha construido ni ejecutado en un entorno con Docker** (en el entorno de desarrollo no hay): su forma y sus comandos se comprobaron a mano contra esos Dockerfile y las unidades systemd reales de la CM5. Existe para que la forma de la integración quede decidida y documentada una sola vez en vez de improvisada por separado por cada hijo.
 
 ### Decisiones de diseño ya tomadas en este esqueleto
 
@@ -118,7 +118,7 @@ HYDRA-UMC-VISION-NODE/
 ├── bump_manifest_version.py # Sincroniza la versión de hydra-umc.project.json con la nativa (--sync)
 ├── build.sh / build.bat # venv + instalación editable (extras dev) + compile-check + tests
 ├── run.sh / run.bat     # Ejecuta el entry point desde el venv local (reenvía argumentos)
-├── docker-compose.yml   # Mapa de integración de los 4 hijos (todavía no funcional)
+├── docker-compose.yml   # Mapa de integración de los 4 hijos (sin verificar con Docker)
 └── CHANGELOG.md         # Historial versión a versión (esquema cuentakilómetros, sin fechas)
 ```
 
@@ -145,7 +145,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Entorno virtual** — crea `.venv/` si no existe ya (seguro re-ejecutar; un `.venv/` existente se reutiliza, no se recrea).
 3. **Instalación editable (con extras dev)** — `pip install -e ".[dev]"` instala este paquete en `.venv` en modo "editable", así que los cambios de código bajo `src/` tienen efecto inmediato sin reinstalar, instala `pytest`, y registra el entry point de consola `hydra-umc-vision-node` que usa `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` compila a bytecode cada archivo `.py` bajo `src/`, detectando errores de sintaxis en todo el paquete incluso en archivos que `main.py` nunca importa realmente.
-5. **Suite de tests real** — `pytest tests/` ejecuta los 60 tests.
+5. **Suite de tests real** — `pytest tests/` ejecuta los 61 tests.
 
 El script usa `set -euo pipefail` y se detiene en el primer paso que falle, imprimiendo `== Build OK ==` solo si todos los pasos tuvieron éxito.
 
@@ -158,7 +158,7 @@ Localiza el intérprete de Python dentro de `.venv` (soporta tanto el layout POS
 La invocación sin argumentos imprime nombre + versión + rol:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.0
+HYDRA-UMC-VISION-NODE v0.1.1
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
@@ -242,7 +242,7 @@ Cada ruta responde con un cuerpo de error honesto (`{"error": "..."}`) y el cód
 
 ## 🚀 Estado Actual y Próximos Pasos
 
-**Qué funciona hoy:** un chequeo real de disponibilidad de familia (`manifest.py`/`family.py`) que lee el manifiesto propio de cada uno de los 4 hijos reales y reporta presencia/versión/madurez/rol, un manifiesto real de pipeline y detección real de modo degradado (`pipeline.py`/`hardware.py`) que sondea honestamente hardware real de cámara/Hailo-8 y reporta exactamente qué etapas del pipeline pueden correr, validación real de corrupción de frames independiente de hardware (`frame.py`), los subcomandos CLI `family-status`/`pipeline-status`/`validate-frame` más un subcomando `serve` que expone los tres como una API JSON/HTTP (`api.py`), 60 tests pasando, y un mapa de integración completamente documentado (pero todavía no funcional) para los 4 hijos en `docker-compose.yml` - ver [`CHANGELOG.md`](CHANGELOG.md) para la salida completa real de build/run.
+**Qué funciona hoy:** un chequeo real de disponibilidad de familia (`manifest.py`/`family.py`) que lee el manifiesto propio de cada uno de los 4 hijos reales y reporta presencia/versión/madurez/rol, un manifiesto real de pipeline y detección real de modo degradado (`pipeline.py`/`hardware.py`) que sondea honestamente hardware real de cámara/Hailo-8 y reporta exactamente qué etapas del pipeline pueden correr, validación real de corrupción de frames independiente de hardware (`frame.py`), los subcomandos CLI `family-status`/`pipeline-status`/`validate-frame` más un subcomando `serve` que expone los tres como una API JSON/HTTP (`api.py`), 61 tests pasando, y un mapa de integración completamente documentado para los 4 hijos en `docker-compose.yml` (construido con los Dockerfile de los hijos, nunca ejecutado con Docker) - ver [`CHANGELOG.md`](CHANGELOG.md) para la salida completa real de build/run.
 
 **Qué sigue abierto, sin orden particular y sin calendario comprometido:**
 
@@ -250,7 +250,7 @@ Cada ruta responde con un cuerpo de error honesto (`{"error": "..."}`) y el cód
 * La API gRPC de control hacia el core HYDRA-UMC.
 * Supervisión real de los 4 servicios hijos (hoy `family-status` solo comprueba presencia/madurez, no salud en tiempo de ejecución; `docker-compose.yml` solo documenta la forma prevista).
 * Sincronización del pipeline multi-cámara una vez que [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) tenga un pipeline de captura real con el que sincronizar.
-* Convertir `docker-compose.yml` en un stack realmente ejecutable, lo cual depende de que cada uno de los 4 hijos publique primero su propio `Dockerfile`.
+* Construir y ejecutar `docker-compose.yml` de verdad en un entorno con Docker (los 4 hijos ya tienen su `Dockerfile`).
 
 ---
 

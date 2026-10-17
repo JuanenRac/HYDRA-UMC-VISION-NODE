@@ -34,6 +34,12 @@ hand.
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
 
+## [0.1.1] - Idle connections dropped, accurate compose docs, Portuguese README
+
+- **Idle connections are dropped:** the HTTP handler had no connection timeout, so a client that opened a connection and sent nothing held a handler thread forever. A silent client is now dropped after 15 seconds; the limit covers socket I/O only, never the time a check takes.
+- **Tests:** a new test covers the dropped idle connection (61 tests).
+- **Docs:** the README no longer says the four children ship no `Dockerfile` (they all do, and the compose file builds from them); it now says plainly that the stack has never been built or run with Docker. The test counts and the sample version line are corrected, and a README in Portuguese (`README_por.md`) joins the other translations.
+
 ## [0.1.0] - Compatibility record
 
 - Added a compatibility record (model name, version and SHA-256, Hailo architecture, pipeline version) that round-trips through JSON and reports every reason it does not fit the node using it: architecture, pipeline version and, when given, the registry's recorded digest.
