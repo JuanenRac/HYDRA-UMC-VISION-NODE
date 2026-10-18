@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-VISION-NODE - src/hydra_umc_vision_node/family.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 """Real family-readiness check: this node's actual job today.
 

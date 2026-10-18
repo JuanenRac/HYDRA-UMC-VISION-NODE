@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-VISION-NODE - package init: src/hydra_umc_vision_node/__init__.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 """HYDRA-UMC-VISION-NODE - high-speed perception edge AI node (Hailo-8 + CM5).
 

@@ -1,6 +1,6 @@
 # HYDRA-UMC-VISION-NODE - docker-compose.yml: integration map
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 #
 # Documents how this Vision AI Node integrates its 4 children as real
 # containers. All 4 (HYDRA-UMC-VISION-STREAMER, HYDRA-UMC-DETECTION-HEF,

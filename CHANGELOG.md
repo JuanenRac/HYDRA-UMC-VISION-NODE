@@ -10,6 +10,11 @@ by 1 instead (e.g. `0.0.9` -> `0.1.0`), the same carry cascading into
 `MAJOR` if `MINOR` also exceeds 9. `MAJOR` is otherwise only ever bumped by
 hand.
 
+## [0.1.4]
+
+- Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
+- Every SPDX identifier, file header, the package metadata, the service units and the README licence line now say GPL-3.0-or-later consistently (the LICENSE file keeps the full GPL-3.0 text).
+
 ## [0.1.3] - Maturity lowered to functional, strict sibling-manifest fields
 
 - Maturity is functional: the code, tests and documentation are in place, but nothing here has been verified on real hardware yet, so the manifest no longer claims the established level.

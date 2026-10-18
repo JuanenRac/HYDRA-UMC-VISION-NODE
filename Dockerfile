@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-VISION-NODE - Container Build: Dockerfile
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 # Real, minimal image for the family-readiness HTTP API (api.py's own
 # server, stdlib http.server - pyproject.toml's own dependencies is

@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-VISION-NODE - src/hydra_umc_vision_node/pipeline.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 """Real, hardware-independent description of this node's perception
 pipeline: what stages it is made of, and which real piece of hardware

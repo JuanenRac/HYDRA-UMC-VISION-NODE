@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-VISION-NODE - tests/test_service_unit.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 """The systemd unit must not hide the devices the node probes for."""
 from __future__ import annotations

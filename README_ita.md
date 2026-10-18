@@ -9,7 +9,7 @@
 ### 🧠 Nodo IA Edge per Percezione ad Alta Velocità (Hailo-8 + Raspberry Pi CM5)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licenza-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Licenza-GPL%203.0-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
   <img src="https://img.shields.io/badge/Prestazioni-26%20TOPS-green.svg" alt="26 TOPS">
   <img src="https://img.shields.io/badge/Protocollo-gRPC%20%2F%20Protobuf%20(planned)-lightgrey.svg" alt="gRPC">
@@ -160,7 +160,7 @@ Individua l'interprete Python dentro `.venv` (gestisce sia il layout POSIX `.ven
 L'invocazione nuda stampa nome + versione + ruolo:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.3
+HYDRA-UMC-VISION-NODE v0.1.4
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
@@ -361,4 +361,4 @@ Questo progetto fa parte dell'ecosistema robotico HYDRA-UMC dello stesso autore 
 📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 LICENZA
-GPL-3.0 - Vedi il file LICENSE per i dettagli.
+GPL-3.0-or-later - Vedi il file LICENSE per i dettagli.
