@@ -10,8 +10,9 @@ by 1 instead (e.g. `0.0.9` -> `0.1.0`), the same carry cascading into
 `MAJOR` if `MINOR` also exceeds 9. `MAJOR` is otherwise only ever bumped by
 hand.
 
-## Unreleased - strict sibling-manifest fields
+## [0.1.3] - Maturity lowered to functional, strict sibling-manifest fields
 
+- Maturity is functional: the code, tests and documentation are in place, but nothing here has been verified on real hardware yet, so the manifest no longer claims the established level.
 - **`api.py`'s `POST /validate-frame` no longer trusts a caller-controlled
   `Content-Length` with no upper bound** - found on code review. Unlike the sibling JSON endpoints this fix
   landed on elsewhere (HYDRA-UMC-ANOMALY-DETECTOR and others), there is no
@@ -29,7 +30,7 @@ hand.
   This repo's own baseline workflow only ever compile-checked
   (`py_compile`) `.py` files - it never ran `pytest`, so a regression in
   `tests/` could be merged without CI ever failing. CI-only fix, no
-  runtime code changed, no version bump.
+  runtime code changed.
 - The family manifest reader now accepts only non-empty text values for
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
