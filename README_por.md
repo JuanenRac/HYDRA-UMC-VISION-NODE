@@ -160,7 +160,7 @@ Localiza o interpretador Python dentro do `.venv` (trata tanto a estrutura POSIX
 A invocação simples imprime nome + versão + papel:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.4
+HYDRA-UMC-VISION-NODE v0.1.5
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 

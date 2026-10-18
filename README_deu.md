@@ -9,7 +9,7 @@
 ### 🧠 Hochgeschwindigkeits-Edge-KI-Knoten für Wahrnehmung (Hailo-8 + Raspberry Pi CM5)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Lizenz-GPL%203.0-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Lizenz-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
   <img src="https://img.shields.io/badge/Leistung-26%20TOPS-green.svg" alt="26 TOPS">
   <img src="https://img.shields.io/badge/Protokoll-gRPC%20%2F%20Protobuf%20(planned)-lightgrey.svg" alt="gRPC">
@@ -160,7 +160,7 @@ Sucht den Python-Interpreter innerhalb von `.venv` (unterstützt sowohl das POSI
 Der bloße Aufruf gibt Name + Version + Rolle aus:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.4
+HYDRA-UMC-VISION-NODE v0.1.5
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
