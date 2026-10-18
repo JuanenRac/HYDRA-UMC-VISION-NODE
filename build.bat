@@ -31,6 +31,10 @@ REM Bumps the odometer version, creates/updates the local venv, installs the
 REM project (editable) with its dependencies, and compile-checks every source
 REM file. Run this before run.bat whenever the source changes.
 setlocal
+rem Keep the window open for people, never in automation (CI / HYDRA_UMC_CI).
+set "KEEP_OPEN=pause"
+if defined CI set "KEEP_OPEN=ver >nul"
+if "%HYDRA_UMC_CI%"=="1" set "KEEP_OPEN=ver >nul"
 cd /d "%~dp0"
 
 echo == HYDRA-UMC-VISION-NODE :: build ==
@@ -39,11 +43,11 @@ echo -- Odometer version bump --
 REM HYDRA_UMC_SCRIPT_STANDARD_VERSION_STEP
 echo [1/3] Incrementing project version and synchronising its manifest...
 python bump_version.py
-if errorlevel 1 ( echo NATIVE VERSION BUMP FAILED. & pause & exit /b 1 )
+if errorlevel 1 ( echo NATIVE VERSION BUMP FAILED. & %KEEP_OPEN% & exit /b 1 )
 REM HYDRA_UMC_SCRIPT_STANDARD_VERSION_CAPTURE_BEFORE
 for /f "usebackq delims=" %%V in (`python -c "import json; print(json.load(open(r'%~dp0hydra-umc.project.json', encoding='utf-8'))['version'])"`) do set "HYDRA_UMC_VERSION_BEFORE=%%V"
 python "%~dp0bump_manifest_version.py" --sync
-if errorlevel 1 ( echo VERSION SYNCHRONIZATION FAILED. & pause & exit /b 1 )
+if errorlevel 1 ( echo VERSION SYNCHRONIZATION FAILED. & %KEEP_OPEN% & exit /b 1 )
 if errorlevel 1 goto :error
 
 REM HYDRA_UMC_SCRIPT_STANDARD_VERSION_CAPTURE_AFTER
@@ -81,10 +85,10 @@ echo -- Running the real test suite (pytest) --
 if errorlevel 1 goto :error
 
 echo == Build OK ==
-pause
+%KEEP_OPEN%
 exit /b 0
 
 :error
 echo == Build FAILED ==
-pause
+%KEEP_OPEN%
 exit /b 1
