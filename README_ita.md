@@ -18,6 +18,16 @@
 
 ---
 
+## 📋 In breve
+
+| | |
+|---|---|
+| Versione | `0.1.5` |
+| Maturità | Funzionale |
+| Tecnologia | Python / CM5 / Hailo-8 |
+| Destinazione | Il Raspberry Pi CM5 di una cella HYDRA-UMC |
+| Su hardware reale | Non ancora: per questa versione non risulta alcuna esecuzione su hardware reale |
+
 ## 1. 🛠️ PANORAMICA TECNICA
 
 **HYDRA-UMC-VISION-NODE** è il motore di percezione dedicato dell'ecosistema HYDRA-UMC. Pensato per girare sul Raspberry Pi Compute Module 5 abbinato a un acceleratore IA Hailo-8 M.2, il suo compito previsto è gestire flussi video massicci fino a 8 telecamere USB 3.0 simultanee.
