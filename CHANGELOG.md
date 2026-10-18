@@ -34,6 +34,16 @@ hand.
   `name`, `version`, `maturity` and `role`. Invalid JSON types no longer get
   silently coerced into strings and represented as a real child contract.
 
+## [0.1.2] - Hardware probes under systemd, bounded frame validation, confined workspace
+
+- **Hardware probes work under systemd:** the unit used `PrivateDevices=true`, which hides `/dev/video0` and `/dev/hailo0`, so on the real board `pipeline-status` always answered "degraded". The unit now keeps the real `/dev` and limits devices with `DevicePolicy=closed` and explicit `DeviceAllow` rules.
+- **Frame validation can no longer exhaust memory:** the body limit came from client-supplied dimensions (two negative sizes gave a huge positive one). Dimensions are checked first (at most 8192x8192x4), the body is capped at 64 MiB and read in chunks.
+- **`?workspace=` is confined:** a request may only look inside the workspace the server was started with.
+- **Container workspace:** the image reads `HYDRA_UMC_WORKSPACE` (an installed package cannot derive it from its own path), and `serve` warns when the folder does not exist.
+- **Compose map corrected:** it now publishes the real ports (8094, 8100, 8116) instead of unused gRPC ports, no longer mounts a `registry.json` that does not exist, mounts the sibling checkouts read-only, uses `latest` image tags and drops the obsolete `version` key.
+- **Tests:** the pipeline test no longer depends on the machine having (or lacking) a camera, and new tests cover the bounds, the confined workspace and the unit file (66 tests).
+- **Docs:** the gRPC badge is marked as planned, the contributing guide describes the real stack, and the README (all languages) documents the new limits.
+
 ## [0.1.1] - Idle connections dropped, accurate compose docs, Portuguese README
 
 - **Idle connections are dropped:** the HTTP handler had no connection timeout, so a client that opened a connection and sent nothing held a handler thread forever. A silent client is now dropped after 15 seconds; the limit covers socket I/O only, never the time a check takes.

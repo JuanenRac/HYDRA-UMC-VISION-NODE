@@ -185,3 +185,46 @@ def test_a_client_that_sends_nothing_is_dropped_instead_of_holding_a_thread(tmp_
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
+
+
+def _post_raw(base: str, query: str, body: bytes = b"", declared_length: int | None = None) -> tuple[int, dict]:
+    request = urllib.request.Request(f"{base}/validate-frame?{query}", data=body, method="POST")
+    if declared_length is not None:
+        request.add_unredirected_header("Content-Length", str(declared_length))
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status, json.loads(response.read())
+    except urllib.error.HTTPError as error:
+        return error.code, json.loads(error.read())
+
+
+def test_absurd_or_negative_frame_dimensions_are_refused_before_reading_a_body(tmp_path: Path) -> None:
+    with running_server(tmp_path) as base:
+        for query in (
+            "width=-100000&height=-100000&channels=3",
+            "width=50000&height=50000&channels=3",
+            "width=100&height=100&channels=9",
+            "width=0&height=10&channels=3",
+        ):
+            status, body = _post_raw(base, query)
+            assert status == 400, query
+            assert "error" in body
+
+
+def test_a_frame_body_above_the_absolute_cap_is_rejected(tmp_path: Path) -> None:
+    with running_server(tmp_path) as base:
+        status, _ = _post_raw(base, "width=8192&height=8192&channels=4", b"", declared_length=400 * 1024 * 1024)
+        assert status == 400
+
+
+def test_family_status_workspace_override_must_stay_inside_the_server_workspace(tmp_path: Path) -> None:
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    outside = tmp_path / "elsewhere"
+    outside.mkdir()
+    with running_server(workspace) as base:
+        status, body = _get(f"{base}/family-status?workspace={outside}")
+        assert status == 400
+        assert "error" in body
+        status, _ = _get(f"{base}/family-status?workspace={workspace / '..' / 'elsewhere'}")
+        assert status == 400

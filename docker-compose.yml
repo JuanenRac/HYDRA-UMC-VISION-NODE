@@ -17,20 +17,16 @@
 # same GitHub/ parent directory, matching the rest of the HYDRA-UMC ecosystem.
 # Run `docker compose config` to validate this on a real Docker host.
 
-version: "3.9"
-
 services:
   vision-node:
     build: .
-    image: hydra-umc-vision-node:1.0.0
+    image: hydra-umc-vision-node:latest
     container_name: hydra-umc-vision-node
     restart: unless-stopped
-    devices:
-      - /dev/hailo0:/dev/hailo0        # Hailo-8 M.2 accelerator
     volumes:
-      - ./models:/opt/hydra/models:ro  # compiled .hef models (this repo)
+      - ..:/workspace:ro               # the sibling checkouts: family-status reads their hydra-umc.project.json
     ports:
-      - "50051:50051"                  # gRPC control API towards HYDRA-UMC core (not real yet - see this repo's own README)
+      - "8094:8094"                    # the HTTP API (family-status, pipeline-status, validate-frame); the gRPC control API does not exist yet
     mem_limit: 384m                    # matches systemd/hydra-umc-vision-node.service's own MemoryMax
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8094/stats', timeout=3)"]
@@ -48,7 +44,7 @@ services:
 
   vision-streamer:
     build: ../HYDRA-UMC-VISION-STREAMER
-    image: hydra-umc-vision-streamer:1.0.0
+    image: hydra-umc-vision-streamer:latest
     container_name: hydra-umc-vision-streamer
     devices:
       - /dev/video0:/dev/video0        # repeat per attached USB 3.0 camera
@@ -58,15 +54,20 @@ services:
     # per-camera CLI flags (main.py's own `stream serve`), so a real
     # deployment overrides `command:` per camera rather than relying on
     # any default this image ships (there isn't one - see its Dockerfile).
-    command: ["stream", "serve", "--device", "0", "--addr", "0.0.0.0", "--port", "8110"]
+    # Camera N is served on 8100+N-1 (HYDRA-UMC-SERVER expects camera 1 on 8100).
+    ports:
+      - "8100:8100"
+    command: ["stream", "serve", "--device", "0", "--addr", "0.0.0.0", "--port", "8100"]
 
   detection-hef:
     build: ../HYDRA-UMC-DETECTION-HEF
-    image: hydra-umc-detection-hef:1.0.0
+    image: hydra-umc-detection-hef:latest
     container_name: hydra-umc-detection-hef
     volumes:
       - ../HYDRA-UMC-DETECTION-HEF/build:/opt/hydra/models:ro
-      - ../HYDRA-UMC-DETECTION-HEF/registry.json:/etc/hydra-umc-detection-hef/registry.json:ro
+      # Optional: create a registry.json in that repo and mount it at
+      # /etc/hydra-umc-detection-hef/registry.json. Mounting a path that does
+      # not exist makes Docker create a directory there and the service fail.
     # Serves the curated library of compiled YOLO .hef models that
     # vision-node loads onto the Hailo-8 NPU. Real HTTP API (stdlib
     # http.server) on 8093, matching the real CM5 systemd unit - see
@@ -75,7 +76,7 @@ services:
 
   safety-zones:
     build: ../HYDRA-UMC-SAFETY-ZONES
-    image: hydra-umc-safety-zones:1.0.0
+    image: hydra-umc-safety-zones:latest
     container_name: hydra-umc-safety-zones
     # Real-time 3D intrusion detection - triggers CAN E-STOP through
     # vision-node when a Warning/Danger zone is breached. Real HTTP API
@@ -83,12 +84,12 @@ services:
 
   visual-servoing-api:
     build: ../HYDRA-UMC-VISUAL-SERVOING-API
-    image: hydra-umc-visual-servoing-api:1.0.0
+    image: hydra-umc-visual-servoing-api:latest
     container_name: hydra-umc-visual-servoing-api
     ports:
-      - "50052:50052"                  # gRPC: closed-loop pose-correction feed - still future work, see main.py's own docstring
+      - "8116:8116"                    # HTTP API; the gRPC pose-correction feed is still future work
     # Turns Hailo-8 visual feedback into real-time kinematic pose
     # corrections consumed by the HYDRA-UMC core (STM32H745). Real HTTP
-    # API (stdlib http.server) on 8091 today, matching the real CM5
+    # API (stdlib http.server) on 8116 today, matching the real CM5
     # systemd unit - the gRPC feed above is the aspirational future path
     # this repo's own README/main.py docstring already name as not built yet.

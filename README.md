@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/License-GPL%203.0-blue.svg" alt="GPL 3.0">
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="26 TOPS">
-  <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf-yellow.svg" alt="gRPC">
+  <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf%20(planned)-lightgrey.svg" alt="gRPC">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Functional v0 stage">
 </p>
 
@@ -43,6 +43,8 @@ This project is the **integration parent** of the Vision AI Node family: it does
 * 🧩 **Why it exists:** without a dedicated node, perception work would either overload the STM32H745 real-time core inside [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (which has no spare cycles for it) or force every camera frame over the wire to a remote GPU, adding latency the safety loop cannot afford. Running it on CM5 + Hailo-8, physically next to the robot, keeps the detect → correct → (if needed) E-STOP loop local and fast.
 
 **Honesty check - what actually runs today:** bare invocation still prints identity/version/role, but there is now a real `family-status [--workspace PATH]` subcommand: it reads `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API`'s own real manifests from a local checkout and reports what it honestly finds. None of the Hailo-8 runtime, the gRPC control API, or real child supervision exists yet - they are the reason this project exists, not something it currently does. See [`CHANGELOG.md`](CHANGELOG.md) for exactly what has shipped so far, and the "Current Status & Next Steps" section below for what is still open.
+
+**API limits:** `POST /validate-frame` refuses frames above 8192x8192x4 or 64 MiB (and non-positive sizes) before reading the body, and `?workspace=` may only point inside the workspace the server was started with. In a container the workspace comes from `HYDRA_UMC_WORKSPACE` (mount the sibling checkouts read-only at `/workspace`, as `docker-compose.yml` does). The systemd unit keeps the real `/dev` so that the camera and accelerator probes work, limiting devices with `DevicePolicy=closed` instead of `PrivateDevices`.
 
 ---
 
@@ -145,7 +147,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Virtual environment** — creates `.venv/` if it does not already exist (safe to re-run; an existing `.venv/` is reused, not recreated).
 3. **Editable install (with dev extras)** — `pip install -e ".[dev]"` installs this package into `.venv` in "editable" mode, so source edits under `src/` take effect immediately without reinstalling, pulls in `pytest`, and registers the `hydra-umc-vision-node` console entry point used by `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` byte-compiles every `.py` file under `src/`, catching syntax errors across the whole package even in files never actually imported by `main.py`.
-5. **Real test suite** — `pytest tests/` runs all 61 tests.
+5. **Real test suite** — `pytest tests/` runs all 66 tests.
 
 The script uses `set -euo pipefail` and stops at the first failing step, printing `== Build OK ==` only if every step succeeded.
 
@@ -158,7 +160,7 @@ Locates the Python interpreter inside `.venv` (handles both the POSIX `.venv/bin
 Bare invocation prints name + version + role:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.1
+HYDRA-UMC-VISION-NODE v0.1.2
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 

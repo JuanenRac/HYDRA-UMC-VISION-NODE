@@ -3,10 +3,10 @@
 We welcome contributions to the high-speed perception engine of the HYDRA-UMC platform.
 
 ## Technology Stack
-- **Language**: Python 3.12, C++20.
-- **Hardware**: Raspberry Pi CM5 (BCM2712), Hailo-8 M.2 AI Accelerator.
-- **Frameworks**: HailoRT, GStreamer, gRPC, Protobuf.
-- **Environment**: Linux (Ubuntu 22.04 / Raspberry Pi OS).
+- **Language**: Python 3.10 or newer, standard library only (no runtime dependencies).
+- **Tests**: `pytest tests/`, plus `python tools/ci_validate.py` before every push.
+- **Hardware** (planned, not driven by this repository yet): Raspberry Pi CM5 and a Hailo-8 M.2 accelerator; HailoRT, GStreamer and gRPC belong to the child projects and to future work.
+- **Environment**: Linux (Raspberry Pi OS) or Windows for development.
 
 ## Guidelines
 1. **Model Optimization**: Ensure all HEF models are quantized and optimized for Hailo-8.

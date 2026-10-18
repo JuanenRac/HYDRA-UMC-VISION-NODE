@@ -23,7 +23,7 @@ from urllib.parse import parse_qs, urlparse
 import json
 
 from .family import check_family_status
-from .frame import FrameSpec, validate_frame
+from .frame import MAX_CHANNELS, MAX_DIMENSION, MAX_FRAME_BYTES, FrameSpec, validate_frame
 from .hardware import accelerator_available, active_stages, camera_available, determine_mode
 from .pipeline import build_manifest, manifest_to_dict
 
@@ -85,7 +85,19 @@ class Handler(BaseHTTPRequestHandler):
             _write_error(self, 404, "not found")
 
     def _handle_family_status(self, params: dict[str, str]) -> None:
-        workspace = Path(params["workspace"]) if "workspace" in params else self.server.workspace
+        workspace = self.server.workspace
+        if "workspace" in params:
+            # A client may only look at a folder inside the workspace the
+            # server was started with, never at an arbitrary path.
+            requested = Path(params["workspace"])
+            try:
+                inside = requested.resolve().is_relative_to(self.server.workspace.resolve())
+            except OSError:
+                inside = False
+            if not inside:
+                _write_error(self, 400, "workspace must be inside the workspace this server was started with")
+                return
+            workspace = requested
         statuses = check_family_status(workspace)
         missing = [s.name for s in statuses if not s.present]
         _write_json(self, 200, {
@@ -156,7 +168,19 @@ class Handler(BaseHTTPRequestHandler):
         # need to be, so that is the bound. One extra byte of slack is
         # enough to still report an oversized frame as `size_mismatch`
         # below instead of silently truncating it.
-        max_acceptable = spec.expected_bytes + 1
+        # A spec that is non-positive or beyond the node's limits has no
+        # honest body at all: refuse it before reading anything (a negative
+        # width times a negative height used to give a huge positive size).
+        spec_is_sane = (
+            0 < width <= MAX_DIMENSION and 0 < height <= MAX_DIMENSION and 0 < channels <= MAX_CHANNELS
+        )
+        if not spec_is_sane:
+            _write_error(
+                self, 400,
+                f"width and height must be between 1 and {MAX_DIMENSION} and channels between 1 and {MAX_CHANNELS}",
+            )
+            return
+        max_acceptable = min(spec.expected_bytes + 1, MAX_FRAME_BYTES)
         if length < 0 or length > max_acceptable:
             # Same reasoning as HYDRA-UMC-ANOMALY-DETECTOR's own body cap:
             # draining a bounded amount of an over-limit request before
@@ -165,14 +189,14 @@ class Handler(BaseHTTPRequestHandler):
             # closes the connection.
             drain_cap = max_acceptable * 4
             if 0 <= length <= drain_cap:
-                self.rfile.read(length)
+                _read_exactly(self.rfile, length)
             _write_error(
                 self, 400,
                 f"request body must contain at most {max_acceptable} bytes "
                 f"for a {width}x{height}x{channels} frame",
             )
             return
-        data = self.rfile.read(length) if length > 0 else b""
+        data = _read_exactly(self.rfile, length) if length > 0 else b""
 
         issues = validate_frame(data, spec)
         _write_json(self, 200, {
@@ -181,6 +205,19 @@ class Handler(BaseHTTPRequestHandler):
             "actualBytes": len(data),
             "issues": [asdict(i) for i in issues],
         })
+
+
+def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
+    """Reads `length` bytes in bounded chunks (stops early if the client closes)."""
+    parts: list[bytes] = []
+    remaining = length
+    while remaining > 0:
+        block = rfile.read(min(chunk, remaining))
+        if not block:
+            break
+        parts.append(block)
+        remaining -= len(block)
+    return b"".join(parts)
 
 
 class VisionNodeServer(ThreadingHTTPServer):

@@ -58,8 +58,12 @@ def test_family_status_missing_children(tmp_path: Path, capsys: pytest.CaptureFi
 
 
 def test_pipeline_status_prints_real_json_and_reports_actual_hardware(
-    capsys: pytest.CaptureFixture[str],
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # The answer must not depend on the machine running the test (a laptop
+    # with a webcam, or the CM5 itself): pretend there is no hardware.
+    monkeypatch.setattr("hydra_umc_vision_node.main.camera_available", lambda: False)
+    monkeypatch.setattr("hydra_umc_vision_node.main.accelerator_available", lambda: False)
     exit_code = main(["pipeline-status"])
 
     captured = capsys.readouterr()

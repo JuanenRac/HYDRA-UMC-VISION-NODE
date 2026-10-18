@@ -283,7 +283,11 @@ $ hydra-umc-vision-node serve --port 8094
 | `/validate-frame` | `POST` | `width`, `height` (required), `channels` (optional, default `3`) | Same check as the `validate-frame` subcommand, but the raw frame bytes travel as the request body instead of a local file path — the only thing a real remote caller can hand this server. |
 | `/stats` | `GET` | — | Reports the server's own default workspace path. |
 
+`?workspace=` on `/family-status` may only point inside the workspace the server was started with (`400` otherwise), and `POST /validate-frame` answers `400` for a non-positive size or one above 8192x8192x4 / 64 MiB before reading the body.
+
 `GET /family-status` (all 4 children present, same real checkout as the CLI example above):
+
+(Example output: the child versions shown depend on the checkout it was captured from.)
 
 ```
 $ curl http://127.0.0.1:8094/family-status

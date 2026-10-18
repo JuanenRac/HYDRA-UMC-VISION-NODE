@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="26 TOPS">
-  <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf-yellow.svg" alt="gRPC">
+  <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf%20(planned)-lightgrey.svg" alt="gRPC">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Functional v0 stage">
 </p>
 
@@ -50,6 +50,8 @@ Raspberry Pi Compute Module 5 上，并搭配 Hailo-8 M.2 AI 加速器，其预�
 API 或真实的子节点监督逻辑目前均尚未实现——它们是本项目存在的原因，而非
 当前已完成的工作。具体已交付内容请参见 [`CHANGELOG.md`](CHANGELOG.md)，
 尚待完成的内容请参见下方"当前状态与后续步骤"章节。
+
+**API 限制：** `POST /validate-frame` 会在读取请求体之前拒绝大于 8192x8192x4 或 64 MiB 的帧（以及非正数尺寸），`?workspace=` 只能指向服务器启动时所用工作区的内部。在容器中，工作区来自 `HYDRA_UMC_WORKSPACE`（像 `docker-compose.yml` 那样把同级仓库以只读方式挂载到 `/workspace`）。systemd 单元保留真实的 `/dev`，以便摄像头和加速器探测正常工作，并用 `DevicePolicy=closed` 而不是 `PrivateDevices` 限制设备。
 
 ---
 
@@ -162,7 +164,7 @@ HYDRA-UMC-VISION-NODE/
 2. **虚拟环境** —— 若 `.venv/` 尚不存在则创建它（可安全重复运行；已存在的 `.venv/` 会被复用，而非重新创建）。
 3. **可编辑安装（含 dev 附加依赖）** —— `pip install -e ".[dev]"` 以"可编辑"模式将本包安装到 `.venv` 中，因此对 `src/` 下源代码的修改会立即生效而无需重新安装，安装 `pytest`，并注册 `run.sh` 所使用的 `hydra-umc-vision-node` 控制台入口点。
 4. **编译检查** —— `python -m compileall -q src` 对 `src/` 下的每个 `.py` 文件进行字节码编译，即使某个文件从未被 `main.py` 实际导入，也能捕获整个包中的语法错误。
-5. **真实测试套件** —— `pytest tests/` 运行全部 61 个测试。
+5. **真实测试套件** —— `pytest tests/` 运行全部 66 个测试。
 
 脚本使用 `set -euo pipefail`，在第一个失败步骤处停止，只有全部步骤
 均成功时才打印 `== Build OK ==`。
@@ -178,7 +180,7 @@ Windows 风格的 `.venv/Scripts/python.exe` 目录结构，因为本仓库是�
 无参数调用会打印名称 + 版本 + 角色：
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.1
+HYDRA-UMC-VISION-NODE v0.1.2
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 

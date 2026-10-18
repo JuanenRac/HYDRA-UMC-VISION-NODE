@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -43,7 +44,9 @@ ROLE = (
 # is this repo's own root, and one more level up is the workspace that
 # holds it as a sibling of the other ecosystem repos.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_DEFAULT_WORKSPACE = _REPO_ROOT.parent
+# An installed (non-editable) package lives in site-packages, where "two parents
+# up" is meaningless, so HYDRA_UMC_WORKSPACE (set by the container image) wins.
+_DEFAULT_WORKSPACE = Path(os.environ.get("HYDRA_UMC_WORKSPACE") or _REPO_ROOT.parent)
 
 
 def get_version() -> str:
@@ -125,6 +128,8 @@ def _run_validate_frame(path: Path, width: int, height: int, channels: int) -> i
 
 
 def _run_serve(addr: str, port: int, workspace: Path) -> int:
+    if not workspace.is_dir():
+        print(f"[vision-node] warning: workspace {workspace} is not a directory - every child will report as missing", file=sys.stderr)
     server = VisionNodeServer((addr, port), workspace)
     print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace})")
     print("[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats")

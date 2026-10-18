@@ -20,6 +20,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+# Largest frame this node will accept over HTTP or describe in a spec. A
+# declared size above these limits is refused before any body is read.
+MAX_DIMENSION = 8192
+MAX_CHANNELS = 4
+MAX_FRAME_BYTES = 64 * 1024 * 1024
+
+
 @dataclass(frozen=True)
 class FrameSpec:
     """The expected shape of one frame - what `capture` in pipeline.py
@@ -58,6 +65,15 @@ def validate_frame(data: bytes, spec: FrameSpec) -> list[FrameValidationIssue]:
             FrameValidationIssue(
                 "invalid_spec",
                 f"FrameSpec has non-positive dimensions: {spec.width}x{spec.height}x{spec.channels}",
+            )
+        )
+        return issues
+    if spec.width > MAX_DIMENSION or spec.height > MAX_DIMENSION or spec.channels > MAX_CHANNELS:
+        issues.append(
+            FrameValidationIssue(
+                "invalid_spec",
+                f"FrameSpec is larger than this node accepts (at most {MAX_DIMENSION}x{MAX_DIMENSION}x{MAX_CHANNELS}): "
+                f"{spec.width}x{spec.height}x{spec.channels}",
             )
         )
         return issues

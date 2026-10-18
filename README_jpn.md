@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="26 TOPS">
-  <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf-yellow.svg" alt="gRPC">
+  <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf%20(planned)-lightgrey.svg" alt="gRPC">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Functional v0 stage">
 </p>
 
@@ -55,6 +55,8 @@ gRPC 制御 API、実際の子プロセス監督ロジックはいずれもま�
 ことではありません。実際に出荷済みの内容は [`CHANGELOG.md`](CHANGELOG.md)
 を、まだ残っている作業は下記の「現在の状況と次のステップ」セクションを
 参照してください。
+
+**API の制限：** `POST /validate-frame` は、8192x8192x4 または 64 MiB を超えるフレーム（および正でないサイズ）を、ボディを読む前に拒否します。`?workspace=` は、サーバー起動時のワークスペースの内側のみを指定できます。コンテナではワークスペースは `HYDRA_UMC_WORKSPACE` から取得されます（`docker-compose.yml` のように、兄弟リポジトリを読み取り専用で `/workspace` にマウントしてください）。systemd ユニットはカメラとアクセラレーターの検出が動作するよう実際の `/dev` を保持し、`PrivateDevices` の代わりに `DevicePolicy=closed` でデバイスを制限します。
 
 ---
 
@@ -173,7 +175,7 @@ HYDRA-UMC-VISION-NODE/
 2. **仮想環境** — `.venv/` がまだ存在しない場合は作成します（再実行しても安全です。既存の `.venv/` は再作成されず再利用されます）。
 3. **Editable インストール（dev エクストラ付き）** — `pip install -e ".[dev]"` は本パッケージを「editable」モードで `.venv` にインストールするため、`src/` 下のソース変更は再インストールなしに即座に反映され、`pytest` がインストールされ、`run.sh` が使用する `hydra-umc-vision-node` コンソールエントリポイントが登録されます。
 4. **コンパイルチェック** — `python -m compileall -q src` は `src/` 下のすべての `.py` ファイルをバイトコンパイルし、`main.py` から一度も実際にインポートされないファイルであっても、パッケージ全体にわたる構文エラーを検出します。
-5. **実際のテストスイート** — `pytest tests/` が全 61 件のテストを実行します。
+5. **実際のテストスイート** — `pytest tests/` が全 66 件のテストを実行します。
 
 スクリプトは `set -euo pipefail` を使用し、最初に失敗したステップで停止
 します。すべてのステップが成功した場合にのみ `== Build OK ==` を
@@ -191,7 +193,7 @@ Windows 形式の `.venv/Scripts/python.exe` の両方のレイアウトに対�
 引数なしで呼び出すと名前 + バージョン + 役割を表示します：
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.1
+HYDRA-UMC-VISION-NODE v0.1.2
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 

@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Lizenz-GPL%203.0-blue.svg" alt="GPL 3.0">
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
   <img src="https://img.shields.io/badge/Leistung-26%20TOPS-green.svg" alt="26 TOPS">
-  <img src="https://img.shields.io/badge/Protokoll-gRPC%20%2F%20Protobuf-yellow.svg" alt="gRPC">
+  <img src="https://img.shields.io/badge/Protokoll-gRPC%20%2F%20Protobuf%20(planned)-lightgrey.svg" alt="gRPC">
   <img src="https://img.shields.io/badge/Stufe-Skelett-lightgrey.svg" alt="Skelettstufe">
 </p>
 
@@ -43,6 +43,8 @@ Dieses Projekt ist der **Integrations-Elternteil** der Vision-AI-Node-Familie: E
 * 🧩 **Warum es existiert:** Ohne einen dedizierten Knoten würde die Wahrnehmungsarbeit den Echtzeitkern STM32H745 in [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) überlasten (der dafür keine freien Zyklen hat) oder jeden Kameraframe zu einer entfernten GPU zwingen, was eine Latenz hinzufügt, die sich die Sicherheitsschleife nicht leisten kann. Der Betrieb auf CM5 + Hailo-8, physisch neben dem Roboter, hält die Schleife Erkennen → Korrigieren → (falls nötig) E-STOP lokal und schnell.
 
 **Ehrlichkeitscheck - was heute wirklich läuft:** Der bloße Aufruf gibt weiterhin Identität/Version/Rolle aus, aber es gibt jetzt drei echte Unterbefehle: `family-status [--workspace PFAD]` (liest die echten, eigenen Manifeste der 4 echten Kinder), `pipeline-status` (sondiert echte Hardware und meldet den echten, ehrlichen Modus - `full`, oder einen ehrlichen degradierten Modus auf einer Maschine ohne Kamera/Hailo-8, wie dieser Entwicklungsmaschine) und `validate-frame <pfad> --width --height` (echte strukturelle Beschädigungsprüfung eines Frame-Puffers). Nichts von der Hailo-8-Laufzeit, der gRPC-Steuerungs-API oder der echten Kind-Überwachung existiert bereits - sie sind der Daseinsgrund dieses Projekts, nicht etwas, das es heute tut. Siehe [`CHANGELOG.md`](CHANGELOG.md) für genau das, was bisher geliefert wurde, und den Abschnitt "Aktueller Status & Nächste Schritte" unten für das, was noch offen ist.
+
+**Grenzen der API:** `POST /validate-frame` weist Frames über 8192x8192x4 oder 64 MiB (und nicht positive Größen) ab, bevor der Body gelesen wird, und `?workspace=` darf nur innerhalb des Workspace zeigen, mit dem der Server gestartet wurde. In einem Container stammt der Workspace aus `HYDRA_UMC_WORKSPACE` (die Schwester-Checkouts schreibgeschützt unter `/workspace` einhängen, wie es `docker-compose.yml` tut). Die systemd-Unit behält das echte `/dev`, damit die Kamera- und Beschleuniger-Prüfungen funktionieren, und begrenzt Geräte mit `DevicePolicy=closed` statt `PrivateDevices`.
 
 ---
 
@@ -145,7 +147,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Virtuelle Umgebung** — erstellt `.venv/`, falls noch nicht vorhanden (sicher erneut auszuführen; ein vorhandenes `.venv/` wird wiederverwendet, nicht neu erstellt).
 3. **Editierbare Installation** — `pip install -e .` installiert dieses Paket im "editierbaren" Modus in `.venv`, sodass Quelländerungen unter `src/` sofort wirksam werden, ohne Neuinstallation, und registriert den von `run.sh` genutzten Konsolen-Einstiegspunkt `hydra-umc-vision-node`.
 4. **Compile-Check** — `python -m compileall -q src` kompiliert jede `.py`-Datei unter `src/` zu Bytecode und findet so Syntaxfehler im gesamten Paket, auch in Dateien, die `main.py` nie tatsächlich importiert.
-5. **Echte Test-Suite** — `pytest tests/` führt alle 61 Tests aus.
+5. **Echte Test-Suite** — `pytest tests/` führt alle 66 Tests aus.
 
 Das Skript verwendet `set -euo pipefail` und stoppt beim ersten fehlschlagenden Schritt; `== Build OK ==` wird nur ausgegeben, wenn alle 5 Schritte erfolgreich waren.
 
@@ -158,7 +160,7 @@ Sucht den Python-Interpreter innerhalb von `.venv` (unterstützt sowohl das POSI
 Der bloße Aufruf gibt Name + Version + Rolle aus:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.1
+HYDRA-UMC-VISION-NODE v0.1.2
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 

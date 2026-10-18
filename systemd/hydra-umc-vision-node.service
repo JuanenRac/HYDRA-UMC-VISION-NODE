@@ -29,7 +29,13 @@ Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
-PrivateDevices=true
+# No PrivateDevices: it hides /dev/video0 and /dev/hailo0, which hardware.py
+# looks for, so the node would always report "degraded". The device policy
+# below keeps the node limited to what it needs instead.
+DevicePolicy=closed
+DeviceAllow=char-video4linux r
+DeviceAllow=/dev/hailo0 r
+SupplementaryGroups=video
 ProtectHome=true
 ProtectSystem=strict
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

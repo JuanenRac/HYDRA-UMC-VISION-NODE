@@ -29,6 +29,9 @@ COPY src ./src
 RUN pip install --no-cache-dir .
 
 RUN useradd --system --create-home --home-dir /home/hydra hydra
+# The folder holding the children's manifests (mount it read-only, see
+# docker-compose.yml): an installed package cannot guess it from its own path.
+ENV HYDRA_UMC_WORKSPACE=/workspace
 USER hydra
 
 EXPOSE 8094
