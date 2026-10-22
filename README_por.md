@@ -128,7 +128,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── build_test.py    # Verificação de compilação sem subir a versão
 │   └── ci_validate.py   # Validação de manifesto/CHANGELOG/documentação usada pelo CI
 ├── pyproject.toml       # Metadados do pacote, dependências, versão ao estilo conta-quilómetros
-├── bump_version.py      # Subida de versão nativa ao estilo conta-quilómetros (executada pelo build.sh/.bat)
+├── bump_version.py      # Subida de versão ao estilo conta-quilómetros (executada só pelo comando `bump` explícito)
 ├── bump_manifest_version.py # Sincroniza a versão do hydra-umc.project.json com a nativa (--sync)
 ├── build.sh / build.bat # venv + instalação editável (extras de desenvolvimento) + verificação de compilação + testes
 ├── run.sh / run.bat     # Executa o ponto de entrada a partir do venv local (reencaminha argumentos)
@@ -155,7 +155,7 @@ HYDRA-UMC-VISION-NODE/
 ./build.sh
 ```
 
-1. **Subida de versão ao estilo conta-quilómetros** — executa o `bump_version.py`, que incrementa o `PATCH` no `pyproject.toml` (transitando para `MINOR`/`MAJOR` segundo a regra acima). Isto acontece em *todas* as compilações, incluindo a que está prestes a executar, por isso espere que a versão suba 1.
+1. **Leitura da versão** - lê e mostra a versão do projeto; compilar nunca a altera (só `python tools/hydra_project_tool.py bump` a sobe).
 2. **Ambiente virtual** — cria o `.venv/` se ainda não existir (seguro voltar a executar; um `.venv/` existente é reutilizado, não recriado).
 3. **Instalação editável (com extras de desenvolvimento)** — o `pip install -e ".[dev]"` instala este pacote no `.venv` em modo "editável", para que as edições em `src/` tenham efeito de imediato sem reinstalar, traz o `pytest` e regista o ponto de entrada de consola `hydra-umc-vision-node` usado pelo `run.sh`.
 4. **Verificação de compilação** — `python -m compileall -q src` compila para bytecode todos os ficheiros `.py` de `src/`, apanhando erros de sintaxe em todo o pacote mesmo em ficheiros nunca importados pelo `main.py`.

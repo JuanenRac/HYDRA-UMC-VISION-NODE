@@ -151,7 +151,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── build_test.py    # バージョンを増やさないビルドチェック
 │   └── ci_validate.py   # CI が使用するマニフェスト/CHANGELOG/ドキュメント検証
 ├── pyproject.toml       # パッケージメタデータ、依存関係、オドメーターバージョン
-├── bump_version.py      # ネイティブバージョンのオドメーター式インクリメント（build.sh/.bat が実行）
+├── bump_version.py      # オドメーター式バージョンインクリメント（明示的な `bump` コマンドのみが実行）
 ├── bump_manifest_version.py # hydra-umc.project.json のバージョンをネイティブ版と同期(--sync)
 ├── build.sh / build.bat # venv + editable インストール（dev エクストラ付き） + コンパイルチェック + テスト
 ├── run.sh / run.bat     # ローカル venv からエントリポイントを実行（引数を転送）
@@ -181,7 +181,7 @@ HYDRA-UMC-VISION-NODE/
 ./build.sh
 ```
 
-1. **オドメーター式バージョンインクリメント** — `bump_version.py` を実行し、`pyproject.toml` 内の `PATCH` を増加させます（上記のオドメーター規則に従って `MINOR`/`MAJOR` に繰り上がります）。これは今から実行しようとしているこのビルドを含め、*毎回*のビルドで発生するため、バージョンが 1 つ上がることを想定してください。
+1. **バージョンの確認** — プロジェクトのバージョンを読み取って表示します。ビルドがバージョンを変更することはありません（上げるのは `python tools/hydra_project_tool.py bump` だけです）。
 2. **仮想環境** — `.venv/` がまだ存在しない場合は作成します（再実行しても安全です。既存の `.venv/` は再作成されず再利用されます）。
 3. **Editable インストール（dev エクストラ付き）** — `pip install -e ".[dev]"` は本パッケージを「editable」モードで `.venv` にインストールするため、`src/` 下のソース変更は再インストールなしに即座に反映され、`pytest` がインストールされ、`run.sh` が使用する `hydra-umc-vision-node` コンソールエントリポイントが登録されます。
 4. **コンパイルチェック** — `python -m compileall -q src` は `src/` 下のすべての `.py` ファイルをバイトコンパイルし、`main.py` から一度も実際にインポートされないファイルであっても、パッケージ全体にわたる構文エラーを検出します。

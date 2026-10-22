@@ -142,7 +142,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── build_test.py    # 不递增版本号的构建检查
 │   └── ci_validate.py   # CI 使用的清单/CHANGELOG/文档校验
 ├── pyproject.toml       # 包元数据、依赖项、里程表版本号
-├── bump_version.py      # 原生版本的里程表式递增（由 build.sh/.bat 运行）
+├── bump_version.py      # 里程表式版本递增（仅由显式 `bump` 命令运行）
 ├── bump_manifest_version.py # 将 hydra-umc.project.json 的版本与原生版本同步(--sync)
 ├── build.sh / build.bat # venv + 可编辑安装（含 dev 附加依赖） + 编译检查 + 测试
 ├── run.sh / run.bat     # 从本地 venv 运行入口点（转发参数）
@@ -171,7 +171,7 @@ HYDRA-UMC-VISION-NODE/
 ./build.sh
 ```
 
-1. **里程表式版本递增** —— 运行 `bump_version.py`，在 `pyproject.toml` 中递增 `PATCH`（按照上述里程表规则进位到 `MINOR`/`MAJOR`）。这在*每次*构建时都会发生，包括你即将运行的这一次，因此版本号预期会上升 1。
+1. **版本读取** —— 读取并显示项目版本；构建绝不会更改它（只有 `python tools/hydra_project_tool.py bump` 才会提升）。
 2. **虚拟环境** —— 若 `.venv/` 尚不存在则创建它（可安全重复运行；已存在的 `.venv/` 会被复用，而非重新创建）。
 3. **可编辑安装（含 dev 附加依赖）** —— `pip install -e ".[dev]"` 以"可编辑"模式将本包安装到 `.venv` 中，因此对 `src/` 下源代码的修改会立即生效而无需重新安装，安装 `pytest`，并注册 `run.sh` 所使用的 `hydra-umc-vision-node` 控制台入口点。
 4. **编译检查** —— `python -m compileall -q src` 对 `src/` 下的每个 `.py` 文件进行字节码编译，即使某个文件从未被 `main.py` 实际导入，也能捕获整个包中的语法错误。

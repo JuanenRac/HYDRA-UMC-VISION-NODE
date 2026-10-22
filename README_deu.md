@@ -95,7 +95,7 @@ Keines der 5 Projekte trägt einen `hardware/`- oder `firmware/`-Ordner: CM5 + H
 ### In diesem Skelett bereits getroffene Designentscheidungen
 
 * **Die Version wird aus den Metadaten des installierten Pakets gelesen, nicht fest codiert.** `main.py` ruft `importlib.metadata.version("hydra-umc-vision-node")` auf, statt eine zweite `__version__`-Zeichenkette irgendwo im Paket zu pflegen. Das bedeutet, `bump_version.py` hat nur eine Stelle zu bearbeiten (`pyproject.toml`), und die ausgegebene Version kann nie stillschweigend davon abweichen.
-* **Der "Kilometerzähler"-Bump berührt automatisch nur `PATCH`/`MINOR`.** `bump_version.py` erhöht `PATCH` bei jedem echten Build, mit Übertrag auf `MINOR` über 9 hinaus, und von `MINOR` auf `MAJOR` über 9 hinaus - erhöht aber niemals `MAJOR` selbst. `MAJOR` ist eine bewusste menschliche, semantische Entscheidung (ein echter Architektur-Meilenstein), keine Sache, die ein Build-Skript allein entscheiden sollte. Dies ist dieselbe Konvention, die bereits im übrigen Ökosystem verwendet wird (siehe `HYDRA-UMC-EDITOR-URDF/bump_version.py` und `HYDRA-UMC-SUITE/bump_version.py`).
+* **Der "Kilometerzähler"-Bump berührt automatisch nur `PATCH`/`MINOR`.** `bump_version.py` erhöht `PATCH` bei jedem Bump, mit Übertrag auf `MINOR` über 9 hinaus, und von `MINOR` auf `MAJOR` über 9 hinaus - erhöht aber niemals `MAJOR` selbst. `MAJOR` ist eine bewusste menschliche, semantische Entscheidung (ein echter Architektur-Meilenstein), keine Sache, die ein Build-Skript allein entscheiden sollte. Dies ist dieselbe Konvention, die bereits im übrigen Ökosystem verwendet wird (siehe `HYDRA-UMC-EDITOR-URDF/bump_version.py` und `HYDRA-UMC-SUITE/bump_version.py`).
 * **gRPC/Protobuf statt REST für die geplante Steuerungs-API** (siehe Badge oben) - gewählt, weil die Schleife Wahrnehmung → Korrektur → Firmware, in der dieser Knoten lebt, latenzempfindlich ist und mit anderen Python-/Embedded-Diensten im selben LAN spricht, wo das binäre Framing und die Streaming-Unterstützung von gRPC besser passen als JSON über HTTP. Noch nicht implementiert; hier dokumentiert, damit die Richtung klar ist, bevor der Code kommt.
 * **`family-status` liest das eigene Manifest jedes Kindes statt einer manuell gepflegten Liste.** `hydra-umc.project.json` ist bereits die einzige Quelle der Wahrheit, der das Dashboard/der Updater des Ökosystems vertrauen - eine zweite Liste hier würde in dem Moment abdriften, in dem sich die echte Reife eines Kindes ändert und niemand daran denkt, sie zu aktualisieren.
 * **Ein fehlender Geschwister-Checkout ist ein echtes, ehrliches „nicht gefunden", kein Absturz.** Ein Integrations-Parent kann wirklich nicht wissen, ob ein Entwickler alle 4 Kinder lokal ausgecheckt hat - `manifest.py` gibt für jeden echten Fehlerfall (fehlendes Repo, fehlende Datei, fehlerhaftes JSON) `None` zurück, sodass `family-status` es klar melden kann, statt eine Exception auszulösen.
@@ -128,7 +128,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── build_test.py    # Nicht-versionierender Build-Check
 │   └── ci_validate.py   # Manifest/CHANGELOG/Docs-Validierung, von CI genutzt
 ├── pyproject.toml       # Paketmetadaten, Abhängigkeiten, Kilometerzähler-Version
-├── bump_version.py      # Native Kilometerzähler-artige Versions-Bump (build.sh/.bat)
+├── bump_version.py      # Versionserhöhung im Kilometerzähler-Stil (nur vom expliziten `bump`-Befehl ausgeführt)
 ├── bump_manifest_version.py # Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)
 ├── build.sh / build.bat # venv + editierbare Installation + Compile-Check
 ├── run.sh / run.bat     # Führt den Einstiegspunkt aus dem lokalen venv aus
@@ -155,7 +155,7 @@ HYDRA-UMC-VISION-NODE/
 ./build.sh
 ```
 
-1. **Kilometerzähler-Versions-Bump** — führt `bump_version.py` aus, das `PATCH` in `pyproject.toml` erhöht (mit Übertrag auf `MINOR`/`MAJOR` nach obiger Regel). Dies geschieht bei *jedem* Build, einschließlich diesem, den Sie gleich ausführen, erwarten Sie also, dass die Version um 1 steigt.
+1. **Versionsprüfung** - liest und zeigt die Projektversion an; Bauen ändert sie nie (nur `python tools/hydra_project_tool.py bump` erhöht sie).
 2. **Virtuelle Umgebung** — erstellt `.venv/`, falls noch nicht vorhanden (sicher erneut auszuführen; ein vorhandenes `.venv/` wird wiederverwendet, nicht neu erstellt).
 3. **Editierbare Installation** — `pip install -e .` installiert dieses Paket im "editierbaren" Modus in `.venv`, sodass Quelländerungen unter `src/` sofort wirksam werden, ohne Neuinstallation, und registriert den von `run.sh` genutzten Konsolen-Einstiegspunkt `hydra-umc-vision-node`.
 4. **Compile-Check** — `python -m compileall -q src` kompiliert jede `.py`-Datei unter `src/` zu Bytecode und findet so Syntaxfehler im gesamten Paket, auch in Dateien, die `main.py` nie tatsächlich importiert.
