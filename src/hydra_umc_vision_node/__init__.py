@@ -12,9 +12,12 @@ for how the 4 children are meant to be wired together once each one ships a
 real container image.
 
 Being the integration parent is also why this is the one project of the 5
-that carries an `os/` (shared HydraOS image for the CM5 host) and a
+that reserves an `os/` (shared HydraOS image for the CM5 host) and a
 `models/` folder (compiled .hef models served to the Hailo-8 NPU): both are
-resources the 4 children consume rather than own individually. Conversely,
+resources the 4 children consume rather than own individually. They are
+populated at deployment and are not in version control: no image or model is
+versioned here, and on the CM5 the models live where DETECTION-HEF's service
+installs them. Conversely,
 there is no `hardware/` or `firmware/` folder here at all - CM5 + Hailo-8 is
 off-the-shelf hardware with no board or auxiliary microcontroller of this
 project's own to design.
