@@ -38,6 +38,7 @@
 
 Questo progetto è il **genitore di integrazione** della famiglia Vision AI Node: non fa tutto questo lavoro da solo, è il nodo a cui si collegano i 4 figli specializzati sotto, ciascuno con una singola responsabilità:
 
+* 🔑 **Token Bearer opzionale:** su loopback l'API non richiede token; fuori dal loopback rifiuta di avviarsi senza (`--token-file` o `HYDRA_UMC_VISION_NODE_TOKEN`). Con un token impostato, ogni richiesta deve inviare `Authorization: Bearer <token>` (confronto a tempo costante); solo `GET /stats`, il percorso di salute del manifesto, resta aperto. *(implementato)*
 * **[HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER)** — cattura e pre-elabora i flussi camera consumati da questo nodo.
 * **[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)** — compila e versiona i modelli `.hef` che questo nodo carica sulla sua NPU Hailo-8.
 * **[HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES)** — è pensato per trasformare la percezione di questo nodo in rilevamento di intrusioni e richieste di E-STOP (solo logica v0; nessun rilevatore la alimenta ancora).
@@ -159,7 +160,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Ambiente virtuale** — crea `.venv/` se non esiste già (sicuro da rieseguire; un `.venv/` esistente viene riutilizzato, non ricreato).
 3. **Installazione editabile** — `pip install -e .` installa questo pacchetto in `.venv` in modalità "editabile", quindi le modifiche al codice sotto `src/` hanno effetto immediato senza reinstallare, e registra l'entry point da console `hydra-umc-vision-node` usato da `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` compila in bytecode ogni file `.py` sotto `src/`, individuando errori di sintassi in tutto il pacchetto anche in file mai realmente importati da `main.py`.
-5. **Suite di test reale** — `pytest tests/` esegue tutti i 66 test.
+5. **Suite di test reale** — `pytest tests/` esegue tutti i 74 test.
 
 Lo script usa `set -euo pipefail` e si ferma al primo passo che fallisce, stampando `== Build OK ==` solo se tutti e 5 i passi hanno avuto successo.
 

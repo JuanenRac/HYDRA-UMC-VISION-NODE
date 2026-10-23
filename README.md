@@ -38,6 +38,7 @@ It is meant to act as the "reflexes" of the system: object tracking, defect insp
 
 This project is the **integration parent** of the Vision AI Node family: it does not do all of that work itself, it is the node that the 4 specialized children below plug into, each one owning a single responsibility:
 
+* 🔑 **Optional Bearer token:** on loopback the API needs no token; away from loopback it refuses to start without one (`--token-file` or `HYDRA_UMC_VISION_NODE_TOKEN`). With a token set, every request must send `Authorization: Bearer <token>` (constant-time comparison); only `GET /stats`, the health path of the manifest, stays open. *(implemented)*
 * **[HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER)** — captures and pre-processes the camera feeds this node consumes.
 * **[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)** — compiles and versions the `.hef` models this node loads onto its Hailo-8 NPU.
 * **[HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES)** — is meant to turn this node's perception into intrusion detection and E-STOP requests (v0 logic only; no detector feeds it yet).
@@ -159,7 +160,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Virtual environment** — creates `.venv/` if it does not already exist (safe to re-run; an existing `.venv/` is reused, not recreated).
 3. **Editable install (with dev extras)** — `pip install -e ".[dev]"` installs this package into `.venv` in "editable" mode, so source edits under `src/` take effect immediately without reinstalling, pulls in `pytest`, and registers the `hydra-umc-vision-node` console entry point used by `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` byte-compiles every `.py` file under `src/`, catching syntax errors across the whole package even in files never actually imported by `main.py`.
-5. **Real test suite** — `pytest tests/` runs all 66 tests.
+5. **Real test suite** — `pytest tests/` runs all 74 tests.
 
 The script uses `set -euo pipefail` and stops at the first failing step, printing `== Build OK ==` only if every step succeeded.
 

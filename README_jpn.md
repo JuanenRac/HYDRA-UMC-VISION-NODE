@@ -43,6 +43,7 @@ Raspberry Pi Compute Module 5 に Hailo-8 M.2 AI アクセラレーターを組�
 それ自体がすべての作業を行うのではなく、以下の 4 つの専門子プロジェクトが
 接続される先のノードであり、それぞれが単一の責任を担います：
 
+* 🔑 **任意の Bearer トークン：** ループバックでは API にトークンは不要で、ループバック以外ではトークンなしでは起動しません（`--token-file` または `HYDRA_UMC_VISION_NODE_TOKEN`）。トークンを設定すると、すべてのリクエストが `Authorization: Bearer <token>` を送る必要があります（一定時間での比較）。マニフェストのヘルスパスである `GET /stats` だけは開いたままです。*(実装済み)*
 * **[HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER)** — 本ノードが消費するカメラフィードをキャプチャし前処理します。
 * **[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)** — 本ノードがその Hailo-8 NPU にロードする `.hef` モデルをコンパイルしバージョン管理します。
 * **[HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES)** — このノードの知覚を侵入検知と E-STOP 要求に変換することを目指す(v0 ロジックのみ。検出器はまだ接続されていない)。
@@ -185,7 +186,7 @@ HYDRA-UMC-VISION-NODE/
 2. **仮想環境** — `.venv/` がまだ存在しない場合は作成します（再実行しても安全です。既存の `.venv/` は再作成されず再利用されます）。
 3. **Editable インストール（dev エクストラ付き）** — `pip install -e ".[dev]"` は本パッケージを「editable」モードで `.venv` にインストールするため、`src/` 下のソース変更は再インストールなしに即座に反映され、`pytest` がインストールされ、`run.sh` が使用する `hydra-umc-vision-node` コンソールエントリポイントが登録されます。
 4. **コンパイルチェック** — `python -m compileall -q src` は `src/` 下のすべての `.py` ファイルをバイトコンパイルし、`main.py` から一度も実際にインポートされないファイルであっても、パッケージ全体にわたる構文エラーを検出します。
-5. **実際のテストスイート** — `pytest tests/` が全 66 件のテストを実行します。
+5. **実際のテストスイート** — `pytest tests/` が全 74 件のテストを実行します。
 
 スクリプトは `set -euo pipefail` を使用し、最初に失敗したステップで停止
 します。すべてのステップが成功した場合にのみ `== Build OK ==` を

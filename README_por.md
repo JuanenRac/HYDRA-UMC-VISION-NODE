@@ -38,6 +38,7 @@ Destina-se a ser os «reflexos» do sistema: seguimento de objetos, inspeção d
 
 Este projeto é o **pai de integração** da família do Nó de IA de Visão: não faz ele próprio todo esse trabalho, é o nó a que os 4 filhos especializados abaixo se ligam, cada um com uma única responsabilidade:
 
+* 🔑 **Token Bearer opcional:** em loopback a API não precisa de token; fora do loopback recusa-se a arrancar sem um (`--token-file` ou `HYDRA_UMC_VISION_NODE_TOKEN`). Com um token definido, todo o pedido tem de enviar `Authorization: Bearer <token>` (comparação em tempo constante); só `GET /stats`, o caminho de saúde do manifesto, fica aberto. *(implementado)*
 * **[HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER)** — capta e pré-processa os fluxos das câmaras que este nó consome.
 * **[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)** — compila e versiona os modelos `.hef` que este nó carrega na sua NPU Hailo-8.
 * **[HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES)** — destina-se a transformar a perceção deste nó em deteção de intrusão e pedidos de E-STOP (só lógica v0; nenhum detetor a alimenta ainda).
@@ -159,7 +160,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Ambiente virtual** — cria o `.venv/` se ainda não existir (seguro voltar a executar; um `.venv/` existente é reutilizado, não recriado).
 3. **Instalação editável (com extras de desenvolvimento)** — o `pip install -e ".[dev]"` instala este pacote no `.venv` em modo "editável", para que as edições em `src/` tenham efeito de imediato sem reinstalar, traz o `pytest` e regista o ponto de entrada de consola `hydra-umc-vision-node` usado pelo `run.sh`.
 4. **Verificação de compilação** — `python -m compileall -q src` compila para bytecode todos os ficheiros `.py` de `src/`, apanhando erros de sintaxe em todo o pacote mesmo em ficheiros nunca importados pelo `main.py`.
-5. **Suite de testes real** — `pytest tests/` executa todos os 66 testes.
+5. **Suite de testes real** — `pytest tests/` executa todos os 74 testes.
 
 O script usa `set -euo pipefail` e pára no primeiro passo que falhar, imprimindo `== Build OK ==` apenas se todos os passos tiverem êxito.
 

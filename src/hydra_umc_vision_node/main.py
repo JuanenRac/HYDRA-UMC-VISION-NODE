@@ -27,6 +27,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
+from .access import bind_problem, load_token
 from .api import VisionNodeServer
 from .family import check_family_status
 from .frame import FrameSpec, validate_frame
@@ -127,11 +128,20 @@ def _run_validate_frame(path: Path, width: int, height: int, channels: int) -> i
     return 1
 
 
-def _run_serve(addr: str, port: int, workspace: Path) -> int:
+def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None) -> int:
+    try:
+        token = load_token(token_file)
+    except ValueError as error:
+        print(f"[vision-node] error: {error}", file=sys.stderr)
+        return 2
+    problem = bind_problem(addr, token)
+    if problem:
+        print(f"[vision-node] error: {problem}", file=sys.stderr)
+        return 2
     if not workspace.is_dir():
         print(f"[vision-node] warning: workspace {workspace} is not a directory - every child will report as missing", file=sys.stderr)
-    server = VisionNodeServer((addr, port), workspace)
-    print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace})")
+    server = VisionNodeServer((addr, port), workspace, token)
+    print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace}; {'Bearer token required' if token else 'no token, loopback only'})")
     print("[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats")
     try:
         server.serve_forever()
@@ -178,6 +188,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve_parser.add_argument("--addr", default="127.0.0.1", help="address to bind the HTTP API to")
     serve_parser.add_argument("--port", type=int, default=8094, help="port for the HTTP API")
+    serve_parser.add_argument("--token-file", default=None, help="file with the bearer token every request must present (or the HYDRA_UMC_VISION_NODE_TOKEN environment variable). Needed to bind an address that is not loopback.")
     serve_parser.add_argument(
         "--workspace",
         type=Path,
@@ -199,7 +210,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate-frame":
         return _run_validate_frame(args.path, args.width, args.height, args.channels)
     if args.command == "serve":
-        return _run_serve(args.addr, args.port, args.workspace)
+        return _run_serve(args.addr, args.port, args.workspace, args.token_file)
 
     _print_identity()
     return 0

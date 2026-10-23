@@ -22,6 +22,7 @@ from urllib.parse import parse_qs, urlparse
 
 import json
 
+from .access import authorized, reject
 from .family import check_family_status
 from .frame import MAX_CHANNELS, MAX_DIMENSION, MAX_FRAME_BYTES, FrameSpec, validate_frame
 from .hardware import accelerator_available, active_stages, camera_available, determine_mode
@@ -56,6 +57,10 @@ def _query_params(handler: BaseHTTPRequestHandler) -> dict[str, str]:
     return {key: value[0] for key, value in values.items()}
 
 
+# GET path the project manifest declares as the health probe; it carries no token
+HEALTH_PATH = "/stats"
+
+
 class Handler(BaseHTTPRequestHandler):
     server: "VisionNodeServer"
 
@@ -68,6 +73,10 @@ class Handler(BaseHTTPRequestHandler):
         pass  # quiet by default, same reasoning as this family's other api.py files
 
     def do_GET(self) -> None:  # noqa: N802
+        # the health path of the manifest stays open so the service registry can probe the service without the token
+        if urlparse(self.path).path != HEALTH_PATH and not authorized(self, self.server.token):
+            reject(self)
+            return
         path = urlparse(self.path).path
         try:
             params = _query_params(self)
@@ -123,6 +132,9 @@ class Handler(BaseHTTPRequestHandler):
         })
 
     def do_POST(self) -> None:  # noqa: N802
+        if not authorized(self, self.server.token):
+            reject(self)
+            return
         path = urlparse(self.path).path
         try:
             params = _query_params(self)
@@ -221,6 +233,8 @@ def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
 
 
 class VisionNodeServer(ThreadingHTTPServer):
-    def __init__(self, address: tuple[str, int], workspace: Path) -> None:
+    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "") -> None:
         super().__init__(address, Handler)
+        # empty means no token (loopback only; see access.py)
+        self.token = token
         self.workspace = workspace

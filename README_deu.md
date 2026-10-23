@@ -38,6 +38,7 @@ Er soll als die „Reflexe“ des Systems dienen: Objektverfolgung, Fehlerinspek
 
 Dieses Projekt ist der **Integrations-Elternteil** der Vision-AI-Node-Familie: Es erledigt diese Arbeit nicht selbst, sondern ist der Knoten, an den die 4 spezialisierten Kind-Projekte unten andocken, jedes mit genau einer Verantwortung:
 
+* 🔑 **Optionales Bearer-Token:** auf Loopback braucht die API kein Token; außerhalb von Loopback startet sie ohne eines nicht (`--token-file` oder `HYDRA_UMC_VISION_NODE_TOKEN`). Ist ein Token gesetzt, muss jede Anfrage `Authorization: Bearer <token>` senden (Vergleich in konstanter Zeit); nur `GET /stats`, der Health-Pfad des Manifests, bleibt offen. *(implementiert)*
 * **[HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER)** — erfasst und verarbeitet die Kameraströme vor, die dieser Knoten konsumiert.
 * **[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)** — kompiliert und versioniert die `.hef`-Modelle, die dieser Knoten auf seine Hailo-8-NPU lädt.
 * **[HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES)** — soll die Wahrnehmung dieses Knotens in Eindringungserkennung und E-STOP-Anforderungen umsetzen (nur v0-Logik; noch kein Detektor speist sie).
@@ -159,7 +160,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Virtuelle Umgebung** — erstellt `.venv/`, falls noch nicht vorhanden (sicher erneut auszuführen; ein vorhandenes `.venv/` wird wiederverwendet, nicht neu erstellt).
 3. **Editierbare Installation** — `pip install -e .` installiert dieses Paket im "editierbaren" Modus in `.venv`, sodass Quelländerungen unter `src/` sofort wirksam werden, ohne Neuinstallation, und registriert den von `run.sh` genutzten Konsolen-Einstiegspunkt `hydra-umc-vision-node`.
 4. **Compile-Check** — `python -m compileall -q src` kompiliert jede `.py`-Datei unter `src/` zu Bytecode und findet so Syntaxfehler im gesamten Paket, auch in Dateien, die `main.py` nie tatsächlich importiert.
-5. **Echte Test-Suite** — `pytest tests/` führt alle 66 Tests aus.
+5. **Echte Test-Suite** — `pytest tests/` führt alle 74 Tests aus.
 
 Das Skript verwendet `set -euo pipefail` und stoppt beim ersten fehlschlagenden Schritt; `== Build OK ==` wird nur ausgegeben, wenn alle 5 Schritte erfolgreich waren.
 
