@@ -24,7 +24,7 @@
 
 | | |
 |---|---|
-| 版本 | `0.1.5` |
+| 版本 | `0.1.6` |
 | 成熟度 | 可用 |
 | 技术栈 | Python / CM5 / Hailo-8 |
 | 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
@@ -193,7 +193,7 @@ Windows 风格的 `.venv/Scripts/python.exe` 目录结构，因为本仓库是�
 无参数调用会打印名称 + 版本 + 角色：
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.5
+HYDRA-UMC-VISION-NODE v0.1.6
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 

@@ -24,7 +24,7 @@
 
 | | |
 |---|---|
-| Versione | `0.1.5` |
+| Versione | `0.1.6` |
 | Maturità | Funzionale |
 | Tecnologia | Python / CM5 / Hailo-8 |
 | Destinazione | Il Raspberry Pi CM5 di una cella HYDRA-UMC |
@@ -174,7 +174,7 @@ Individua l'interprete Python dentro `.venv` (gestisce sia il layout POSIX `.ven
 L'invocazione nuda stampa nome + versione + ruolo:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.5
+HYDRA-UMC-VISION-NODE v0.1.6
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
