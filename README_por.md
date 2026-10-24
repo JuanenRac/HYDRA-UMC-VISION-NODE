@@ -30,6 +30,19 @@
 | Destino | O Raspberry Pi CM5 de uma célula HYDRA-UMC |
 | Em hardware real | Ainda não: não há registo de execução em hardware real para esta versão |
 
+## 🚦 Estado do projeto
+
+Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É escrita com o que o repositório consegue demonstrar (testes, compilações, execuções), não com o que está previsto.
+
+🟢 Feito e verificado · 🟡 Funciona, com limites conhecidos · 🟠 Feito a meio ou ainda por verificar · 🔴 Por fazer ou a não funcionar
+
+| Área | Estado | O que significa aqui |
+|---|---|---|
+| Software | 🟡 | Funciona para o seu propósito principal; a verificação de honestidade acima lista o que ainda falta |
+| Testes | 🟠 | Ainda não há registo do número de testes deste repositório |
+| Hardware real | 🔴 | Ainda não: não há registo de execução em hardware real para esta versão |
+| Documentação | 🟢 | README em oito idiomas, verificado contra o manifesto a cada alteração |
+
 ## 1. 🛠️ VISÃO TÉCNICA GERAL
 
 O **HYDRA-UMC-VISION-NODE** é o motor de perceção dedicado do ecossistema HYDRA-UMC. Pensado para correr no Raspberry Pi Compute Module 5 emparelhado com um acelerador de IA Hailo-8 M.2, o seu trabalho previsto é tratar fluxos de vídeo massivos de até 8 câmaras USB 3.0 em simultâneo.
