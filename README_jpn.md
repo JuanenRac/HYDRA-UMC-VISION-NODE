@@ -147,13 +147,17 @@ Vision AI Node ファミリーの 5 つのプロジェクトの中で、本プ�
 ```text
 HYDRA-UMC-VISION-NODE/
 ├── src/hydra_umc_vision_node/
+│   ├── __init__.py       # パッケージの説明とバージョン
 │   ├── manifest.py       # 兄弟プロジェクト自身のマニフェストの実際の防御的リーダー
 │   ├── family.py          # 4 つの実際の子プロジェクトに対する実際のファミリーレディネスチェック
 │   ├── pipeline.py          # 実際の知覚パイプラインマニフェスト（ステージ + ハードウェア要件）
 │   ├── frame.py                # 実際の、ハードウェアに依存しないフレーム破損検証
 │   ├── hardware.py               # 実際のカメラ/アクセラレータ探索 + デグレードモードロジック
 │   ├── api.py                      # シンプルなJSON/HTTPサーフェス(stdlibのhttp.server)。実際の3つのサブコマンドを橋渡し
-│   └── main.py                     # エントリポイント + `family-status`/`pipeline-status`/`validate-frame`
+│   ├── main.py                     # エントリポイント + `family-status`/`pipeline-status`/`validate-frame`
+│   ├── access.py                   # HTTP API 用の任意の Bearer トークン (ループバックでは不要、それ以外では必須)
+│   ├── codes.py                    # 生フレーム内の DataMatrix コードを読む (ピックアンドプレースセル内の基板の識別)
+│   └── compat_record.py            # 検出結果の生成に使ったもの (モデル、バージョン、SHA-256、アーキテクチャ) と、現在も適合するか
 ├── tests/               # 実際のテスト：マニフェスト読み込み、ファミリーステータス、pipeline、frame、hardware、api、CLI
 ├── docs/                # ドキュメントと API リファレンス
 ├── os/                  # HydraOS システムイメージ設定（CM5）——親プロジェクト専用、デプロイ時に配置(gitには含まれない)
@@ -164,7 +168,10 @@ HYDRA-UMC-VISION-NODE/
 │   └── hydra-umc-vision-node.service # ローカルCM5知覚APIのsystemdユニット
 ├── tools/
 │   ├── build_test.py    # バージョンを増やさないビルドチェック
-│   └── ci_validate.py   # CI が使用するマニフェスト/CHANGELOG/ドキュメント検証
+│   ├── ci_validate.py   # CI が使用するマニフェスト/CHANGELOG/ドキュメント検証
+│   ├── _doc_policy.py   # ファミリー共通のドキュメント規則 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   ├── _readme_parity.py # 8つの README が同じ構造であることの検査 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   └── hydra_project_tool.py # すべてのリポジトリで共通のコマンド: validate、test、ci、version、status、bump
 ├── pyproject.toml       # パッケージメタデータ、依存関係、オドメーターバージョン
 ├── bump_version.py      # オドメーター式バージョンインクリメント（明示的な `bump` コマンドのみが実行）
 ├── bump_manifest_version.py # hydra-umc.project.json のバージョンをネイティブ版と同期(--sync)

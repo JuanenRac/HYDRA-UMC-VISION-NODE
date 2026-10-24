@@ -138,13 +138,17 @@ V4L2 设备、通往 HYDRA-UMC 核心的 gRPC 端口）连接在一起。文件�
 ```text
 HYDRA-UMC-VISION-NODE/
 ├── src/hydra_umc_vision_node/
+│   ├── __init__.py       # 包说明与版本
 │   ├── manifest.py       # 真实的、具防御性的兄弟项目自身清单读取器
 │   ├── family.py          # 对 4 个真实子项目的真实家族就绪检查
 │   ├── pipeline.py          # 真实的感知流水线清单（阶段 + 硬件需求）
 │   ├── frame.py                # 真实的、与硬件无关的帧损坏校验
 │   ├── hardware.py               # 真实的摄像头/加速器探测 + 降级模式逻辑
 │   ├── api.py                      # 简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 3 个子命令
-│   └── main.py                     # 入口点 + `family-status`/`pipeline-status`/`validate-frame`
+│   ├── main.py                     # 入口点 + `family-status`/`pipeline-status`/`validate-frame`
+│   ├── access.py                   # HTTP API 的可选 Bearer 令牌 (本机回环无需,非回环时必须)
+│   ├── codes.py                    # 读取一帧原始图像中的 DataMatrix 码 (贴片单元中一块板的身份)
+│   └── compat_record.py            # 一组检测结果由什么产生 (模型、版本、SHA-256、架构) 以及是否仍然适用
 ├── tests/               # 真实测试：清单读取、家族状态、pipeline、frame、hardware、api、CLI
 ├── docs/                # 文档与 API 参考
 ├── os/                  # HydraOS 系统镜像配置（CM5）——仅父项目拥有,部署时填充(不在 git 中)
@@ -155,7 +159,10 @@ HYDRA-UMC-VISION-NODE/
 │   └── hydra-umc-vision-node.service # 本地 CM5 感知 API 的 systemd 单元
 ├── tools/
 │   ├── build_test.py    # 不递增版本号的构建检查
-│   └── ci_validate.py   # CI 使用的清单/CHANGELOG/文档校验
+│   ├── ci_validate.py   # CI 使用的清单/CHANGELOG/文档校验
+│   ├── _doc_policy.py   # 家族共享的文档规则 (HYDRA-UMC-SDK 的副本,保持同步)
+│   ├── _readme_parity.py # 检查八个 README 结构一致 (HYDRA-UMC-SDK 的副本,保持同步)
+│   └── hydra_project_tool.py # 每个仓库相同的命令: validate、test、ci、version、status、bump
 ├── pyproject.toml       # 包元数据、依赖项、里程表版本号
 ├── bump_version.py      # 里程表式版本递增（仅由显式 `bump` 命令运行）
 ├── bump_manifest_version.py # 将 hydra-umc.project.json 的版本与原生版本同步(--sync)

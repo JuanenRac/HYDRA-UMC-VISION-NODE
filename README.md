@@ -124,13 +124,17 @@ None of the 5 projects carries a `hardware/` or `firmware/` folder: CM5 + Hailo-
 ```text
 HYDRA-UMC-VISION-NODE/
 ├── src/hydra_umc_vision_node/
+│   ├── __init__.py       # Package description and version
 │   ├── manifest.py       # Real, defensive reader for a sibling's own manifest
 │   ├── family.py          # Real family-readiness check over the 4 real children
 │   ├── pipeline.py          # Real perception pipeline manifest (stages + hardware needs)
 │   ├── frame.py               # Real hardware-independent frame corruption validation
 │   ├── hardware.py              # Real camera/accelerator probes + degraded-mode logic
 │   ├── api.py                     # Plain JSON/HTTP surface (stdlib http.server) over the 3 real subcommands
-│   └── main.py                    # Entry point + `family-status`/`pipeline-status`/`validate-frame`
+│   ├── main.py                    # Entry point + `family-status`/`pipeline-status`/`validate-frame`
+│   ├── access.py                  # Optional Bearer token for the HTTP API (none needed on loopback, mandatory away from it)
+│   ├── codes.py                   # Reads the DataMatrix codes in one raw frame (the identity of a board in a pick-and-place cell)
+│   └── compat_record.py           # What a set of detections was produced with (model, version, SHA-256, architecture) and whether it still fits
 ├── tests/               # Real tests: manifest reading, family status, pipeline, frame, hardware, api, CLI
 ├── docs/                # Documentation and API reference
 ├── os/                  # HydraOS system image configuration (CM5) - parent-only, deploy-time populated (not in git)
@@ -141,7 +145,10 @@ HYDRA-UMC-VISION-NODE/
 │   └── hydra-umc-vision-node.service # Local CM5 perception API systemd unit
 ├── tools/
 │   ├── build_test.py    # Non-versioning build/compile check
-│   └── ci_validate.py   # Manifest/CHANGELOG/docs validation used by CI
+│   ├── ci_validate.py   # Manifest/CHANGELOG/docs validation used by CI
+│   ├── _doc_policy.py   # Documentation rules shared by the family (a copy of HYDRA-UMC-SDK's, kept in sync)
+│   ├── _readme_parity.py # Check that the eight READMEs share one structure (a copy of HYDRA-UMC-SDK's, kept in sync)
+│   └── hydra_project_tool.py # The same commands in every repository: validate, test, ci, version, status, bump
 ├── pyproject.toml       # Package metadata, dependencies, odometer version
 ├── bump_version.py      # Odometer-style version bump (run only by the explicit `bump` command)
 ├── bump_manifest_version.py # Syncs hydra-umc.project.json's version to the native one (--sync)

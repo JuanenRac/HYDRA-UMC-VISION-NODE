@@ -124,13 +124,17 @@ Nessuno dei 5 progetti contiene cartelle `hardware/` o `firmware/`: CM5 + Hailo-
 ```text
 HYDRA-UMC-VISION-NODE/
 ├── src/hydra_umc_vision_node/
+│   ├── __init__.py       # Descrizione e versione del pacchetto
 │   ├── manifest.py       # Vero lettore difensivo del manifesto di un progetto fratello
 │   ├── family.py          # Vera verifica di prontezza della famiglia sui 4 figli reali
 │   ├── pipeline.py          # Vero manifesto della pipeline di percezione (stadi + esigenze hardware)
 │   ├── frame.py               # Vera validazione di corruzione del frame, indipendente dall'hardware
 │   ├── hardware.py              # Vere sonde fotocamera/acceleratore + logica di modalità degradata
 │   ├── api.py                     # Superficie JSON/HTTP semplice (http.server di stdlib) sui 3 sottocomandi reali
-│   └── main.py                    # Entry point + sottocomandi reali `family-status`/`pipeline-status`/`validate-frame`
+│   ├── main.py                    # Entry point + sottocomandi reali `family-status`/`pipeline-status`/`validate-frame`
+│   ├── access.py                  # Token Bearer facoltativo per l'API HTTP (non serve su loopback, obbligatorio fuori da esso)
+│   ├── codes.py                   # Legge i codici DataMatrix in un fotogramma grezzo (l'identità di una scheda in una cella pick-and-place)
+│   └── compat_record.py           # Con cosa è stato prodotto un insieme di rilevamenti (modello, versione, SHA-256, architettura) e se è ancora valido
 ├── tests/               # Test reali: lettura manifesto, stato famiglia, pipeline, frame, hardware, api, CLI
 ├── docs/                # Documentazione e riferimento API
 ├── os/                  # Configurazione immagine HydraOS (CM5) - solo qui, popolata al deployment (non in git)
@@ -141,7 +145,10 @@ HYDRA-UMC-VISION-NODE/
 │   └── hydra-umc-vision-node.service # Unità systemd della API locale di percezione sulla CM5
 ├── tools/
 │   ├── build_test.py    # Controllo build senza versionamento
-│   └── ci_validate.py   # Validazione manifest/CHANGELOG/docs usata dalla CI
+│   ├── ci_validate.py   # Validazione manifest/CHANGELOG/docs usata dalla CI
+│   ├── _doc_policy.py   # Regole di documentazione condivise dalla famiglia (copia di quella di HYDRA-UMC-SDK, mantenuta sincronizzata)
+│   ├── _readme_parity.py # Verifica che gli otto README abbiano la stessa struttura (copia di quella di HYDRA-UMC-SDK, mantenuta sincronizzata)
+│   └── hydra_project_tool.py # Gli stessi comandi in ogni repository: validate, test, ci, version, status, bump
 ├── pyproject.toml       # Metadati pacchetto, dipendenze, versione contachilometri
 ├── bump_version.py      # Incremento di versione stile contachilometri (eseguito solo dal comando `bump` esplicito)
 ├── bump_manifest_version.py # Sincronizza la versione di hydra-umc.project.json con quella nativa (--sync)
