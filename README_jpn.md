@@ -54,6 +54,7 @@ Raspberry Pi Compute Module 5 に Hailo-8 M.2 AI アクセラレーターを組�
 * 🧩 **ファミリーレディネスチェック（v0）：** 実際の `family-status` サブコマンドが 4 つの実際の子プロジェクトそれぞれの実際の `hydra-umc.project.json` を読み取り、存在/バージョン/成熟度/役割を報告します——自分自身はまだ Hailo-8 ランタイムもカメラパイプラインも動かしていない統合親プロジェクトとして正直な機能です。下記「正直な現状確認」を参照してください。
 * 🩺 **パイプラインマニフェスト、フレーム検証、デグレードモード（v0）：** このノードの知覚パイプラインの形状(どのステージがカメラ、アクセラレータ、あるいはどちらも必要としないか)についての実際の、検査可能なマニフェスト、生のフレームバッファに対する実際の構造的破損チェック、そして実際のカメラ/Hailo-8 ハードウェアを正直に探索し、今どのステージが実際に実行可能かを正確に報告する実際のデグレードモード検出——新しい `pipeline-status` と `validate-frame` サブコマンド経由です。
 * 🌐 **JSON/HTTP API（v0）：** 実際の `serve` サブコマンドが `family-status`/`pipeline-status`/`validate-frame` を HTTP API として公開します（`GET /family-status`、`GET /pipeline-status`、`POST /validate-frame`、加えて `GET /stats`）——CLI サブコマンドが実行するのと全く同じ関数を、追加の依存関係なしに `http.server` の上で動かします。詳しくは下記の「JSON/HTTP API」と [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) を参照してください。
+* 🏷️ **基板コードの読み取り:** `POST /read-code?width=W&height=H&channels=N` は生のフレームをボディとして受け取り(`/validate-frame` と同じ形式)、その中の DataMatrix コードを返します。基板上のコードと作業指示の基板を照合するピックアンドプレースのブリッジ向けです。デコーダーは `pylibdmtx` で、初回使用時にインポートされるオプションの依存関係です。入っていない場合、このルートは `503` を返して何をインストールすべきかを伝え、他のルートには影響しません。コードの文字列には上限があります(印字可能な ASCII、最大 256 文字、最大 16 コード)。模擬デコーダーでテスト済み。実際のラベルでは未検証。*(実装済み)*
 * 🚀 **ハードウェアアクセラレーション（計画中）：** Hailo-8（26 TOPS）上での HEF モデルのネイティブ実行を目標に設計されています——これらのモデルをコンパイルするツールチェーンは別プロジェクト（[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)）であり、本ノード自体が構築するものではありません。
 * 📷 **マルチストリーム処理（計画中）：** [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) が上流でキャプチャした、最大 8 台の高解像度カメラフィードを同時分析します。
 * 🎯 **精密知覚（計画中）：** 産業用部品検出のために YOLO 系アーキテクチャを中心に設計されています。
@@ -273,6 +274,7 @@ run.bat
 |---|---|---|
 | `/family-status` | `GET` | `family-status` サブコマンドと同じです。オプションのクエリパラメータ `?workspace=PATH` はそのリクエストに限りサーバーのデフォルトワークスペースを上書きします。 |
 | `/pipeline-status` | `GET` | `pipeline-status` サブコマンドと同じです。 |
+| `/read-code` | `POST` | ボディとして送られた生フレーム内の DataMatrix コード。`/validate-frame` と同じく `?width=W&height=H` とオプションの `channels`(既定 3)を指定します。`{"codes": [...], "count": N}` を返し、`pylibdmtx` がなければ `503` を返します。 |
 | `/validate-frame` | `POST` | `validate-frame` サブコマンドと同じチェックですが、生のフレームバイト列はサーバー側のファイルパスではなくリクエストボディとして送られます——実際のリモート呼び出し元には、このサーバー自身のファイルシステム上のローカルパスを渡す手段がないためです。`?width=W&height=H` クエリパラメータが必須です（`channels` は省略可、デフォルト `3`）。 |
 | `/stats` | `GET` | サーバーのデフォルトワークスペースのパスを報告します。 |
 

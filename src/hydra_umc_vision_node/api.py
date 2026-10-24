@@ -23,6 +23,7 @@ from urllib.parse import parse_qs, urlparse
 import json
 
 from .access import authorized, reject
+from .codes import DecoderUnavailable, decode_codes, pylibdmtx_decoder
 from .family import check_family_status
 from .frame import MAX_CHANNELS, MAX_DIMENSION, MAX_FRAME_BYTES, FrameSpec, validate_frame
 from .hardware import accelerator_available, active_stages, camera_available, determine_mode
@@ -143,21 +144,54 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/validate-frame":
             self._handle_validate_frame(params)
+        elif path == "/read-code":
+            self._handle_read_code(params)
         else:
             _write_error(self, 404, "not found")
 
+    def _handle_read_code(self, params: dict[str, str]) -> None:
+        """Read the DataMatrix codes of one raw frame: the frame travels as the body, exactly as for /validate-frame."""
+        frame = self._read_frame(params)
+        if frame is None:
+            return
+        spec, data = frame
+        issues = [issue for issue in validate_frame(data, spec) if issue.kind != "uniform_buffer"]
+        if issues:
+            _write_json(self, 400, {"error": "the frame is not valid", "issues": [asdict(i) for i in issues]})
+            return
+        try:
+            codes = decode_codes(data, spec, self.server.code_decoder)
+        except DecoderUnavailable as error:
+            _write_error(self, 503, str(error))
+            return
+        _write_json(self, 200, {"codes": codes, "count": len(codes)})
+
     def _handle_validate_frame(self, params: dict[str, str]) -> None:
+        frame = self._read_frame(params)
+        if frame is None:
+            return
+        spec, data = frame
+        issues = validate_frame(data, spec)
+        _write_json(self, 200, {
+            "valid": not issues,
+            "expectedBytes": spec.expected_bytes,
+            "actualBytes": len(data),
+            "issues": [asdict(i) for i in issues],
+        })
+
+    def _read_frame(self, params: dict[str, str]) -> tuple[FrameSpec, bytes] | None:
+        """The frame spec of the query and the body of the request, or None after the error has been answered."""
         missing = {"width", "height"} - params.keys()
         if missing:
             _write_error(self, 400, f"missing required params: {sorted(missing)}")
-            return
+            return None
         try:
             width = int(params["width"])
             height = int(params["height"])
             channels = int(params.get("channels", "3"))
         except ValueError as e:
             _write_error(self, 400, f"width/height/channels must be integers: {e}")
-            return
+            return None
 
         # FrameSpec itself never raises (frozen dataclass, no __post_init__
         # validation) - a non-positive dimension is reported as a real
@@ -169,7 +203,7 @@ class Handler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
         except ValueError as e:
             _write_error(self, 400, f"Content-Length must be an integer: {e}")
-            return
+            return None
         # This used
         # to read a caller-controlled Content-Length with no upper bound at
         # all before this fix - a lying/oversized header could force
@@ -191,7 +225,7 @@ class Handler(BaseHTTPRequestHandler):
                 self, 400,
                 f"width and height must be between 1 and {MAX_DIMENSION} and channels between 1 and {MAX_CHANNELS}",
             )
-            return
+            return None
         max_acceptable = min(spec.expected_bytes + 1, MAX_FRAME_BYTES)
         if length < 0 or length > max_acceptable:
             # Same reasoning as HYDRA-UMC-ANOMALY-DETECTOR's own body cap:
@@ -207,16 +241,9 @@ class Handler(BaseHTTPRequestHandler):
                 f"request body must contain at most {max_acceptable} bytes "
                 f"for a {width}x{height}x{channels} frame",
             )
-            return
+            return None
         data = _read_exactly(self.rfile, length) if length > 0 else b""
-
-        issues = validate_frame(data, spec)
-        _write_json(self, 200, {
-            "valid": not issues,
-            "expectedBytes": spec.expected_bytes,
-            "actualBytes": len(data),
-            "issues": [asdict(i) for i in issues],
-        })
+        return spec, data
 
 
 def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
@@ -233,8 +260,10 @@ def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
 
 
 class VisionNodeServer(ThreadingHTTPServer):
-    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "") -> None:
+    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder) -> None:
         super().__init__(address, Handler)
+        # reads the DataMatrix codes of a frame (codes.py); replaceable, so the route is tested without the library
+        self.code_decoder = code_decoder
         # empty means no token (loopback only; see access.py)
         self.token = token
         self.workspace = workspace

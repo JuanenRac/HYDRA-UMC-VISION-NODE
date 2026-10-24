@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Reading the code of a board.** `POST /read-code?width=W&height=H&channels=N` takes one raw frame as the body (like `/validate-frame`, with the same size limits, and with the token when there is one) and returns the DataMatrix codes in it as `{"codes": [...], "count": N}`, for the pick-and-place bridge that compares the code on a board with the board of its job. The decoder is `pylibdmtx`, an optional dependency imported on first use: without it the route answers `503` and says what to install, and the rest of the API is unaffected. A code is bounded (printable ASCII, at most 256 characters, at most 16 codes per frame) and a blank frame is read like any other. The reading of the frame body is shared by both routes. Tested with a fake decoder; not tried on a real label.
 - The package description says that `os/` and `models/` are reserved and populated at deployment, not versioned here, like the READMEs already do (it said the project carries them).
 - **Optional Bearer token for the HTTP API.** `serve --token-file FILE` (or `HYDRA_UMC_VISION_NODE_TOKEN`, at least 16 characters) makes every request carry `Authorization: Bearer <token>` (constant-time comparison); only `GET /stats`, the health path of the manifest, stays open. On loopback no token is needed; any other address is refused at start without one.
 - The manifest declares the health route of the service (`/stats`), so the service registry, the ecosystem status of the server and the watchdog know where to probe it.

@@ -52,6 +52,7 @@ Raspberry Pi Compute Module 5 上，并搭配 Hailo-8 M.2 AI 加速器，其预�
 * 🧩 **家族就绪检查（v0）：** 真实的 `family-status` 子命令读取 4 个真实子项目各自真实的 `hydra-umc.project.json`，报告其是否存在/版本/成熟度/角色——对于一个自身尚未运行任何 Hailo-8 运行时或摄像头流水线的集成父项目来说，这是诚实的。详见下方"诚实说明"。
 * 🩺 **流水线清单、帧验证与降级模式（v0）：** 一份真实的、可检视的本节点感知流水线形状清单（哪些阶段需要摄像头、加速器，或两者都不需要），对原始帧缓冲区进行真实的结构性损坏校验，以及真实的降级模式检测——诚实地探测真实的摄像头/Hailo-8 硬件，并准确报告当前哪些阶段真的可以运行——通过新增的 `pipeline-status` 和 `validate-frame` 子命令实现。
 * 🌐 **JSON/HTTP API（v0）：** 真实的 `serve` 子命令将 `family-status`/`pipeline-status`/`validate-frame` 以 HTTP API 的形式对外提供（`GET /family-status`、`GET /pipeline-status`、`POST /validate-frame`，外加 `GET /stats`）——与 CLI 子命令执行的完全是同一批函数，构建在 `http.server` 之上，不引入任何额外依赖。详见下文"JSON/HTTP API"一节以及 [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md)。
+* 🏷️ **读取板卡编码:** `POST /read-code?width=W&height=H&channels=N` 以请求体接收一帧原始图像(与 `/validate-frame` 的形式相同),返回其中的 DataMatrix 编码,供贴片机桥接把板卡上的编码与其作业所指的板卡进行比对。解码器是 `pylibdmtx`,一个首次使用时才导入的可选依赖:没有它时该路由返回 `503` 并说明要安装什么,其他路由不受影响。编码文本有界(可打印 ASCII,最多 256 个字符,最多 16 个编码)。已用模拟解码器测试;尚未在真实标签上试过。*(已实现)*
 * 🚀 **硬件加速（计划中）：** 设计目标是在 Hailo-8（26 TOPS）上原生执行 HEF 模型——编译这些模型的工具链是一个独立项目（[HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF)），并非本节点自身构建。
 * 📷 **多路流处理（计划中）：** 同时分析最多 8 路高分辨率摄像头画面，由 [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) 在上游捕获。
 * 🎯 **精准感知（计划中）：** 围绕 YOLO 系列架构设计，用于工业组件检测。
@@ -256,6 +257,7 @@ run.bat
 |---|---|---|
 | `/family-status` | `GET` | 与 `family-status` 子命令相同。可选查询参数 `?workspace=PATH` 仅针对该次请求覆盖服务器默认的工作区。 |
 | `/pipeline-status` | `GET` | 与 `pipeline-status` 子命令相同。 |
+| `/read-code` | `POST` | 读取作为请求体发送的原始图像中的 DataMatrix 编码,查询参数 `?width=W&height=H` 和可选的 `channels`(默认 3)与 `/validate-frame` 相同;返回 `{"codes": [...], "count": N}`,若未安装 `pylibdmtx` 则返回 `503`。 |
 | `/validate-frame` | `POST` | 与 `validate-frame` 子命令相同的校验，但原始帧字节通过请求体传输，而不是服务器端的文件路径——真实的远程调用方根本没有本服务器自身文件系统上的本地路径可以传递。需要 `?width=W&height=H` 查询参数（`channels` 可选，默认 `3`）。 |
 | `/stats` | `GET` | 报告服务器默认的工作区路径。 |
 
