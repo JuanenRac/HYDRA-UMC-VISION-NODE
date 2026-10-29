@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **README in the universal layout:** the README and its seven translations follow the layout that the four families share (22 sections in a fixed order), with an architecture picture and a repository-structure picture drawn from `docs/architecture.json` and `docs/structure.json`; the CI validator checks both pictures and the file tree.
+
 - **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.
 - The README in the eight languages describes the build scripts as they are: `build.sh` prints `Build complete.` and uses `python3`, `build.bat` prints `== Build OK ==` and uses `python`, and the local virtual environment is in the root of the repository, not under `build/`.
 
@@ -166,7 +168,7 @@ CM5 systemd unit already runs, non-root. Also added a real `mem_limit` (mirrorin
 Polish pass: copyright headers normalized across `main.py`, `__init__.py`,
 `bump_version.py`, `build.sh`/`build.bat`, `run.sh`/`run.bat` and
 `docker-compose.yml`; "why" comments added around the version-reading and
-odometer design decisions; this `CHANGELOG.md` added; README (5 languages)
+version-bump design decisions; this `CHANGELOG.md` added; README (5 languages)
 substantially expanded with an Advanced Technical Information section, a
 detailed Build & Run walkthrough with troubleshooting, a dateless
 "Current Status & Next Steps" section replacing the previous dated
@@ -176,7 +178,7 @@ bump is this verification build.
 ## [0.0.1]
 
 Real build verification. `build.sh`/`build.bat` run end-to-end for real:
-odometer bump, `.venv` creation, editable install, `python -m compileall`
+version bump, `.venv` creation, editable install, `python -m compileall`
 clean across `src/`. `run.sh`/`run.bat` executed the entry point for real,
 printing name + version + role. No business-logic change - the bump is the
 recorded event.
@@ -186,7 +188,7 @@ recorded event.
 Initial skeleton: `pyproject.toml` (package metadata, no runtime
 dependencies yet), `src/hydra_umc_vision_node/` (`__init__.py` + `main.py`
 entry point reading its version from installed package metadata),
-`bump_version.py` (odometer-style version bump), `build.sh`/`build.bat`
+`bump_version.py` (version bump), `build.sh`/`build.bat`
 (venv + editable install + compile-check) and `run.sh`/`run.bat`. Added
 `docker-compose.yml`, documenting (not yet functional) how this
 integration parent wires in its 4 children as containers once each ships

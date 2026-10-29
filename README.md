@@ -1,3 +1,9 @@
+<!-- =============================================================================
+HYDRA-UMC-VISION-NODE - Integration parent of the Vision AI Node family
+Copyright (C) JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+GPL-3.0-or-later - see LICENSE
+============================================================================= -->
+
 <p align="center">
   <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-VISION-NODE banner" width="100%">
 </p>
@@ -10,15 +16,19 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
-  <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
-  <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="26 TOPS">
-  <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf%20(planned)-lightgrey.svg" alt="gRPC">
-  <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Functional v0 stage">
+  <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
+  <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
+  <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
+  <img src="https://img.shields.io/badge/Tests-98%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
 > **Safety and security status:** this ecosystem is not a certified safety system. There is no hardware E-STOP path, no firmware-enforced limits or interlocks and no verified motion command yet; firmware images are checked with CRC32 and a shared-key HMAC-SHA256, not with an asymmetric signature; TLS and mutual TLS are optional and off by default; no custom board has been populated or tested yet. Read the [security baseline](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) and the [threat model](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md) before relying on any statement here for the safety of a person.
+
+---
 
 ## 📋 At a glance
 
@@ -26,9 +36,12 @@
 |---|---|
 | Version | `0.1.6` |
 | Maturity | Functional |
+| Tests | 98 (`python -m pytest -q tests`) |
 | Stack | Python / CM5 / Hailo-8 |
 | Target | The Raspberry Pi CM5 of a HYDRA-UMC cell |
 | On real hardware | Not yet: no run on real hardware is recorded for this version |
+
+**Jump to:** [Overview](#-overview) · [Architecture](#-architecture) · [Quick start](#-quick-start) · [Testing](#-testing) · [Repository Structure](#-repository-structure) · [Related Projects](#-related-projects)
 
 ## 🚦 Project status
 
@@ -39,11 +52,11 @@ Each line is one part of this repository and the light says how far it is today.
 | Area | State | What it means here |
 |---|---|---|
 | Software | 🟡 | Works for its main purpose; the honesty check above lists what is still missing |
-| Tests | 🟠 | No test count is recorded for this repository yet |
+| Tests | 🟢 | 98 automated tests, run on every change |
 | Real hardware | 🔴 | Not yet: no run on real hardware is recorded for this version |
 | Documentation | 🟢 | README in eight languages, checked against the manifest on every change |
 
-## 1. 🛠️ TECHNICAL OVERVIEW
+## 🎯 Overview
 
 **HYDRA-UMC-VISION-NODE** is the dedicated perception engine of the HYDRA-UMC ecosystem. Designed to run on the Raspberry Pi Compute Module 5 paired with a Hailo-8 M.2 AI accelerator, its intended job is to handle massive video streams from up to 8x USB 3.0 cameras simultaneously.
 
@@ -69,15 +82,22 @@ This project is the **integration parent** of the Vision AI Node family: it does
 * 🛡️ **Active Safety (planned):** real-time occupancy mapping feeding [HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES) for human-intrusion detection.
 * 🧩 **Why it exists:** without a dedicated node, perception work would either overload the STM32H745 real-time core inside [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (which has no spare cycles for it) or force every camera frame over the wire to a remote GPU, adding latency the safety loop cannot afford. Running it on CM5 + Hailo-8, physically next to the robot, keeps the detect → correct → (if needed) E-STOP loop local and fast.
 
-**Honesty check - what actually runs today:** bare invocation still prints identity/version/role, but there is now a real `family-status [--workspace PATH]` subcommand: it reads `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API`'s own real manifests from a local checkout and reports what it honestly finds. None of the Hailo-8 runtime, the gRPC control API, or real child supervision exists yet - they are the reason this project exists, not something it currently does. See [`CHANGELOG.md`](CHANGELOG.md) for exactly what has shipped so far, and the "Current Status & Next Steps" section below for what is still open.
+**Honesty check - what actually runs today:** bare invocation still prints identity/version/role, but there is now a real `family-status [--workspace PATH]` subcommand: it reads `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API`'s own real manifests from a local checkout and reports what it honestly finds. None of the Hailo-8 runtime, the gRPC control API, or real child supervision exists yet - they are the reason this project exists, not something it currently does. See [`CHANGELOG.md`](CHANGELOG.md) for exactly what has shipped so far, and the "Roadmap & Known limits" section below for what is still open.
 
 **API limits:** `POST /validate-frame` refuses frames above 8192x8192x4 or 64 MiB (and non-positive sizes) before reading the body, and `?workspace=` may only point inside the workspace the server was started with. In a container the workspace comes from `HYDRA_UMC_WORKSPACE` (mount the sibling checkouts read-only at `/workspace`, as `docker-compose.yml` does). The systemd unit keeps the real `/dev` so that the camera and accelerator probes work, limiting devices with `DevicePolicy=closed` instead of `PrivateDevices`.
 
----
+## 🧩 Role in HYDRA-UMC
 
-## 2. 🔄 INTENDED SYSTEM FLOW
+**HYDRA-UMC-VISION-NODE** is the integration parent of the Vision AI Node family. It does not run the camera, the accelerator or the detection itself: it checks that its four children are present and ready, describes the perception pipeline stage by stage, validates raw camera frames and reads DataMatrix codes.
 
-The diagram below is the target data flow this skeleton is being built towards - it documents the architecture decision, not a pipeline that runs today.
+## 🏛️ Architecture
+
+<p align="center">
+  <img src="images/architecture.svg" alt="HYDRA-UMC-VISION-NODE architecture" width="100%">
+</p>
+
+<details>
+<summary>Text version of the diagram (Mermaid)</summary>
 
 ```mermaid
 flowchart TB
@@ -89,9 +109,13 @@ flowchart TB
     DETECT --> SAFETY["SAFETY-ZONES (E-STOP)"]
 ```
 
----
+</details>
 
-## 3. 🧠 ADVANCED TECHNICAL INFORMATION
+### INTENDED SYSTEM FLOW
+
+The diagram below is the target data flow this skeleton is being built towards - it documents the architecture decision, not a pipeline that runs today.
+
+### ADVANCED TECHNICAL INFORMATION
 
 ### Why this project is the integration parent (and what that means concretely)
 
@@ -110,59 +134,32 @@ None of the 5 projects carries a `hardware/` or `firmware/` folder: CM5 + Hailo-
 ### Design decisions already made in this skeleton
 
 * **Version read from installed package metadata, not hardcoded.** `main.py` calls `importlib.metadata.version("hydra-umc-vision-node")` instead of keeping a second `__version__` string somewhere in the package. This means `bump_version.py` only ever has one place to edit (`pyproject.toml`), and the printed version can never silently drift out of sync with it.
-* **The odometer bump only ever touches `PATCH`/`MINOR` automatically.** `bump_version.py` increments `PATCH` on every bump, carrying into `MINOR` past 9, and `MINOR` into `MAJOR` past 9 - but it never bumps `MAJOR` itself. `MAJOR` is a deliberate, human, semantic decision (a real architecture milestone), not something a build script should decide on its own. This is the same convention already used across the ecosystem (see `HYDRA-UMC-EDITOR-URDF/bump_version.py` and `HYDRA-UMC-SUITE/bump_version.py`).
+`MAJOR` is a deliberate, human, semantic decision (a real architecture milestone), not something a build script should decide on its own. This is the same convention already used across the ecosystem (see `HYDRA-UMC-EDITOR-URDF/bump_version.py` and `HYDRA-UMC-SUITE/bump_version.py`).
 * **gRPC/Protobuf, not REST, for the planned control API** (see badge above) - chosen because the perception → correction → firmware loop this node sits in is latency-sensitive and talks to other Python/embedded services within the same LAN, where gRPC's binary framing and streaming support are a better fit than JSON-over-HTTP. Not implemented yet; documented here so the direction is clear before the code lands.
 * **`family-status` reads each child's own manifest instead of a hand-maintained list.** `hydra-umc.project.json` is already the single source of truth the ecosystem's dashboard/updater trust - a second list here would drift the moment a child's real maturity changed and nobody remembered to update it.
 * **A missing sibling checkout is a real, honest "not found" rather than a crash.** An integration parent genuinely cannot know whether a developer has all 4 children checked out locally - `manifest.py` returns `None` for every real failure mode (missing repo, missing file, malformed JSON) so `family-status` can report it clearly instead of raising.
 * **Why degraded-mode detection is split into a probe and a pure decision function.** `hardware.py`'s `camera_available()`/`accelerator_available()` are the only parts that ever touch real hardware (a Linux device node); `determine_mode()`/`active_stages()` take plain booleans and contain the actual decision logic. That split is what lets every real hardware combination (full, no camera, no accelerator, no hardware at all) be tested directly and deterministically, without mocking a filesystem or needing real CM5+Hailo-8 hardware to prove the logic correct.
 * **Why frame validation only checks structure, not pixel content.** Detecting a truncated/oversized buffer or a suspiciously uniform one (a frozen sensor, a blank capture) is real, useful, hardware-independent validation that needs no reference image and no camera to test honestly. Deciding whether a frame's actual CONTENT looks wrong (blur, exposure, a real vision-quality metric) is a fundamentally different, much harder problem that would need real captured frames to calibrate against - explicitly out of scope for this v0.
 
----
+## 🚀 Quick start
 
-## 📂 DIRECTORY STRUCTURE
+Requires Python 3.10 or newer.
 
-```text
-HYDRA-UMC-VISION-NODE/
-├── src/hydra_umc_vision_node/
-│   ├── __init__.py       # Package description and version
-│   ├── manifest.py       # Real, defensive reader for a sibling's own manifest
-│   ├── family.py          # Real family-readiness check over the 4 real children
-│   ├── pipeline.py          # Real perception pipeline manifest (stages + hardware needs)
-│   ├── frame.py               # Real hardware-independent frame corruption validation
-│   ├── hardware.py              # Real camera/accelerator probes + degraded-mode logic
-│   ├── api.py                     # Plain JSON/HTTP surface (stdlib http.server) over the 3 real subcommands
-│   ├── main.py                    # Entry point + `family-status`/`pipeline-status`/`validate-frame`
-│   ├── access.py                  # Optional Bearer token for the HTTP API (none needed on loopback, mandatory away from it)
-│   ├── codes.py                   # Reads the DataMatrix codes in one raw frame (the identity of a board in a pick-and-place cell)
-│   └── compat_record.py           # What a set of detections was produced with (model, version, SHA-256, architecture) and whether it still fits
-├── tests/               # Real tests: manifest reading, family status, pipeline, frame, hardware, api, CLI
-├── docs/                # Documentation and API reference
-├── os/                  # HydraOS system image configuration (CM5) - parent-only, deploy-time populated (not in git)
-├── models/              # Compiled .hef models served to the Hailo-8 NPU - parent-only, deploy-time populated (not in git)
-├── build/               # Build output
-├── images/              # Media and diagrams
-├── systemd/
-│   └── hydra-umc-vision-node.service # Local CM5 perception API systemd unit
-├── tools/
-│   ├── build_test.py    # Non-versioning build/compile check
-│   ├── ci_validate.py   # Manifest/CHANGELOG/docs validation used by CI
-│   ├── _doc_policy.py   # Documentation rules shared by the family (a copy of HYDRA-UMC-SDK's, kept in sync)
-│   ├── _readme_parity.py # Check that the eight READMEs share one structure (a copy of HYDRA-UMC-SDK's, kept in sync)
-│   └── hydra_project_tool.py # The same commands in every repository: validate, test, ci, version, status, bump
-├── pyproject.toml       # Package metadata, dependencies, odometer version
-├── bump_version.py      # Odometer-style version bump (run only by the explicit `bump` command)
-├── bump_manifest_version.py # Syncs hydra-umc.project.json's version to the native one (--sync)
-├── build.sh / build.bat # venv + editable install (dev extras) + compile-check + tests
-├── run.sh / run.bat     # Runs the entry point from the local venv (forwards arguments)
-├── docker-compose.yml   # Integration map of the 4 Vision AI Node children (not verified with Docker)
-└── CHANGELOG.md         # Version-by-version history (odometer scheme, no dates)
+```bash
+./build.sh  # Linux, macOS (build.bat on Windows)
+./run.sh family-status
+./run.sh pipeline-status
+./run.sh validate-frame frame.raw --width 640 --height 480
+./run.sh serve --port 8105
 ```
 
-`hardware/` and `firmware/` do not exist in this repository (see "Advanced Technical Information" above for why). `os/` and `models/` exist only in this project among the 5 - the 4 children do not carry their own copies.
+## 🧪 Testing
 
----
+98 automated tests run with `python -m pytest -q tests`. They need no hardware and nothing outside this machine.
 
-## 🏗️ BUILD & RUN GUIDE
+The CI runs `HYDRA_UMC_CI=1 python tools/ci_validate.py`, which checks the manifest, the documents, the eight READMEs and the pictures.
+
+## 🏗️ Build & Release
 
 ### Prerequisites
 
@@ -181,7 +178,7 @@ HYDRA-UMC-VISION-NODE/
 2. **Virtual environment** — creates `.venv/` if it does not already exist (safe to re-run; an existing `.venv/` is reused, not recreated).
 3. **Editable install (with dev extras)** — `pip install -e ".[dev]"` installs this package into `.venv` in "editable" mode, so source edits under `src/` take effect immediately without reinstalling, pulls in `pytest`, and registers the `hydra-umc-vision-node` console entry point used by `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` byte-compiles every `.py` file under `src/`, catching syntax errors across the whole package even in files never actually imported by `main.py`.
-5. **Real test suite** — `pytest tests/` runs all 74 tests.
+5. **Real test suite** — `pytest tests/` runs all 98 tests.
 
 The script uses `set -euo pipefail` and stops at the first failing step, printing `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) only if every step succeeded.
 
@@ -275,11 +272,55 @@ Every route replies with an honest error body (`{"error": "..."}`) and the match
 * **`run.sh`/`run.bat` says "No `.venv` found"** — `build.sh`/`build.bat` must be run at least once first; `run.sh`/`run.bat` never creates the environment itself, only builds do.
 * **Stale editable install after pulling changes** — delete `.venv/` and re-run `build.sh`/`build.bat`; this is rarely needed since `pip install -e .` normally picks up source changes without reinstalling.
 
----
+## 📂 Repository Structure
 
-## 🚀 Current Status & Next Steps
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Repository structure of HYDRA-UMC-VISION-NODE" width="100%">
+</p>
 
-**What works today:** a real family-readiness check (`manifest.py`/`family.py`) that reads each of the 4 real children's own manifest and reports presence/version/maturity/role, a real pipeline manifest and degraded-mode detection (`pipeline.py`/`hardware.py`) that honestly probes for real camera/Hailo-8 hardware and reports exactly which pipeline stages can run, real hardware-independent frame corruption validation (`frame.py`), the `family-status`/`pipeline-status`/`validate-frame` CLI subcommands plus a `serve` subcommand exposing all three as a JSON/HTTP API (`api.py`), 61 passing tests, and a fully documented integration map for the 4 children in `docker-compose.yml` (built from the children's own Dockerfiles, never run with Docker) - see [`CHANGELOG.md`](CHANGELOG.md) for the full real build/run output.
+<details>
+<summary>Text version of the tree</summary>
+
+```text
+HYDRA-UMC-VISION-NODE/
+├── src/hydra_umc_vision_node/   source code
+│   ├── __init__.py              Package description and version
+│   ├── manifest.py              Real, defensive reader for a sibling's own manifest
+│   ├── family.py                Real family-readiness check over the 4 real children
+│   ├── pipeline.py              Real perception pipeline manifest (stages + hardware needs)
+│   ├── frame.py                 Real hardware-independent frame corruption validation
+│   ├── hardware.py              Real camera/accelerator probes + degraded-mode logic
+│   ├── api.py                   Plain JSON/HTTP surface (stdlib http.server) over the 3 real subcommands
+│   ├── main.py                  Entry point + `family-status`/`pipeline-status`/`validate-frame`
+│   ├── access.py                Optional Bearer token for the HTTP API (none needed on loopback, mandatory away from it)
+│   ├── codes.py                 Reads the DataMatrix codes in one raw frame (the identity of a board in a pick-and-place cell)
+│   └── compat_record.py         What a set of detections was produced with (model, version, SHA-256, architecture) and whether it still fits
+├── tests/                       Real tests: manifest reading, family status, pipeline, frame, hardware, api, CLI
+├── docs/                        Documentation and API reference
+├── images/                      Media and diagrams
+├── systemd/                     service unit
+├── tools/                       project tools and CI checks
+├── .github/                     CI workflow and issue templates
+├── pyproject.toml               package metadata
+├── bump_version.py              explicit version bump
+├── bump_manifest_version.py     Syncs hydra-umc.project.json's version to the native one (--sync)
+├── build.sh / build.bat         venv + editable install (dev extras) + compile-check + tests
+├── run.sh / run.bat             Runs the entry point from the local venv (forwards arguments)
+├── docker-compose.yml           Integration map of the 4 Vision AI Node children (not verified with Docker)
+├── CHANGELOG.md                 what changed in each version
+├── Dockerfile                   container image
+├── build-test.sh                non-mutating build check
+├── hydra-umc.project.json       manifest: version, maturity, family
+└── test.sh                      runs the tests
+```
+
+</details>
+
+## 🗺️ Roadmap & Known limits
+
+**Known limits today**
+
+**What works today:** a real family-readiness check (`manifest.py`/`family.py`) that reads each of the 4 real children's own manifest and reports presence/version/maturity/role, a real pipeline manifest and degraded-mode detection (`pipeline.py`/`hardware.py`) that honestly probes for real camera/Hailo-8 hardware and reports exactly which pipeline stages can run, real hardware-independent frame corruption validation (`frame.py`), the `family-status`/`pipeline-status`/`validate-frame` CLI subcommands plus a `serve` subcommand exposing all three as a JSON/HTTP API (`api.py`), 98 passing tests, and a fully documented integration map for the 4 children in `docker-compose.yml` (built from the children's own Dockerfiles, never run with Docker) - see [`CHANGELOG.md`](CHANGELOG.md) for the full real build/run output.
 
 **What is still open, in no particular order and with no committed timeline:**
 
@@ -289,7 +330,9 @@ Every route replies with an honest error body (`{"error": "..."}`) and the match
 * Multi-camera pipeline synchronization once [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) has a real capture pipeline to synchronize with.
 * Building and running `docker-compose.yml` for real in an environment with Docker (the 4 children already ship their `Dockerfile`).
 
----
+## 🌍 Languages
+
+This README and the documents of the repository exist in eight languages: English, Spanish, German, French, Italian, Japanese, Chinese and Portuguese (Portugal). They are written together and checked in the CI so that the eight files have the same sections and the same links. This repository has no screen or message catalogue of its own, so there are no interface strings to translate.
 
 ## 🔗 Related Projects
 
@@ -380,21 +423,27 @@ This project is part of the HYDRA-UMC robotics ecosystem by the same author (Jua
 - **[HYDRA-UMC-OPS-AGENT](https://github.com/JuanenRac/HYDRA-UMC-OPS-AGENT)** — maintenance-incident coordinator: a low-privilege edge role collects a sanitized inventory/health snapshot, a control-plane role renders it read-only and asks an AI provider to suggest a diagnosis - never applies a patch or deploys anything.
 - **[HYDRA-UMC-DEV-SERVER](https://github.com/JuanenRac/HYDRA-UMC-DEV-SERVER)** — reproducible development host (Raspberry Pi 5 / CM5) that stores the ecosystem's source and runs bounded build/test tasks under a durable queue; a dedicated dev role, explicitly not an operational CM5.
 
----
+## 📚 Documentation
 
-## 📚 Documentation & Community
+Where to read more:
 
-- **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** — every subcommand (`family-status`, `pipeline-status`, `validate-frame`, `serve`) and every JSON/HTTP API route, with real captured output.
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — tech stack and coding guidelines for a pull request.
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — the standards of behavior expected in this community.
-- **[SECURITY.md](SECURITY.md)** — how to report a vulnerability, and this project's own real security focus areas.
-- **[SUPPORT.md](SUPPORT.md)** — where to ask questions and report bugs.
-- **[LICENSE.md](LICENSE.md)** — this project's own license.
+* **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** — every subcommand (`family-status`, `pipeline-status`, `validate-frame`, `serve`) and every JSON/HTTP API route, with real captured output.
+* [Security baseline of the ecosystem](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)
+* [Threat model of the ecosystem](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)
+* [Changelog of this repository](CHANGELOG.md)
+* [License of this repository](LICENSE.md)
+
+## 🤝 Contributing & Community
+
+* Before a pull request run `HYDRA_UMC_CI=1 py -3 tools/ci_validate.py` (or `HYDRA_UMC_CI=1 python3 tools/ci_validate.py`): it must print `CI_VALIDATION=PASS`. Do not run `build.sh` or `build.bat` for this check; building is not a check.
+* The eight READMEs are written from one source in HYDRA-UMC-DOCS; do not edit them by hand. Change the source and write them again with `tools/make_readmes.py`.
+* Do not state in a README what has not run: say "simulated" or "not tried on hardware" where that is the truth.
+* See [CONTRIBUTING.md](CONTRIBUTING.md), the [code of conduct](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md) and [SUPPORT.md](SUPPORT.md).
 
 ## 👤 AUTHOR
-**JuanenRac** (Electro Hobby 3D)
-📧 electrohobby3d@gmail.com
-📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
 
 ## 📜 LICENSE
-GPL-3.0-or-later - See LICENSE for details.
+
+GPL-3.0-or-later - [LICENSE](LICENSE).

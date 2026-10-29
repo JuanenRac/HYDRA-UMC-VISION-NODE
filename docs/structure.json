@@ -1,0 +1,675 @@
+{
+  "repo": "HYDRA-UMC-VISION-NODE",
+  "ecosystem": "hydra",
+  "svg": "en",
+  "exempt": [
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "LICENSE",
+    "LICENSE.md",
+    "build-test.bat",
+    "test.bat"
+  ],
+  "cards": [
+    {
+      "name": "src/hydra_umc_vision_node/",
+      "span": 3,
+      "accent": "a",
+      "rows": [
+        {
+          "name": "__init__.py",
+          "desc": {
+            "en": "Package description and version",
+            "es": "Descripción y versión del paquete",
+            "de": "Paketbeschreibung und Version",
+            "fr": "Description et version du paquet",
+            "it": "Descrizione e versione del pacchetto",
+            "ja": "パッケージの説明とバージョン",
+            "zh": "包说明与版本",
+            "pt": "Descrição e versão do pacote"
+          },
+          "tree_desc": {
+            "en": "Package description and version",
+            "es": "Descripción y versión del paquete",
+            "de": "Paketbeschreibung und Version",
+            "fr": "Description et version du paquet",
+            "it": "Descrizione e versione del pacchetto",
+            "ja": "パッケージの説明とバージョン",
+            "zh": "包说明与版本",
+            "pt": "Descrição e versão do pacote"
+          }
+        },
+        {
+          "name": "manifest.py",
+          "desc": {
+            "en": "Real, defensive reader for a sibling's own",
+            "es": "Lector real y defensivo del manifiesto",
+            "de": "Echter, defensiver Reader für das Manifest",
+            "fr": "Vrai lecteur défensif du manifeste d'un",
+            "it": "Vero lettore difensivo del manifesto di un",
+            "ja": "兄弟プロジェクト自身のマニフェストの実際の防",
+            "zh": "真实的、具防御性的兄弟项目自身清单读取器",
+            "pt": "Leitor real e defensivo do manifesto"
+          },
+          "tree_desc": {
+            "en": "Real, defensive reader for a sibling's own manifest",
+            "es": "Lector real y defensivo del manifiesto propio de un hermano",
+            "de": "Echter, defensiver Reader für das Manifest eines Geschwisterprojekts",
+            "fr": "Vrai lecteur défensif du manifeste d'un projet frère",
+            "it": "Vero lettore difensivo del manifesto di un progetto fratello",
+            "ja": "兄弟プロジェクト自身のマニフェストの実際の防御的リーダー",
+            "zh": "真实的、具防御性的兄弟项目自身清单读取器",
+            "pt": "Leitor real e defensivo do manifesto próprio de um irmão"
+          }
+        },
+        {
+          "name": "family.py",
+          "desc": {
+            "en": "Real family-readiness check over the 4",
+            "es": "Chequeo real de disponibilidad de familia",
+            "de": "Echte Familien-Bereitschaftsprüfung über",
+            "fr": "Vraie vérification de disponibilité de la",
+            "it": "Vera verifica di prontezza della famiglia",
+            "ja": "4 つの実際の子プロジェクトに対する実際のフ",
+            "zh": "对 4 个真实子项目的真实家族就绪检查",
+            "pt": "Verificação real de prontidão da família"
+          },
+          "tree_desc": {
+            "en": "Real family-readiness check over the 4 real children",
+            "es": "Chequeo real de disponibilidad de familia sobre los 4 hijos reales",
+            "de": "Echte Familien-Bereitschaftsprüfung über die 4 echten Kinder",
+            "fr": "Vraie vérification de disponibilité de la famille sur les 4 vrais enfants",
+            "it": "Vera verifica di prontezza della famiglia sui 4 figli reali",
+            "ja": "4 つの実際の子プロジェクトに対する実際のファミリーレディネスチェック",
+            "zh": "对 4 个真实子项目的真实家族就绪检查",
+            "pt": "Verificação real de prontidão da família sobre os 4 filhos reais"
+          }
+        },
+        {
+          "name": "pipeline.py",
+          "desc": {
+            "en": "Real perception pipeline manifest",
+            "es": "Manifiesto real del pipeline de percepción",
+            "de": "Echtes Wahrnehmungs-Pipeline-Manifest",
+            "fr": "Vrai manifeste de pipeline de perception",
+            "it": "Vero manifesto della pipeline di percezione",
+            "ja": "実際の知覚パイプラインマニフェスト",
+            "zh": "真实的感知流水线清单（阶段 + 硬件需求）",
+            "pt": "Manifesto real do pipeline de perceção"
+          },
+          "tree_desc": {
+            "en": "Real perception pipeline manifest (stages + hardware needs)",
+            "es": "Manifiesto real del pipeline de percepción (etapas + necesidades de hardware)",
+            "de": "Echtes Wahrnehmungs-Pipeline-Manifest (Stufen + Hardware-Bedarf)",
+            "fr": "Vrai manifeste de pipeline de perception (étapes + besoins matériels)",
+            "it": "Vero manifesto della pipeline di percezione (stadi + esigenze hardware)",
+            "ja": "実際の知覚パイプラインマニフェスト（ステージ + ハードウェア要件）",
+            "zh": "真实的感知流水线清单（阶段 + 硬件需求）",
+            "pt": "Manifesto real do pipeline de perceção (etapas + necessidades de hardware)"
+          }
+        },
+        {
+          "name": "frame.py",
+          "desc": {
+            "en": "Real hardware-independent frame corruption",
+            "es": "Validación real de corrupción de frames",
+            "de": "Echte, hardwareunabhängige",
+            "fr": "Vraie validation de corruption de frame",
+            "it": "Vera validazione di corruzione del frame",
+            "ja": "実際の、ハードウェアに依存しないフレーム破損",
+            "zh": "真实的、与硬件无关的帧损坏校验",
+            "pt": "Validação real"
+          },
+          "tree_desc": {
+            "en": "Real hardware-independent frame corruption validation",
+            "es": "Validación real de corrupción de frames, independiente de hardware",
+            "de": "Echte, hardwareunabhängige Frame-Beschädigungsprüfung",
+            "fr": "Vraie validation de corruption de frame, indépendante du matériel",
+            "it": "Vera validazione di corruzione del frame, indipendente dall'hardware",
+            "ja": "実際の、ハードウェアに依存しないフレーム破損検証",
+            "zh": "真实的、与硬件无关的帧损坏校验",
+            "pt": "Validação real, independente do hardware, de corrupção de tramas"
+          }
+        },
+        {
+          "name": "hardware.py",
+          "desc": {
+            "en": "Real camera/accelerator probes +",
+            "es": "Sondeos reales de cámara/acelerador +",
+            "de": "Echte Kamera-/Beschleuniger-Sonden + Logik",
+            "fr": "Vraies sondes caméra/accélérateur + logique",
+            "it": "Vere sonde fotocamera/acceleratore + logica",
+            "ja": "実際のカメラ/アクセラレータ探索 + デグレ",
+            "zh": "真实的摄像头/加速器探测 + 降级模式逻辑",
+            "pt": "Sondas reais de câmara/acelerador + lógica"
+          },
+          "tree_desc": {
+            "en": "Real camera/accelerator probes + degraded-mode logic",
+            "es": "Sondeos reales de cámara/acelerador + lógica de modo degradado",
+            "de": "Echte Kamera-/Beschleuniger-Sonden + Logik für degradierten Modus",
+            "fr": "Vraies sondes caméra/accélérateur + logique de mode dégradé",
+            "it": "Vere sonde fotocamera/acceleratore + logica di modalità degradata",
+            "ja": "実際のカメラ/アクセラレータ探索 + デグレードモードロジック",
+            "zh": "真实的摄像头/加速器探测 + 降级模式逻辑",
+            "pt": "Sondas reais de câmara/acelerador + lógica de modo degradado"
+          }
+        },
+        {
+          "name": "api.py",
+          "desc": {
+            "en": "Plain JSON/HTTP surface",
+            "es": "Superficie JSON/HTTP plana",
+            "de": "Einfache JSON/HTTP-Oberfläche",
+            "fr": "Surface JSON/HTTP simple",
+            "it": "Superficie JSON/HTTP semplice",
+            "ja": "シンプルなJSON/HTTPサーフェス(st",
+            "zh": "简洁的 JSON/HTTP 接口(基于 st",
+            "pt": "Superfície JSON/HTTP simples"
+          },
+          "tree_desc": {
+            "en": "Plain JSON/HTTP surface (stdlib http.server) over the 3 real subcommands",
+            "es": "Superficie JSON/HTTP plana (http.server de stdlib) sobre los 3 subcomandos reales",
+            "de": "Einfache JSON/HTTP-Oberfläche (stdlib http.server) über die 3 echten Subbefehle",
+            "fr": "Surface JSON/HTTP simple (http.server de stdlib) sur les 3 vraies sous-commandes",
+            "it": "Superficie JSON/HTTP semplice (http.server di stdlib) sui 3 sottocomandi reali",
+            "ja": "シンプルなJSON/HTTPサーフェス(stdlibのhttp.server)。実際の3つのサブコマンドを橋渡し",
+            "zh": "简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 3 个子命令",
+            "pt": "Superfície JSON/HTTP simples (http.server da biblioteca padrão) sobre os 3 subcomandos reais"
+          }
+        },
+        {
+          "name": "main.py",
+          "desc": {
+            "en": "Entry point +",
+            "es": "Entry point +",
+            "de": "Einstiegspunkt +",
+            "fr": "Point d'entrée + sous-commandes réelles",
+            "it": "Entry point + sottocomandi reali",
+            "ja": "エントリポイント + `family-sta",
+            "zh": "入口点 + `family-status`/",
+            "pt": "Ponto de entrada +"
+          },
+          "tree_desc": {
+            "en": "Entry point + `family-status`/`pipeline-status`/`validate-frame`",
+            "es": "Entry point + `family-status`/`pipeline-status`/`validate-frame`",
+            "de": "Einstiegspunkt + `family-status`/`pipeline-status`/`validate-frame`",
+            "fr": "Point d'entrée + sous-commandes réelles `family-status`/`pipeline-status`/`validate-frame`",
+            "it": "Entry point + sottocomandi reali `family-status`/`pipeline-status`/`validate-frame`",
+            "ja": "エントリポイント + `family-status`/`pipeline-status`/`validate-frame`",
+            "zh": "入口点 + `family-status`/`pipeline-status`/`validate-frame`",
+            "pt": "Ponto de entrada + `family-status`/`pipeline-status`/`validate-frame`"
+          }
+        },
+        {
+          "name": "access.py",
+          "desc": {
+            "en": "Optional Bearer token for the HTTP API",
+            "es": "Token Bearer opcional para la API HTTP",
+            "de": "Optionales Bearer-Token für die HTTP-API",
+            "fr": "Jeton Bearer facultatif pour l'API HTTP",
+            "it": "Token Bearer facoltativo per l'API HTTP",
+            "ja": "HTTP API 用の任意の Bearer",
+            "zh": "HTTP API 的可选 Bearer 令牌",
+            "pt": "Token Bearer opcional para a API HTTP"
+          },
+          "tree_desc": {
+            "en": "Optional Bearer token for the HTTP API (none needed on loopback, mandatory away from it)",
+            "es": "Token Bearer opcional para la API HTTP (no hace falta en loopback, obligatorio fuera de él)",
+            "de": "Optionales Bearer-Token für die HTTP-API (auf Loopback nicht nötig, sonst Pflicht)",
+            "fr": "Jeton Bearer facultatif pour l'API HTTP (inutile en boucle locale, obligatoire en dehors)",
+            "it": "Token Bearer facoltativo per l'API HTTP (non serve su loopback, obbligatorio fuori da esso)",
+            "ja": "HTTP API 用の任意の Bearer トークン (ループバックでは不要、それ以外では必須)",
+            "zh": "HTTP API 的可选 Bearer 令牌 (本机回环无需,非回环时必须)",
+            "pt": "Token Bearer opcional para a API HTTP (dispensável em loopback, obrigatório fora dele)"
+          }
+        },
+        {
+          "name": "codes.py",
+          "desc": {
+            "en": "Reads the DataMatrix codes in one raw frame",
+            "es": "Lee los códigos DataMatrix de un fotograma",
+            "de": "Liest die DataMatrix-Codes in einem Rohbild",
+            "fr": "Lit les codes DataMatrix d'une image brute",
+            "it": "Legge i codici DataMatrix in un fotogramma",
+            "ja": "生フレーム内の DataMatrix コード",
+            "zh": "读取一帧原始图像中的 DataMatrix",
+            "pt": "Lê os códigos DataMatrix de uma imagem em"
+          },
+          "tree_desc": {
+            "en": "Reads the DataMatrix codes in one raw frame (the identity of a board in a pick-and-place cell)",
+            "es": "Lee los códigos DataMatrix de un fotograma en bruto (la identidad de una placa en una celda de pick-and-place)",
+            "de": "Liest die DataMatrix-Codes in einem Rohbild (die Identität einer Platine in einer Bestückungszelle)",
+            "fr": "Lit les codes DataMatrix d'une image brute (l'identité d'une carte dans une cellule de pick-and-place)",
+            "it": "Legge i codici DataMatrix in un fotogramma grezzo (l'identità di una scheda in una cella pick-and-place)",
+            "ja": "生フレーム内の DataMatrix コードを読む (ピックアンドプレースセル内の基板の識別)",
+            "zh": "读取一帧原始图像中的 DataMatrix 码 (贴片单元中一块板的身份)",
+            "pt": "Lê os códigos DataMatrix de uma imagem em bruto (a identidade de uma placa numa célula de pick-and-place)"
+          }
+        },
+        {
+          "name": "compat_record.py",
+          "desc": {
+            "en": "What a set of detections was produced with",
+            "es": "Con qué se produjo un conjunto de",
+            "de": "Womit ein Satz Erkennungen erzeugt wurde",
+            "fr": "Avec quoi un ensemble de détections a été",
+            "it": "Con cosa è stato prodotto un insieme di",
+            "ja": "検出結果の生成に使ったもの (モデル",
+            "zh": "一组检测结果由什么产生 (模型",
+            "pt": "Com o que um conjunto de deteções foi"
+          },
+          "tree_desc": {
+            "en": "What a set of detections was produced with (model, version, SHA-256, architecture) and whether it still fits",
+            "es": "Con qué se produjo un conjunto de detecciones (modelo, versión, SHA-256, arquitectura) y si todavía encaja",
+            "de": "Womit ein Satz Erkennungen erzeugt wurde (Modell, Version, SHA-256, Architektur) und ob er noch passt",
+            "fr": "Avec quoi un ensemble de détections a été produit (modèle, version, SHA-256, architecture) et s'il convient encore",
+            "it": "Con cosa è stato prodotto un insieme di rilevamenti (modello, versione, SHA-256, architettura) e se è ancora valido",
+            "ja": "検出結果の生成に使ったもの (モデル、バージョン、SHA-256、アーキテクチャ) と、現在も適合するか",
+            "zh": "一组检测结果由什么产生 (模型、版本、SHA-256、架构) 以及是否仍然适用",
+            "pt": "Com o que um conjunto de deteções foi produzido (modelo, versão, SHA-256, arquitetura) e se ainda serve"
+          }
+        }
+      ],
+      "tree_head": {
+        "en": "source code",
+        "es": "código fuente",
+        "de": "Quellcode",
+        "fr": "code source",
+        "it": "codice sorgente",
+        "ja": "ソースコード",
+        "zh": "源代码",
+        "pt": "código-fonte"
+      },
+      "sub": {
+        "en": "source code",
+        "es": "código fuente",
+        "de": "Quellcode",
+        "fr": "code source",
+        "it": "codice sorgente",
+        "ja": "ソースコード",
+        "zh": "源代码",
+        "pt": "código-fonte"
+      },
+      "columns": 2
+    },
+    {
+      "name": {
+        "en": "folders",
+        "es": "carpetas",
+        "de": "Ordner",
+        "fr": "dossiers",
+        "it": "cartelle",
+        "ja": "フォルダ",
+        "zh": "文件夹",
+        "pt": "pastas"
+      },
+      "kind": "group",
+      "span": 3,
+      "accent": "b",
+      "columns": 2,
+      "rows": [
+        {
+          "name": "tests/",
+          "desc": {
+            "en": "Real tests: manifest reading",
+            "es": "Tests reales: manifiesto",
+            "de": "Echte Tests: Manifest-Lesen",
+            "fr": "Vrais tests : lecture de manifeste",
+            "it": "Test reali: lettura manifesto",
+            "ja": "実際のテスト：マニフェスト読み込み",
+            "zh": "真实测试：清单读取、家族状态、pipelin",
+            "pt": "Testes reais: leitura de manifestos"
+          },
+          "tree_desc": {
+            "en": "Real tests: manifest reading, family status, pipeline, frame, hardware, api, CLI",
+            "es": "Tests reales: manifiesto, family status, pipeline, frame, hardware, api, CLI",
+            "de": "Echte Tests: Manifest-Lesen, Familienstatus, Pipeline, Frame, Hardware, api, CLI",
+            "fr": "Vrais tests : lecture de manifeste, statut famille, pipeline, frame, matériel, api, CLI",
+            "it": "Test reali: lettura manifesto, stato famiglia, pipeline, frame, hardware, api, CLI",
+            "ja": "実際のテスト：マニフェスト読み込み、ファミリーステータス、pipeline、frame、hardware、api、CLI",
+            "zh": "真实测试：清单读取、家族状态、pipeline、frame、hardware、api、CLI",
+            "pt": "Testes reais: leitura de manifestos, estado da família, pipeline, trama, hardware, api, CLI"
+          }
+        },
+        {
+          "name": "docs/",
+          "desc": {
+            "en": "Documentation and API reference",
+            "es": "Documentación y referencia de API",
+            "de": "Dokumentation und API-Referenz",
+            "fr": "Documentation et référence API",
+            "it": "Documentazione e riferimento API",
+            "ja": "ドキュメントと API リファレンス",
+            "zh": "文档与 API 参考",
+            "pt": "Documentação e referência da API"
+          },
+          "tree_desc": {
+            "en": "Documentation and API reference",
+            "es": "Documentación y referencia de API",
+            "de": "Dokumentation und API-Referenz",
+            "fr": "Documentation et référence API",
+            "it": "Documentazione e riferimento API",
+            "ja": "ドキュメントと API リファレンス",
+            "zh": "文档与 API 参考",
+            "pt": "Documentação e referência da API"
+          }
+        },
+        {
+          "name": "images/",
+          "desc": {
+            "en": "Media and diagrams",
+            "es": "Medios y diagramas",
+            "de": "Medien und Diagramme",
+            "fr": "Médias et diagrammes",
+            "it": "Media e diagrammi",
+            "ja": "メディアと図表",
+            "zh": "媒体与图表",
+            "pt": "Multimédia e diagramas"
+          },
+          "tree_desc": {
+            "en": "Media and diagrams",
+            "es": "Medios y diagramas",
+            "de": "Medien und Diagramme",
+            "fr": "Médias et diagrammes",
+            "it": "Media e diagrammi",
+            "ja": "メディアと図表",
+            "zh": "媒体与图表",
+            "pt": "Multimédia e diagramas"
+          }
+        },
+        {
+          "name": "systemd/",
+          "desc": {
+            "en": "service unit",
+            "es": "unidad de servicio",
+            "de": "Dienst-Unit",
+            "fr": "unité de service",
+            "it": "unità di servizio",
+            "ja": "サービスユニット",
+            "zh": "服务单元",
+            "pt": "unidade de serviço"
+          },
+          "tree_desc": {
+            "en": "service unit",
+            "es": "unidad de servicio",
+            "de": "Dienst-Unit",
+            "fr": "unité de service",
+            "it": "unità di servizio",
+            "ja": "サービスユニット",
+            "zh": "服务单元",
+            "pt": "unidade de serviço"
+          }
+        },
+        {
+          "name": "tools/",
+          "desc": {
+            "en": "project tools and CI checks",
+            "es": "herramientas del proyecto y comprobaciones",
+            "de": "Projektwerkzeuge und CI-Prüfungen",
+            "fr": "outils du projet et vérifications de la CI",
+            "it": "strumenti del progetto e controlli della CI",
+            "ja": "プロジェクトのツールと CI の検査",
+            "zh": "项目工具和 CI 检查",
+            "pt": "ferramentas do projeto e verificações da CI"
+          },
+          "tree_desc": {
+            "en": "project tools and CI checks",
+            "es": "herramientas del proyecto y comprobaciones del CI",
+            "de": "Projektwerkzeuge und CI-Prüfungen",
+            "fr": "outils du projet et vérifications de la CI",
+            "it": "strumenti del progetto e controlli della CI",
+            "ja": "プロジェクトのツールと CI の検査",
+            "zh": "项目工具和 CI 检查",
+            "pt": "ferramentas do projeto e verificações da CI"
+          }
+        },
+        {
+          "name": ".github/",
+          "desc": {
+            "en": "CI workflow and issue templates",
+            "es": "flujo de CI y plantillas de incidencias",
+            "de": "CI-Workflow und Issue-Vorlagen",
+            "fr": "workflow de CI et modèles de tickets",
+            "it": "workflow di CI e modelli di segnalazione",
+            "ja": "CI ワークフローと Issue テンプレート",
+            "zh": "CI 工作流和 Issue 模板",
+            "pt": "fluxo de CI e modelos de problemas"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "en": "project files",
+        "es": "ficheros del proyecto",
+        "de": "Projektdateien",
+        "fr": "fichiers du projet",
+        "it": "file del progetto",
+        "ja": "プロジェクトのファイル",
+        "zh": "项目文件",
+        "pt": "ficheiros do projeto"
+      },
+      "kind": "group",
+      "span": 3,
+      "accent": "c",
+      "columns": 2,
+      "rows": [
+        {
+          "name": "pyproject.toml",
+          "desc": {
+            "en": "package metadata",
+            "es": "Metadatos del paquete",
+            "de": "Paketmetadaten",
+            "fr": "Métadonnées du paquet",
+            "it": "Metadati pacchetto",
+            "ja": "パッケージのメタデータ",
+            "zh": "包的元数据",
+            "pt": "Metadados do pacote"
+          },
+          "tree_desc": {
+            "en": "package metadata",
+            "es": "Metadatos del paquete, dependencias, versión cuentakilómetros",
+            "de": "Paketmetadaten",
+            "fr": "Métadonnées du paquet, dépendances, version compteur kilométrique",
+            "it": "Metadati pacchetto, dipendenze, versione contachilometri",
+            "ja": "パッケージのメタデータ",
+            "zh": "包的元数据",
+            "pt": "Metadados do pacote, dependências, versão ao estilo conta-quilómetros"
+          }
+        },
+        {
+          "name": "bump_version.py",
+          "desc": {
+            "en": "explicit version bump",
+            "es": "Incremento de versión tipo cuentakilómetros",
+            "de": "ausdrückliche Versionserhöhung",
+            "fr": "Incrément de version type compteur",
+            "it": "Incremento di versione stile contachilometri",
+            "ja": "明示的なバージョン更新",
+            "zh": "显式提升版本",
+            "pt": "Subida de versão ao estilo conta-quilómetros"
+          },
+          "tree_desc": {
+            "en": "explicit version bump",
+            "es": "Incremento de versión tipo cuentakilómetros (solo lo ejecuta el comando `bump` explícito)",
+            "de": "ausdrückliche Versionserhöhung",
+            "fr": "Incrément de version type compteur kilométrique (exécuté seulement par la commande `bump` explicite)",
+            "it": "Incremento di versione stile contachilometri (eseguito solo dal comando `bump` esplicito)",
+            "ja": "明示的なバージョン更新",
+            "zh": "显式提升版本",
+            "pt": "Subida de versão ao estilo conta-quilómetros (executada só pelo comando `bump` explícito)"
+          }
+        },
+        {
+          "name": "bump_manifest_version.py",
+          "desc": {
+            "en": "Syncs hydra-umc.project.json's version",
+            "es": "Sincroniza la versión de",
+            "de": "Synchronisiert die Version von",
+            "fr": "Synchronise la version de",
+            "it": "Sincronizza la versione di",
+            "ja": "hydra-umc.project.json",
+            "zh": "将 hydra-umc.project.js",
+            "pt": "Sincroniza a versão do"
+          },
+          "tree_desc": {
+            "en": "Syncs hydra-umc.project.json's version to the native one (--sync)",
+            "es": "Sincroniza la versión de hydra-umc.project.json con la nativa (--sync)",
+            "de": "Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)",
+            "fr": "Synchronise la version de hydra-umc.project.json avec la version native (--sync)",
+            "it": "Sincronizza la versione di hydra-umc.project.json con quella nativa (--sync)",
+            "ja": "hydra-umc.project.json のバージョンをネイティブ版と同期(--sync)",
+            "zh": "将 hydra-umc.project.json 的版本与原生版本同步(--sync)",
+            "pt": "Sincroniza a versão do hydra-umc.project.json com a nativa (--sync)"
+          }
+        },
+        {
+          "name": "build.sh / build.bat",
+          "desc": {
+            "en": "venv + editable install",
+            "es": "venv + instalación editable",
+            "de": "venv + editierbare Installation +",
+            "fr": "venv + installation éditable + compile-check",
+            "it": "venv + installazione editabile +",
+            "ja": "venv + editable インストール",
+            "zh": "venv + 可编辑安装（含 dev 附加依",
+            "pt": "venv + instalação editável"
+          },
+          "tree_desc": {
+            "en": "venv + editable install (dev extras) + compile-check + tests",
+            "es": "venv + instalación editable (extras dev) + compile-check + tests",
+            "de": "venv + editierbare Installation + Compile-Check",
+            "fr": "venv + installation éditable + compile-check",
+            "it": "venv + installazione editabile + compile-check",
+            "ja": "venv + editable インストール（dev エクストラ付き） + コンパイルチェック + テスト",
+            "zh": "venv + 可编辑安装（含 dev 附加依赖） + 编译检查 + 测试",
+            "pt": "venv + instalação editável (extras de desenvolvimento) + verificação de compilação + testes"
+          }
+        },
+        {
+          "name": "run.sh / run.bat",
+          "desc": {
+            "en": "Runs the entry point from the local venv",
+            "es": "Ejecuta el entry point desde el venv local",
+            "de": "Führt den Einstiegspunkt aus dem lokalen",
+            "fr": "Exécute le point d'entrée depuis le venv",
+            "it": "Esegue l'entry point dal venv locale",
+            "ja": "ローカル venv からエントリポイントを実",
+            "zh": "从本地 venv 运行入口点（转发参数）",
+            "pt": "Executa o ponto de entrada a partir do venv"
+          },
+          "tree_desc": {
+            "en": "Runs the entry point from the local venv (forwards arguments)",
+            "es": "Ejecuta el entry point desde el venv local (reenvía argumentos)",
+            "de": "Führt den Einstiegspunkt aus dem lokalen venv aus",
+            "fr": "Exécute le point d'entrée depuis le venv local",
+            "it": "Esegue l'entry point dal venv locale",
+            "ja": "ローカル venv からエントリポイントを実行（引数を転送）",
+            "zh": "从本地 venv 运行入口点（转发参数）",
+            "pt": "Executa o ponto de entrada a partir do venv local (reencaminha argumentos)"
+          }
+        },
+        {
+          "name": "docker-compose.yml",
+          "desc": {
+            "en": "Integration map of the 4 Vision AI Node",
+            "es": "Mapa de integración de los 4 hijos",
+            "de": "Integrationskarte der 4 Kinder",
+            "fr": "Carte d'intégration des 4 enfants",
+            "it": "Mappa di integrazione dei 4 figli",
+            "ja": "Vision AI Node の 4 つの子",
+            "zh": "Vision AI Node 4 个子项目的",
+            "pt": "Mapa de integração dos 4 filhos do Nó de IA"
+          },
+          "tree_desc": {
+            "en": "Integration map of the 4 Vision AI Node children (not verified with Docker)",
+            "es": "Mapa de integración de los 4 hijos (sin verificar con Docker)",
+            "de": "Integrationskarte der 4 Kinder (nicht mit Docker geprüft)",
+            "fr": "Carte d'intégration des 4 enfants (non vérifiée avec Docker)",
+            "it": "Mappa di integrazione dei 4 figli (non verificata con Docker)",
+            "ja": "Vision AI Node の 4 つの子プロジェクトの統合マップ（Docker では未検証）",
+            "zh": "Vision AI Node 4 个子项目的集成蓝图（未用 Docker 验证）",
+            "pt": "Mapa de integração dos 4 filhos do Nó de IA de Visão (não verificado com Docker)"
+          }
+        },
+        {
+          "name": "CHANGELOG.md",
+          "desc": {
+            "en": "what changed in each version",
+            "es": "Historial versión a versión",
+            "de": "was sich in jeder Version geändert hat",
+            "fr": "Historique version par version",
+            "it": "Storico versione per versione",
+            "ja": "各バージョンの変更点",
+            "zh": "每个版本的变更",
+            "pt": "Histórico versão a versão"
+          },
+          "tree_desc": {
+            "en": "what changed in each version",
+            "es": "Historial versión a versión (esquema cuentakilómetros, sin fechas)",
+            "de": "was sich in jeder Version geändert hat",
+            "fr": "Historique version par version (schéma compteur kilométrique, sans dates)",
+            "it": "Storico versione per versione (schema contachilometri, senza date)",
+            "ja": "各バージョンの変更点",
+            "zh": "每个版本的变更",
+            "pt": "Histórico versão a versão (esquema conta-quilómetros, sem datas)"
+          }
+        },
+        {
+          "name": "Dockerfile",
+          "desc": {
+            "en": "container image",
+            "es": "imagen de contenedor",
+            "de": "Container-Image",
+            "fr": "image de conteneur",
+            "it": "immagine del container",
+            "ja": "コンテナイメージ",
+            "zh": "容器镜像",
+            "pt": "imagem de contentor"
+          }
+        },
+        {
+          "name": "build-test.sh",
+          "desc": {
+            "en": "non-mutating build check",
+            "es": "comprobación de compilación sin cambios",
+            "de": "Build-Prüfung ohne Änderungen",
+            "fr": "vérification de build sans modification",
+            "it": "controllo di build senza modifiche",
+            "ja": "変更を伴わないビルド確認",
+            "zh": "不修改内容的构建检查",
+            "pt": "verificação de compilação sem alterações"
+          }
+        },
+        {
+          "name": "hydra-umc.project.json",
+          "desc": {
+            "en": "manifest: version, maturity, family",
+            "es": "manifiesto: versión, madurez, familia",
+            "de": "Manifest: Version, Reifegrad, Familie",
+            "fr": "manifeste : version, maturité, famille",
+            "it": "manifesto: versione, maturità, famiglia",
+            "ja": "マニフェスト：バージョン、成熟度、ファミリー",
+            "zh": "清单：版本、成熟度、系列",
+            "pt": "manifesto: versão, maturidade, família"
+          }
+        },
+        {
+          "name": "test.sh",
+          "desc": {
+            "en": "runs the tests",
+            "es": "ejecuta las pruebas",
+            "de": "führt die Tests aus",
+            "fr": "lance les tests",
+            "it": "esegue i test",
+            "ja": "テストを実行",
+            "zh": "运行测试",
+            "pt": "executa os testes"
+          }
+        }
+      ]
+    }
+  ]
+}

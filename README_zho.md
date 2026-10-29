@@ -1,3 +1,9 @@
+<!-- =============================================================================
+HYDRA-UMC-VISION-NODE - Integration parent of the Vision AI Node family
+Copyright (C) JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+GPL-3.0-or-later - see LICENSE
+============================================================================= -->
+
 <p align="center">
   <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-VISION-NODE banner" width="100%">
 </p>
@@ -9,16 +15,20 @@
 ### 🧠 高速感知边缘 AI 节点（Hailo-8 + Raspberry Pi CM5）
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
-  <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="CM5 + Hailo-8">
-  <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="26 TOPS">
-  <img src="https://img.shields.io/badge/Protocol-gRPC%20%2F%20Protobuf%20(planned)-lightgrey.svg" alt="gRPC">
-  <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Functional v0 stage">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
+  <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
+  <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
+  <img src="https://img.shields.io/badge/Tests-98%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
 > **安全与安防现状:**本生态系统不是经认证的安全系统。目前尚无硬件 E-STOP 通路,没有由固件强制执行的限位或联锁,也没有经过验证的运动指令;固件映像使用 CRC32 和共享密钥的 HMAC-SHA256 校验,而非非对称签名;TLS 与双向 TLS 均为可选项,默认关闭;自制电路板尚未组装或测试。在依赖此处任何说法来保障人身安全之前,请先阅读[安全基线](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)和[威胁模型](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)。
+
+---
 
 ## 📋 速览
 
@@ -26,9 +36,12 @@
 |---|---|
 | 版本 | `0.1.6` |
 | 成熟度 | 可用 |
+| 测试 | 98 (`python -m pytest -q tests`) |
 | 技术栈 | Python / CM5 / Hailo-8 |
 | 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
 | 真实硬件 | 尚未：此版本没有在真实硬件上运行的记录 |
+
+**跳转：** [概述](#-概述) · [架构](#-架构) · [快速开始](#-快速开始) · [测试](#-测试) · [仓库结构](#-仓库结构) · [相关项目](#-相关项目)
 
 ## 🚦 项目状态
 
@@ -39,11 +52,11 @@
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
 | 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
-| 测试 | 🟠 | 此仓库尚未记录测试数量 |
+| 测试 | 🟢 | 98 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🔴 | 尚未：此版本没有在真实硬件上运行的记录 |
 | 文档 | 🟢 | 八种语言的 README，每次变更都会与清单核对 |
 
-## 1. 🛠️ 技术概述
+## 🎯 概述
 
 **HYDRA-UMC-VISION-NODE** 是 HYDRA-UMC 生态系统的专用感知引擎。设计为运行在
 Raspberry Pi Compute Module 5 上，并搭配 Hailo-8 M.2 AI 加速器，其预期任务是
@@ -79,12 +92,18 @@ API 或真实的子节点监督逻辑目前均尚未实现——它们是本项�
 
 **API 限制：** `POST /validate-frame` 会在读取请求体之前拒绝大于 8192x8192x4 或 64 MiB 的帧（以及非正数尺寸），`?workspace=` 只能指向服务器启动时所用工作区的内部。在容器中，工作区来自 `HYDRA_UMC_WORKSPACE`（像 `docker-compose.yml` 那样把同级仓库以只读方式挂载到 `/workspace`）。systemd 单元保留真实的 `/dev`，以便摄像头和加速器探测正常工作，并用 `DevicePolicy=closed` 而不是 `PrivateDevices` 限制设备。
 
----
+## 🧩 在 HYDRA-UMC 中的角色
 
-## 2. 🔄 目标系统流程
+**HYDRA-UMC-VISION-NODE** 是 Vision AI Node 系列的集成父项目。它自己不运行摄像头、加速器或检测：它检查四个子项目是否存在且就绪，逐级描述感知流水线，验证原始摄像头帧并读取 DataMatrix 码。
 
-下图是本骨架项目正朝其构建的目标数据流——它记录的是架构决策，而非当前已
-运行的流水线。
+## 🏛️ 架构
+
+<p align="center">
+  <img src="images/architecture.svg" alt="HYDRA-UMC-VISION-NODE architecture" width="100%">
+</p>
+
+<details>
+<summary>图表的文本版本（Mermaid）</summary>
 
 ```mermaid
 flowchart TB
@@ -96,9 +115,14 @@ flowchart TB
     DETECT --> SAFETY["SAFETY-ZONES (E-STOP)"]
 ```
 
----
+</details>
 
-## 3. 🧠 高级技术信息
+### 目标系统流程
+
+下图是本骨架项目正朝其构建的目标数据流——它记录的是架构决策，而非当前已
+运行的流水线。
+
+### 高级技术信息
 
 ### 为什么本项目是集成父项目（以及这具体意味着什么）
 
@@ -124,61 +148,32 @@ V4L2 设备、通往 HYDRA-UMC 核心的 gRPC 端口）连接在一起。文件�
 ### 本骨架中已做出的设计决策
 
 * **版本从已安装的包元数据读取，而非硬编码。** `main.py` 调用 `importlib.metadata.version("hydra-umc-vision-node")`，而不是在包内某处再保留一个 `__version__` 字符串。这意味着 `bump_version.py` 永远只有一处需要修改（`pyproject.toml`），打印出的版本号永远不会与之悄然失步。
-* **里程表式递增只自动触及 `PATCH`/`MINOR`。** `bump_version.py` 在每次真实构建时递增 `PATCH`，超过 9 时进位到 `MINOR`，`MINOR` 超过 9 时进位到 `MAJOR`——但它从不自行递增 `MAJOR`。`MAJOR` 是一个刻意的、人为的语义决策（一个真正的架构里程碑），而非构建脚本应自行决定的事。这与生态系统中已使用的惯例相同（参见 `HYDRA-UMC-EDITOR-URDF/bump_version.py` 和 `HYDRA-UMC-SUITE/bump_version.py`）。
+** `bump_version.py` 在每次真实构建时递增 `PATCH`，超过 9 时进位到 `MINOR`，`MINOR` 超过 9 时进位到 `MAJOR`——但它从不自行递增 `MAJOR`。`MAJOR` 是一个刻意的、人为的语义决策（一个真正的架构里程碑），而非构建脚本应自行决定的事。这与生态系统中已使用的惯例相同（参见 `HYDRA-UMC-EDITOR-URDF/bump_version.py` 和 `HYDRA-UMC-SUITE/bump_version.py`）。
 * **计划中的控制 API 使用 gRPC/Protobuf，而非 REST**（见上方徽章）——之所以如此选择，是因为本节点所处的感知 → 修正 → 固件回路对延迟敏感，且在同一局域网内与其他 Python/嵌入式服务通信，gRPC 的二进制帧格式和流式支持比 JSON-over-HTTP 更合适。尚未实现；在此记录以便在代码落地前方向已经明确。
 * **为何 `family-status` 读取每个子项目自身的清单，而不是一份手工维护的列表。** `hydra-umc.project.json` 已经是整个生态系统仪表盘和更新器都信任的唯一真相来源——在这里再维护第二份列表，只要某个子项目的真实成熟度发生变化而没人记得同步更新，就会立刻产生偏差。
 * **为何缺少某个兄弟项目的本地检出会得到一个真实、诚实的"未找到"，而非一次崩溃。** 一个集成父项目真的无法预先知道开发者是否在本地检出了全部 4 个子项目——`manifest.py` 对每一种真实的失败情形（仓库缺失、清单缺失、JSON 格式错误）都返回 `None`，让 `family-status` 清楚地报告出来，而不是直接抛出异常。
 * **为何降级模式检测被拆分为一个探测函数和一个纯决策函数。** `hardware.py` 中的 `camera_available()`/`accelerator_available()` 是唯一真正接触硬件（一个 Linux 设备节点）的部分；`determine_mode()`/`active_stages()` 只接收普通布尔值，包含真正的决策逻辑。正是这种拆分，让每一种真实的硬件组合（完整、无摄像头、无加速器、完全无硬件）都能直接、确定性地被测试，无需模拟文件系统，也无需真实的 CM5+Hailo-8 硬件来证明逻辑正确。
 * **为何帧验证只检查结构，不检查像素内容。** 检测一个被截断/超大的缓冲区，或一个可疑地全部一致的缓冲区（传感器冻结、空白采集），是真实的、有用的、与硬件无关的验证，不需要任何参考图像也不需要摄像头即可诚实地测试。而判断一帧的真实内容是否看起来有问题（模糊、曝光、真正的视觉质量指标）则是一个根本不同、难得多的问题，需要真实采集的帧来校准——明确排除在这个 v0 的范围之外。
 
----
+## 🚀 快速开始
 
-## 📂 目录结构
+需要 Python 3.10 或更高版本。
 
-```text
-HYDRA-UMC-VISION-NODE/
-├── src/hydra_umc_vision_node/
-│   ├── __init__.py       # 包说明与版本
-│   ├── manifest.py       # 真实的、具防御性的兄弟项目自身清单读取器
-│   ├── family.py          # 对 4 个真实子项目的真实家族就绪检查
-│   ├── pipeline.py          # 真实的感知流水线清单（阶段 + 硬件需求）
-│   ├── frame.py                # 真实的、与硬件无关的帧损坏校验
-│   ├── hardware.py               # 真实的摄像头/加速器探测 + 降级模式逻辑
-│   ├── api.py                      # 简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 3 个子命令
-│   ├── main.py                     # 入口点 + `family-status`/`pipeline-status`/`validate-frame`
-│   ├── access.py                   # HTTP API 的可选 Bearer 令牌 (本机回环无需,非回环时必须)
-│   ├── codes.py                    # 读取一帧原始图像中的 DataMatrix 码 (贴片单元中一块板的身份)
-│   └── compat_record.py            # 一组检测结果由什么产生 (模型、版本、SHA-256、架构) 以及是否仍然适用
-├── tests/               # 真实测试：清单读取、家族状态、pipeline、frame、hardware、api、CLI
-├── docs/                # 文档与 API 参考
-├── os/                  # HydraOS 系统镜像配置（CM5）——仅父项目拥有,部署时填充(不在 git 中)
-├── models/               # 提供给 Hailo-8 NPU 的已编译 .hef 模型——仅父项目拥有,部署时填充(不在 git 中)
-├── build/               # 构建输出
-├── images/              # 媒体与图表
-├── systemd/
-│   └── hydra-umc-vision-node.service # 本地 CM5 感知 API 的 systemd 单元
-├── tools/
-│   ├── build_test.py    # 不递增版本号的构建检查
-│   ├── ci_validate.py   # CI 使用的清单/CHANGELOG/文档校验
-│   ├── _doc_policy.py   # 家族共享的文档规则 (HYDRA-UMC-SDK 的副本,保持同步)
-│   ├── _readme_parity.py # 检查八个 README 结构一致 (HYDRA-UMC-SDK 的副本,保持同步)
-│   └── hydra_project_tool.py # 每个仓库相同的命令: validate、test、ci、version、status、bump
-├── pyproject.toml       # 包元数据、依赖项、里程表版本号
-├── bump_version.py      # 里程表式版本递增（仅由显式 `bump` 命令运行）
-├── bump_manifest_version.py # 将 hydra-umc.project.json 的版本与原生版本同步(--sync)
-├── build.sh / build.bat # venv + 可编辑安装（含 dev 附加依赖） + 编译检查 + 测试
-├── run.sh / run.bat     # 从本地 venv 运行入口点（转发参数）
-├── docker-compose.yml   # Vision AI Node 4 个子项目的集成蓝图（未用 Docker 验证）
-└── CHANGELOG.md         # 逐版本历史（里程表方案，无日期）
+```bash
+./build.sh  # Linux, macOS (build.bat on Windows)
+./run.sh family-status
+./run.sh pipeline-status
+./run.sh validate-frame frame.raw --width 640 --height 480
+./run.sh serve --port 8105
 ```
 
-本仓库中不存在 `hardware/` 和 `firmware/`（原因见上方"高级技术信息"）。
-`os/` 和 `models/` 仅存在于本项目中——5 个项目中，4 个子项目并不携带各自
-的副本。
+## 🧪 测试
 
----
+运行 `python -m pytest -q tests` 会执行 98 个自动测试。 不需要硬件，也不需要这台机器以外的任何东西。
 
-## 🏗️ 构建与运行
+CI 运行 `HYDRA_UMC_CI=1 python tools/ci_validate.py`，检查清单、文档、八个 README 和图片。
+
+## 🏗️ 构建与发布
 
 ### 前提条件
 
@@ -197,7 +192,7 @@ HYDRA-UMC-VISION-NODE/
 2. **虚拟环境** —— 若 `.venv/` 尚不存在则创建它（可安全重复运行；已存在的 `.venv/` 会被复用，而非重新创建）。
 3. **可编辑安装（含 dev 附加依赖）** —— `pip install -e ".[dev]"` 以"可编辑"模式将本包安装到 `.venv` 中，因此对 `src/` 下源代码的修改会立即生效而无需重新安装，安装 `pytest`，并注册 `run.sh` 所使用的 `hydra-umc-vision-node` 控制台入口点。
 4. **编译检查** —— `python -m compileall -q src` 对 `src/` 下的每个 `.py` 文件进行字节码编译，即使某个文件从未被 `main.py` 实际导入，也能捕获整个包中的语法错误。
-5. **真实测试套件** —— `pytest tests/` 运行全部 74 个测试。
+5. **真实测试套件** —— `pytest tests/` 运行全部 98 个测试。
 
 脚本使用 `set -euo pipefail`，在第一个失败步骤处停止，只有全部步骤
 均成功时才打印 `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`)。
@@ -297,11 +292,55 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 * **`run.sh`/`run.bat` 提示"未找到 `.venv`"** —— 必须先至少运行一次 `build.sh`/`build.bat`；`run.sh`/`run.bat` 自身从不创建环境，只有构建脚本会。
 * **拉取更新后可编辑安装过期** —— 删除 `.venv/` 并重新运行 `build.sh`/`build.bat`；这种情况很少需要，因为 `pip install -e .` 通常无需重新安装即可识别源代码变更。
 
----
+## 📂 仓库结构
 
-## 🚀 当前状态与后续步骤
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Repository structure of HYDRA-UMC-VISION-NODE" width="100%">
+</p>
 
-**今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），61 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
+<details>
+<summary>目录树的文本版本</summary>
+
+```text
+HYDRA-UMC-VISION-NODE/
+├── src/hydra_umc_vision_node/   源代码
+│   ├── __init__.py              包说明与版本
+│   ├── manifest.py              真实的、具防御性的兄弟项目自身清单读取器
+│   ├── family.py                对 4 个真实子项目的真实家族就绪检查
+│   ├── pipeline.py              真实的感知流水线清单（阶段 + 硬件需求）
+│   ├── frame.py                 真实的、与硬件无关的帧损坏校验
+│   ├── hardware.py              真实的摄像头/加速器探测 + 降级模式逻辑
+│   ├── api.py                   简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 3 个子命令
+│   ├── main.py                  入口点 + `family-status`/`pipeline-status`/`validate-frame`
+│   ├── access.py                HTTP API 的可选 Bearer 令牌 (本机回环无需,非回环时必须)
+│   ├── codes.py                 读取一帧原始图像中的 DataMatrix 码 (贴片单元中一块板的身份)
+│   └── compat_record.py         一组检测结果由什么产生 (模型、版本、SHA-256、架构) 以及是否仍然适用
+├── tests/                       真实测试：清单读取、家族状态、pipeline、frame、hardware、api、CLI
+├── docs/                        文档与 API 参考
+├── images/                      媒体与图表
+├── systemd/                     服务单元
+├── tools/                       项目工具和 CI 检查
+├── .github/                     CI 工作流和 Issue 模板
+├── pyproject.toml               包的元数据
+├── bump_version.py              显式提升版本
+├── bump_manifest_version.py     将 hydra-umc.project.json 的版本与原生版本同步(--sync)
+├── build.sh / build.bat         venv + 可编辑安装（含 dev 附加依赖） + 编译检查 + 测试
+├── run.sh / run.bat             从本地 venv 运行入口点（转发参数）
+├── docker-compose.yml           Vision AI Node 4 个子项目的集成蓝图（未用 Docker 验证）
+├── CHANGELOG.md                 每个版本的变更
+├── Dockerfile                   容器镜像
+├── build-test.sh                不修改内容的构建检查
+├── hydra-umc.project.json       清单：版本、成熟度、系列
+└── test.sh                      运行测试
+```
+
+</details>
+
+## 🗺️ 路线图与已知限制
+
+**当前已知限制**
+
+**今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），98 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
 项目的完整集成蓝图文档（由各子项目自己的 Dockerfile 构建，从未用 Docker 运行过）——具体的真实构建/运行输出见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 **仍待完成的内容（顺序不分先后，无既定时间表）：**
@@ -312,7 +351,9 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 * 一旦 [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) 拥有真实的采集流水线，即进行多摄像头流水线同步。
 * 在装有 Docker 的环境中真正构建并运行 `docker-compose.yml`（4 个子项目已经提供了各自的 `Dockerfile`）。
 
----
+## 🌍 语言
+
+本 README 和仓库文档提供八种语言：英语、西班牙语、德语、法语、意大利语、日语、中文和葡萄牙语（葡萄牙）。它们同时编写，并由 CI 检查八个文件拥有相同的章节和相同的链接。 本仓库没有自己的界面或消息目录，因此没有需要翻译的界面文字。
 
 ## 🔗 相关项目
 
@@ -403,21 +444,27 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 - **[HYDRA-UMC-OPS-AGENT](https://github.com/JuanenRac/HYDRA-UMC-OPS-AGENT)** — 维护事件协调器：一个低权限的边缘角色采集经过脱敏的库存/健康快照，一个控制面角色以只读方式渲染它，并请求某个 AI 提供方给出诊断建议——从不应用补丁，也从不部署任何内容。
 - **[HYDRA-UMC-DEV-SERVER](https://github.com/JuanenRac/HYDRA-UMC-DEV-SERVER)** — 可复现的开发主机（Raspberry Pi 5 / CM5），保存整个生态系统的源代码，并在持久队列下运行有界的构建/测试任务；这是专用的开发角色，明确区别于运行中的 CM5。
 
----
+## 📚 文档
 
-## 📚 文档与社区
+更多阅读：
 
-- **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** —— 每个子命令（`family-status`、`pipeline-status`、`validate-frame`、`serve`）以及每个 JSON/HTTP API 路由，均附有真实捕获的输出。
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** —— 提交 Pull Request 所需的技术栈和编码规范。
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** —— 本社区所期望的行为准则。
-- **[SECURITY.md](SECURITY.md)** —— 如何报告漏洞，以及本项目真实的安全关注重点。
-- **[SUPPORT.md](SUPPORT.md)** —— 在哪里提问和报告缺陷。
-- **[LICENSE.md](LICENSE.md)** —— 本项目自身的许可证。
+* **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** —— 每个子命令（`family-status`、`pipeline-status`、`validate-frame`、`serve`）以及每个 JSON/HTTP API 路由，均附有真实捕获的输出。
+* [生态系统的安全基线](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)
+* [生态系统的威胁模型](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)
+* [本仓库的更新日志](CHANGELOG.md)
+* [本仓库的许可证](LICENSE.md)
+
+## 🤝 参与贡献与社区
+
+* 提交 pull request 之前，请运行 `HYDRA_UMC_CI=1 py -3 tools/ci_validate.py`（或 `HYDRA_UMC_CI=1 python3 tools/ci_validate.py`）：它必须输出 `CI_VALIDATION=PASS`。此检查不要运行 `build.sh` 或 `build.bat`；构建不是检查。
+* 八个 README 由 HYDRA-UMC-DOCS 中的同一个源生成；请勿手工编辑。修改源文件，再用 `tools/make_readmes.py` 重新生成。
+* 不要在 README 中声称尚未运行过的内容：属实时请写“仅模拟”或“尚未在硬件上试过”。
+* 请参阅 [CONTRIBUTING.md](CONTRIBUTING.md)、[行为准则](CODE_OF_CONDUCT.md)、[SECURITY.md](SECURITY.md) 和 [SUPPORT.md](SUPPORT.md)。
 
 ## 👤 作者
-**JuanenRac** (Electro Hobby 3D)
-📧 electrohobby3d@gmail.com
-📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
 
 ## 📜 许可证
-GPL-3.0-or-later —— 详见 LICENSE。
+
+GPL-3.0-or-later - [LICENSE](LICENSE).

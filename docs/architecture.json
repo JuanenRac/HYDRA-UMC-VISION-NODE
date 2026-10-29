@@ -1,0 +1,155 @@
+{
+  "repo": "HYDRA-UMC-VISION-NODE",
+  "ecosystem": "hydra",
+  "tagline": "A readiness hub: it checks the family, describes the pipeline and validates frames; the heavy work lives in the children.",
+  "description": "HYDRA-UMC-VISION-NODE reads the manifests of its four sibling repositories, describes the perception pipeline against the hardware that is present, validates raw frames, reads DataMatrix codes and serves the same checks over HTTP.",
+  "columns": [
+    "WHO CALLS IT",
+    "THIS REPOSITORY",
+    "THE FAMILY"
+  ],
+  "nodes": [
+    {
+      "id": "cli",
+      "column": 0,
+      "level": "tested",
+      "title": "CLI",
+      "lines": [
+        "family-status, pipeline-status,",
+        "validate-frame, serve"
+      ],
+      "code": [
+        "src/hydra_umc_vision_node/main.py"
+      ]
+    },
+    {
+      "id": "http",
+      "column": 0,
+      "level": "tested",
+      "title": "HTTP API",
+      "lines": [
+        "three routes; token needed",
+        "away from loopback"
+      ],
+      "code": [
+        "src/hydra_umc_vision_node/api.py",
+        "src/hydra_umc_vision_node/access.py"
+      ]
+    },
+    {
+      "id": "kids",
+      "column": 2,
+      "level": "contract",
+      "title": "The four children",
+      "lines": [
+        "STREAMER, DETECTION-HEF,",
+        "SAFETY-ZONES, SERVOING"
+      ]
+    },
+    {
+      "id": "hw",
+      "column": 2,
+      "level": "untested",
+      "title": "Camera and Hailo-8",
+      "lines": [
+        "looked for as device",
+        "nodes; none was present"
+      ]
+    },
+    {
+      "id": "fam",
+      "column": 1,
+      "level": "tested",
+      "title": "family.py + manifest.py",
+      "lines": [
+        "reads the manifests of",
+        "the four children"
+      ],
+      "code": [
+        "src/hydra_umc_vision_node/family.py",
+        "src/hydra_umc_vision_node/manifest.py"
+      ]
+    },
+    {
+      "id": "pip",
+      "column": 1,
+      "level": "tested",
+      "title": "pipeline.py + hardware.py",
+      "lines": [
+        "stages and which device",
+        "each one needs"
+      ],
+      "code": [
+        "src/hydra_umc_vision_node/pipeline.py",
+        "src/hydra_umc_vision_node/hardware.py"
+      ]
+    },
+    {
+      "id": "cod",
+      "column": 1,
+      "level": "tested",
+      "title": "codes + compat_record",
+      "lines": [
+        "DataMatrix reading, and",
+        "model compatibility records"
+      ],
+      "code": [
+        "src/hydra_umc_vision_node/codes.py",
+        "src/hydra_umc_vision_node/compat_record.py"
+      ]
+    },
+    {
+      "id": "frm",
+      "column": 1,
+      "level": "tested",
+      "title": "frame.py",
+      "lines": [
+        "structure of a raw frame",
+        "against its own spec"
+      ],
+      "code": [
+        "src/hydra_umc_vision_node/frame.py"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "cli",
+      "to": "fam",
+      "level": "tested"
+    },
+    {
+      "from": "http",
+      "to": "fam",
+      "level": "tested"
+    },
+    {
+      "from": "fam",
+      "to": "kids",
+      "level": "contract",
+      "label": "manifests"
+    },
+    {
+      "from": "pip",
+      "to": "hw",
+      "level": "untested",
+      "label": "probes"
+    },
+    {
+      "from": "fam",
+      "to": "pip",
+      "level": "tested"
+    },
+    {
+      "from": "pip",
+      "to": "frm",
+      "level": "tested"
+    },
+    {
+      "from": "frm",
+      "to": "cod",
+      "level": "tested"
+    }
+  ],
+  "footer": "Tried on a computer without a camera or a Hailo-8, so the degraded mode is what was exercised."
+}
