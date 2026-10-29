@@ -287,6 +287,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── __init__.py              Description et version du paquet
 │   ├── manifest.py              Vrai lecteur défensif du manifeste d'un projet frère
 │   ├── family.py                Vraie vérification de disponibilité de la famille sur les 4 vrais enfants
+│   ├── live.py                  Santé en direct des enfants (--live)
 │   ├── pipeline.py              Vrai manifeste de pipeline de perception (étapes + besoins matériels)
 │   ├── frame.py                 Vraie validation de corruption de frame, indépendante du matériel
 │   ├── hardware.py              Vraies sondes caméra/accélérateur + logique de mode dégradé

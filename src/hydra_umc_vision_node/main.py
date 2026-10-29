@@ -30,6 +30,7 @@ from pathlib import Path
 from .access import bind_problem, load_token
 from .api import VisionNodeServer
 from .family import check_family_status
+from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
 from .frame import FrameSpec, validate_frame
 from .hardware import PipelineMode, accelerator_available, active_stages, camera_available, determine_mode
 from .pipeline import build_manifest, manifest_to_dict
@@ -70,7 +71,7 @@ def _print_identity() -> None:
     print(ROLE)
 
 
-def _run_family_status(workspace: Path) -> int:
+def _run_family_status(workspace: Path, live: bool = False, host: str = "127.0.0.1", timeout: float = DEFAULT_TIMEOUT_SECONDS) -> int:
     statuses = check_family_status(workspace)
     print(f"Vision AI Node family status (workspace: {workspace}):")
     for status in statuses:
@@ -79,6 +80,21 @@ def _run_family_status(workspace: Path) -> int:
             continue
         m = status.manifest
         print(f"  {status.name}: v{m.version}, maturity={m.maturity}, role={m.role}")
+
+    if live:
+        print(f"\nLive health (host {host}):")
+        down = 0
+        for health in check_family_health(statuses, host, timeout):
+            if health.state == "up":
+                print(f"  {health.name}: up, {health.latency_ms} ms, version {health.served_version or 'not reported'}")
+            elif health.state == "no_service":
+                print(f"  {health.name}: {health.detail}")
+            else:
+                down += 1
+                print(f"  {health.name}: DOWN ({health.detail})")
+        if down:
+            print(f"\n{down} service(s) did not answer.")
+            return 1
 
     missing = [status.name for status in statuses if not status.present]
     if missing:
@@ -167,6 +183,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory containing the sibling repo checkouts (default: this repo's own parent directory).",
     )
 
+    family_parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Also ask each child that declares a service for its health (one short GET on the port its manifest names); off by default.",
+    )
+    family_parser.add_argument("--host", default="127.0.0.1", help="Host the children listen on for --live (default: loopback).")
+    family_parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_SECONDS, help="Seconds to wait for each child with --live.")
+
     subparsers.add_parser(
         "pipeline-status",
         help="Real pipeline manifest plus real degraded-mode detection for this node's actual hardware.",
@@ -204,7 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "family-status":
-        return _run_family_status(args.workspace)
+        return _run_family_status(args.workspace, args.live, args.host, args.timeout)
     if args.command == "pipeline-status":
         return _run_pipeline_status()
     if args.command == "validate-frame":

@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **`family-status --live` asks the children for their health:** besides reading the manifests, every child that declares a service (port and health path in its manifest) is asked once with a short timeout, on loopback unless `--host` says otherwise; the command prints the latency and the version each service reports and fails when one does not answer. Only the port and path of the manifest are used, redirects are not followed and the answer is read up to a limit. Off by default.
+
 - **README in the universal layout:** the README and its seven translations follow the layout that the four families share (22 sections in a fixed order), with an architecture picture and a repository-structure picture drawn from `docs/architecture.json` and `docs/structure.json`; the CI validator checks both pictures and the file tree.
 
 - **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.

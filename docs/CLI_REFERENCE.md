@@ -49,17 +49,25 @@ High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Visio
 
 ## Commands
 
-### `family-status [--workspace PATH]`
+### `family-status [--workspace PATH] [--live] [--host HOST] [--timeout SECONDS]`
 
 ```
 $ hydra-umc-vision-node family-status -h
 usage: hydra-umc-vision-node family-status [-h] [--workspace WORKSPACE]
+                                           [--live] [--host HOST]
+                                           [--timeout TIMEOUT]
 
 options:
   -h, --help            show this help message and exit
   --workspace WORKSPACE
                         Directory containing the sibling repo checkouts
                         (default: this repo's own parent directory).
+  --live                Also ask each child that declares a service for its
+                        health (one short GET on the port its manifest names);
+                        off by default.
+  --host HOST           Host the children listen on for --live (default:
+                        loopback).
+  --timeout TIMEOUT     Seconds to wait for each child with --live.
 ```
 
 Reads each of the four real children's own `hydra-umc.project.json` —
@@ -91,6 +99,19 @@ Vision AI Node family status (workspace: ./empty-ws):
   HYDRA-UMC-VISUAL-SERVOING-API: NOT FOUND
 
 4 of 4 children not found: HYDRA-UMC-VISION-STREAMER, HYDRA-UMC-DETECTION-HEF, HYDRA-UMC-SAFETY-ZONES, HYDRA-UMC-VISUAL-SERVOING-API
+```
+
+With `--live` every child that declares a service in its manifest (a port and a health path) is also asked once, with a short
+timeout, on the loopback address unless `--host` names another one; only the port and the path of the manifest are used and
+redirects are not followed. A service that answers prints its latency and the version it reports; one that does not answer is
+`DOWN` and the exit code is `1`:
+
+```
+Live health (host 127.0.0.1):
+  HYDRA-UMC-VISION-STREAMER: no service declared in the manifest
+  HYDRA-UMC-DETECTION-HEF: up, 3.2 ms, version 0.1.4
+  HYDRA-UMC-SAFETY-ZONES: DOWN (ConnectionRefusedError)
+  HYDRA-UMC-VISUAL-SERVOING-API: up, 2.8 ms, version not reported
 ```
 
 ### `pipeline-status`

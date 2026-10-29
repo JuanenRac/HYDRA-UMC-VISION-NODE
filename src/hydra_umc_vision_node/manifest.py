@@ -26,6 +26,9 @@ class ChildManifest:
     version: str
     maturity: str
     role: str
+    # The service the child declares (None when it declares none): its port and its health path.
+    service_port: int | None = None
+    health_path: str | None = None
 
 
 def read_child_manifest(repo_path: Path) -> ChildManifest | None:
@@ -45,11 +48,22 @@ def read_child_manifest(repo_path: Path) -> ChildManifest | None:
         required = ("name", "version", "maturity", "role")
         if any(not isinstance(data.get(field), str) or not data[field].strip() for field in required):
             return None
+        service = data.get("service")
+        port = health = None
+        if isinstance(service, dict):
+            raw_port = service.get("port")
+            if isinstance(raw_port, int) and not isinstance(raw_port, bool) and 0 < raw_port < 65536:
+                port = raw_port
+            raw_health = service.get("health_path")
+            if isinstance(raw_health, str) and raw_health.startswith("/"):
+                health = raw_health
         return ChildManifest(
             name=data["name"],
             version=data["version"],
             maturity=data["maturity"],
             role=data["role"],
+            service_port=port,
+            health_path=health,
         )
     except (OSError, json.JSONDecodeError, KeyError, TypeError):
         return None

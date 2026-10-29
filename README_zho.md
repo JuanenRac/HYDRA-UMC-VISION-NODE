@@ -307,6 +307,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── __init__.py              包说明与版本
 │   ├── manifest.py              真实的、具防御性的兄弟项目自身清单读取器
 │   ├── family.py                对 4 个真实子项目的真实家族就绪检查
+│   ├── live.py                  子项目的实时健康状态 (--live)
 │   ├── pipeline.py              真实的感知流水线清单（阶段 + 硬件需求）
 │   ├── frame.py                 真实的、与硬件无关的帧损坏校验
 │   ├── hardware.py              真实的摄像头/加速器探测 + 降级模式逻辑

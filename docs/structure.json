@@ -88,6 +88,19 @@
           }
         },
         {
+          "name": "live.py",
+          "desc": {
+            "en": "Live health of the children (--live)",
+            "es": "Salud en vivo de los hijos (--live)",
+            "de": "Live-Zustand der Kinder (--live)",
+            "fr": "Santé en direct des enfants (--live)",
+            "it": "Salute in tempo reale dei figli (--live)",
+            "ja": "子プロジェクトのライブ状態 (--live)",
+            "zh": "子项目的实时健康状态 (--live)",
+            "pt": "Estado em direto dos filhos (--live)"
+          }
+        },
+        {
           "name": "pipeline.py",
           "desc": {
             "en": "Real perception pipeline manifest",
