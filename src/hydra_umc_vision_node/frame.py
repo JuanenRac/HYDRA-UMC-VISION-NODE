@@ -17,6 +17,7 @@ lets this be tested honestly without CM5+Hailo-8 hardware.
 """
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 
@@ -27,18 +28,68 @@ MAX_CHANNELS = 4
 MAX_FRAME_BYTES = 64 * 1024 * 1024
 
 
+# Pixel formats a spec may name: (bytes per pixel numerator, denominator, channels for packed formats or 0).
+# NV12 is planar (full-resolution Y plane plus a half-resolution interleaved UV plane), so it has no row stride.
+PIXEL_FORMATS: dict[str, tuple[int, int]] = {
+    "GRAY": (1, 1),
+    "RGB": (3, 1),
+    "BGR": (3, 1),
+    "RGBA": (4, 1),
+    "BGRA": (4, 1),
+    "YUYV": (2, 1),
+    "NV12": (3, 2),
+}
+
+
 @dataclass(frozen=True)
 class FrameSpec:
     """The expected shape of one frame - what `capture` in pipeline.py
-    is supposed to hand `preprocess`."""
+    is supposed to hand `preprocess`.
+
+    Without `pixel_format` the frame is `width x height x channels` bytes, as before. With one (`RGB`, `BGR`,
+    `RGBA`, `BGRA`, `GRAY`, `YUYV`, `NV12`) the size follows the format, and `stride` (bytes per row of a packed
+    format, at least `width x bytes per pixel`) lets a driver that pads its rows be described exactly.
+    """
 
     width: int
     height: int
     channels: int = 3  # RGB by default
+    pixel_format: str | None = None
+    stride: int | None = None
 
     @property
     def expected_bytes(self) -> int:
-        return self.width * self.height * self.channels
+        if self.pixel_format is None:
+            return self.width * self.height * self.channels
+        num, den = PIXEL_FORMATS[self.pixel_format]
+        if self.stride is not None:
+            return self.stride * self.height
+        return self.width * self.height * num // den
+
+    def problem(self) -> str | None:
+        """Why this spec cannot describe a frame, or None."""
+        if self.width <= 0 or self.height <= 0 or self.channels <= 0:
+            return f"FrameSpec has non-positive dimensions: {self.width}x{self.height}x{self.channels}"
+        if self.width > MAX_DIMENSION or self.height > MAX_DIMENSION or self.channels > MAX_CHANNELS:
+            return (
+                f"FrameSpec is larger than this node accepts (at most {MAX_DIMENSION}x{MAX_DIMENSION}x{MAX_CHANNELS}): "
+                f"{self.width}x{self.height}x{self.channels}"
+            )
+        if self.pixel_format is None:
+            if self.stride is not None:
+                return "FrameSpec.stride needs a pixel_format"
+            return None
+        if self.pixel_format not in PIXEL_FORMATS:
+            return f"unknown pixel_format {self.pixel_format!r} (one of {sorted(PIXEL_FORMATS)})"
+        num, den = PIXEL_FORMATS[self.pixel_format]
+        if self.pixel_format in ("YUYV", "NV12") and (self.width % 2 or (self.pixel_format == "NV12" and self.height % 2)):
+            return f"{self.pixel_format} needs an even width" + (" and height" if self.pixel_format == "NV12" else "")
+        if self.stride is not None:
+            if self.pixel_format == "NV12":
+                return "NV12 is planar and has no row stride"
+            if isinstance(self.stride, bool) or not isinstance(self.stride, int) or self.stride < self.width * num:
+                return f"stride must be an integer of at least {self.width * num} bytes for {self.width} x {self.pixel_format}"
+        return None
 
 
 @dataclass(frozen=True)
@@ -60,22 +111,9 @@ def validate_frame(data: bytes, spec: FrameSpec) -> list[FrameValidationIssue]:
     """
     issues: list[FrameValidationIssue] = []
 
-    if spec.width <= 0 or spec.height <= 0 or spec.channels <= 0:
-        issues.append(
-            FrameValidationIssue(
-                "invalid_spec",
-                f"FrameSpec has non-positive dimensions: {spec.width}x{spec.height}x{spec.channels}",
-            )
-        )
-        return issues
-    if spec.width > MAX_DIMENSION or spec.height > MAX_DIMENSION or spec.channels > MAX_CHANNELS:
-        issues.append(
-            FrameValidationIssue(
-                "invalid_spec",
-                f"FrameSpec is larger than this node accepts (at most {MAX_DIMENSION}x{MAX_DIMENSION}x{MAX_CHANNELS}): "
-                f"{spec.width}x{spec.height}x{spec.channels}",
-            )
-        )
+    spec_problem = spec.problem()
+    if spec_problem is not None:
+        issues.append(FrameValidationIssue("invalid_spec", spec_problem))
         return issues
 
     expected = spec.expected_bytes
@@ -100,6 +138,32 @@ def validate_frame(data: bytes, spec: FrameSpec) -> list[FrameValidationIssue]:
         )
 
     return issues
+
+
+class FrozenFrameWatcher:
+    """Flags a sensor that keeps returning the same frame. A frozen sensor does not always give a uniform buffer; it
+    gives the SAME buffer again and again. Feed every frame to `check`: the hash of each frame is compared with the
+    previous one and the issue `frozen_frame` is returned once `repeats` identical frames in a row have followed the
+    first (so `repeats=2` means three equal frames). A different frame resets the count."""
+
+    def __init__(self, repeats: int = 2) -> None:
+        if isinstance(repeats, bool) or not isinstance(repeats, int) or repeats < 1:
+            raise ValueError("repeats must be an integer of at least 1")
+        self.repeats = repeats
+        self._last: str | None = None
+        self._same = 0
+
+    def check(self, data: bytes) -> FrameValidationIssue | None:
+        digest = hashlib.sha256(data).hexdigest()
+        if digest == self._last:
+            self._same += 1
+        else:
+            self._last, self._same = digest, 0
+        if self._same >= self.repeats:
+            return FrameValidationIssue(
+                "frozen_frame", f"the last {self._same + 1} frames are byte-for-byte identical - likely a frozen sensor"
+            )
+        return None
 
 
 def is_frame_valid(data: bytes, spec: FrameSpec) -> bool:
