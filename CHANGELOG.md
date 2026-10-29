@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.
 - The README in the eight languages describes the build scripts as they are: `build.sh` prints `Build complete.` and uses `python3`, `build.bat` prints `== Build OK ==` and uses `python`, and the local virtual environment is in the root of the repository, not under `build/`.
 
 ## [0.1.6] - Reading the code of a board and optional Bearer token for the HTTP API
