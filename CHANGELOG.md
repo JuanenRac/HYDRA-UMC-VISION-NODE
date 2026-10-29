@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+- The README in the eight languages describes the build scripts as they are: `build.sh` prints `Build complete.` and uses `python3`, `build.bat` prints `== Build OK ==` and uses `python`, and the local virtual environment is in the root of the repository, not under `build/`.
+
 ## [0.1.6] - Reading the code of a board and optional Bearer token for the HTTP API
 
 - **Reading the code of a board.** `POST /read-code?width=W&height=H&channels=N` takes one raw frame as the body (like `/validate-frame`, with the same size limits, and with the token when there is one) and returns the DataMatrix codes in it as `{"codes": [...], "count": N}`, for the pick-and-place bridge that compares the code on a board with the board of its job. The decoder is `pylibdmtx`, an optional dependency imported on first use: without it the route answers `503` and says what to install, and the rest of the API is unaffected. A code is bounded (printable ASCII, at most 256 characters, at most 16 codes per frame) and a blank frame is read like any other. The reading of the frame body is shared by both routes. Tested with a fake decoder; not tried on a real label.

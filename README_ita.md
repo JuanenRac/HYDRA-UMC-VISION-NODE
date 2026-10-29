@@ -139,7 +139,7 @@ HYDRA-UMC-VISION-NODE/
 ├── docs/                # Documentazione e riferimento API
 ├── os/                  # Configurazione immagine HydraOS (CM5) - solo qui, popolata al deployment (non in git)
 ├── models/              # Modelli .hef compilati serviti alla NPU Hailo-8 - solo qui, popolata al deployment (non in git)
-├── build/               # Output di build (qui vive anche il .venv locale)
+├── build/               # Output di build
 ├── images/              # Media e diagrammi
 ├── systemd/
 │   └── hydra-umc-vision-node.service # Unità systemd della API locale di percezione sulla CM5
@@ -183,7 +183,7 @@ HYDRA-UMC-VISION-NODE/
 4. **Compile-check** — `python -m compileall -q src` compila in bytecode ogni file `.py` sotto `src/`, individuando errori di sintassi in tutto il pacchetto anche in file mai realmente importati da `main.py`.
 5. **Suite di test reale** — `pytest tests/` esegue tutti i 74 test.
 
-Lo script usa `set -euo pipefail` e si ferma al primo passo che fallisce, stampando `== Build OK ==` solo se tutti e 5 i passi hanno avuto successo.
+Lo script usa `set -euo pipefail` e si ferma al primo passo che fallisce, stampando `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) solo se tutti e 5 i passi hanno avuto successo.
 
 ```bash
 ./run.sh
@@ -270,7 +270,7 @@ Ogni rotta risponde con un corpo di errore onesto (`{"error": "..."}`) e il codi
 
 ### Risoluzione dei problemi
 
-* **`python`/`python3` non trovato** — installa Python 3.10+ e assicurati che sia nel `PATH`; entrambi gli script provano prima `python3`, con `python` come fallback.
+* **`python`/`python3` non trovato** — installa Python 3.10+ e assicurati che sia nel `PATH`; `build.sh` usa `python3`, `build.bat` usa `python`.
 * **`compileall` fallisce** — significa che è stato introdotto un vero errore di sintassi sotto `src/`; lo script di build esce con codice diverso da zero senza creare/aggiornare l'installazione, di proposito, così un pacchetto rotto non viene mai presentato come "build riuscita".
 * **`run.sh`/`run.bat` dice "No `.venv` found"** — `build.sh`/`build.bat` deve essere eseguito almeno una volta prima; `run.sh`/`run.bat` non crea mai l'ambiente da solo, solo i build lo fanno.
 * **Installazione editabile obsoleta dopo un pull** — elimina `.venv/` e riesegui `build.sh`/`build.bat`; raramente necessario, poiché `pip install -e .` normalmente recepisce le modifiche al codice senza reinstallare.

@@ -139,7 +139,7 @@ HYDRA-UMC-VISION-NODE/
 ├── docs/                # Documentation and API reference
 ├── os/                  # HydraOS system image configuration (CM5) - parent-only, deploy-time populated (not in git)
 ├── models/              # Compiled .hef models served to the Hailo-8 NPU - parent-only, deploy-time populated (not in git)
-├── build/               # Build output (local .venv lives here too)
+├── build/               # Build output
 ├── images/              # Media and diagrams
 ├── systemd/
 │   └── hydra-umc-vision-node.service # Local CM5 perception API systemd unit
@@ -183,7 +183,7 @@ HYDRA-UMC-VISION-NODE/
 4. **Compile-check** — `python -m compileall -q src` byte-compiles every `.py` file under `src/`, catching syntax errors across the whole package even in files never actually imported by `main.py`.
 5. **Real test suite** — `pytest tests/` runs all 74 tests.
 
-The script uses `set -euo pipefail` and stops at the first failing step, printing `== Build OK ==` only if every step succeeded.
+The script uses `set -euo pipefail` and stops at the first failing step, printing `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) only if every step succeeded.
 
 ```bash
 ./run.sh
@@ -270,7 +270,7 @@ Every route replies with an honest error body (`{"error": "..."}`) and the match
 
 ### Troubleshooting
 
-* **`python`/`python3` not found** — install Python 3.10+ and make sure it is on `PATH`; both scripts try `python3` first, falling back to `python`.
+* **`python`/`python3` not found** — install Python 3.10+ and make sure it is on `PATH`; `build.sh` uses `python3`, `build.bat` uses `python`.
 * **`compileall` fails** — this means a real syntax error was introduced under `src/`; the build script exits non-zero without creating/updating the install, on purpose, so a broken package is never left "successfully built".
 * **`run.sh`/`run.bat` says "No `.venv` found"** — `build.sh`/`build.bat` must be run at least once first; `run.sh`/`run.bat` never creates the environment itself, only builds do.
 * **Stale editable install after pulling changes** — delete `.venv/` and re-run `build.sh`/`build.bat`; this is rarely needed since `pip install -e .` normally picks up source changes without reinstalling.

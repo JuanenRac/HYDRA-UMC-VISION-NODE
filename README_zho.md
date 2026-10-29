@@ -153,7 +153,7 @@ HYDRA-UMC-VISION-NODE/
 ├── docs/                # 文档与 API 参考
 ├── os/                  # HydraOS 系统镜像配置（CM5）——仅父项目拥有,部署时填充(不在 git 中)
 ├── models/               # 提供给 Hailo-8 NPU 的已编译 .hef 模型——仅父项目拥有,部署时填充(不在 git 中)
-├── build/               # 构建输出（本地 .venv 也存放于此）
+├── build/               # 构建输出
 ├── images/              # 媒体与图表
 ├── systemd/
 │   └── hydra-umc-vision-node.service # 本地 CM5 感知 API 的 systemd 单元
@@ -200,7 +200,7 @@ HYDRA-UMC-VISION-NODE/
 5. **真实测试套件** —— `pytest tests/` 运行全部 74 个测试。
 
 脚本使用 `set -euo pipefail`，在第一个失败步骤处停止，只有全部步骤
-均成功时才打印 `== Build OK ==`。
+均成功时才打印 `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`)。
 
 ```bash
 ./run.sh
@@ -292,7 +292,7 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 
 ### 故障排查
 
-* **找不到 `python`/`python3`** —— 安装 Python 3.10+ 并确保其在 `PATH` 中；两个脚本都会先尝试 `python3`，再回退到 `python`。
+* **找不到 `python`/`python3`** —— 安装 Python 3.10+ 并确保其在 `PATH` 中；`build.sh` 使用 `python3`，`build.bat` 使用 `python`。
 * **`compileall` 失败** —— 意味着 `src/` 下确实引入了语法错误；构建脚本会以非零状态退出，且不会创建/更新安装，这是故意设计的，为的是绝不留下一个"构建成功"却损坏的包。
 * **`run.sh`/`run.bat` 提示"未找到 `.venv`"** —— 必须先至少运行一次 `build.sh`/`build.bat`；`run.sh`/`run.bat` 自身从不创建环境，只有构建脚本会。
 * **拉取更新后可编辑安装过期** —— 删除 `.venv/` 并重新运行 `build.sh`/`build.bat`；这种情况很少需要，因为 `pip install -e .` 通常无需重新安装即可识别源代码变更。

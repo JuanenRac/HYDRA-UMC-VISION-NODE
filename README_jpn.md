@@ -162,7 +162,7 @@ HYDRA-UMC-VISION-NODE/
 ├── docs/                # ドキュメントと API リファレンス
 ├── os/                  # HydraOS システムイメージ設定（CM5）——親プロジェクト専用、デプロイ時に配置(gitには含まれない)
 ├── models/               # Hailo-8 NPU に配信されるコンパイル済み .hef モデル——親プロジェクト専用、デプロイ時に配置(gitには含まれない)
-├── build/               # ビルド出力（ローカルの .venv もここに存在）
+├── build/               # ビルド出力
 ├── images/              # メディアと図表
 ├── systemd/
 │   └── hydra-umc-vision-node.service # ローカルCM5知覚APIのsystemdユニット
@@ -210,7 +210,7 @@ HYDRA-UMC-VISION-NODE/
 5. **実際のテストスイート** — `pytest tests/` が全 74 件のテストを実行します。
 
 スクリプトは `set -euo pipefail` を使用し、最初に失敗したステップで停止
-します。すべてのステップが成功した場合にのみ `== Build OK ==` を
+します。すべてのステップが成功した場合にのみ `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) を
 表示します。
 
 ```bash
@@ -309,7 +309,7 @@ curl -X POST "http://127.0.0.1:8094/validate-frame?width=4&height=4&channels=3" 
 
 ### トラブルシューティング
 
-* **`python`/`python3` が見つからない** — Python 3.10+ をインストールし `PATH` に含まれていることを確認してください。両スクリプトとも先に `python3` を試し、次に `python` にフォールバックします。
+* **`python`/`python3` が見つからない** — Python 3.10+ をインストールし `PATH` に含まれていることを確認してください。`build.sh` は `python3` を、`build.bat` は `python` を使います。
 * **`compileall` が失敗する** — `src/` 下に実際の構文エラーが導入されたことを意味します。ビルドスクリプトは意図的に非ゼロで終了し、インストールの作成/更新は行いません。壊れたパッケージが「ビルド成功」のまま放置されることは決してありません。
 * **`run.sh`/`run.bat` が「`.venv` が見つかりません」と表示する** — 先に少なくとも 1 回 `build.sh`/`build.bat` を実行する必要があります。`run.sh`/`run.bat` 自体が環境を作成することはなく、ビルドのみが作成します。
 * **変更を取り込んだ後、editable インストールが古いままになる** — `.venv/` を削除して `build.sh`/`build.bat` を再実行してください。`pip install -e .` は通常、再インストールなしにソースの変更を認識するため、これが必要になることはまれです。
