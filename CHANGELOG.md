@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.7] - Frame specs with pixel format and stride, a frozen-frame watcher and a live family status
+
 - **Frame specs with a pixel format and a stride, and a frozen-frame watcher:** `FrameSpec` may name a `pixel_format` (`GRAY`, `RGB`, `BGR`, `RGBA`, `BGRA`, `YUYV`, `NV12`) and a row `stride`, and the expected size follows them; an impossible combination (unknown format, odd width for `YUYV`, a stride smaller than a row) is reported as `invalid_spec`. A spec without them behaves as before. `FrozenFrameWatcher` flags a sensor that keeps returning byte-for-byte the same frame (`frozen_frame`), which a uniform-buffer check does not catch.
 - **`family-status --live` asks the children for their health:** besides reading the manifests, every child that declares a service (port and health path in its manifest) is asked once with a short timeout, on loopback unless `--host` says otherwise; the command prints the latency and the version each service reports and fails when one does not answer. Only the port and path of the manifest are used, redirects are not followed and the answer is read up to a limit. Off by default.
 

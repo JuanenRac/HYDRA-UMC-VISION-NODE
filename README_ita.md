@@ -20,7 +20,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
   <img src="https://img.shields.io/badge/Tests-98%20passing-2ea44f.svg" alt="Tests">
-  <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 
 | | |
 |---|---|
-| Versione | `0.1.6` |
+| Versione | `0.1.7` |
 | Maturità | Funzionale |
 | Test | 98 (`python -m pytest -q tests`) |
 | Tecnologia | Python / CM5 / Hailo-8 |
@@ -193,7 +193,7 @@ Individua l'interprete Python dentro `.venv` (gestisce sia il layout POSIX `.ven
 L'invocazione nuda stampa nome + versione + ruolo:
 
 ```text
-HYDRA-UMC-VISION-NODE v0.1.6
+HYDRA-UMC-VISION-NODE v0.1.7
 High-speed perception edge AI node (Hailo-8 + CM5) - integration parent of Vision-Streamer, Detection-HEF, Safety-Zones and Visual-Servoing-API.
 ```
 
