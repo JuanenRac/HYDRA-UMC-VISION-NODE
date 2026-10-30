@@ -217,11 +217,11 @@ La vraie sous-commande `pipeline-status` sonde le matériel réel et rapporte le
 ```json
 {
   "manifest": { "version": "0.1.0", "stages": [ "..." ] },
-  "camera_present": false,
-  "accelerator_present": false,
+  "cameraPresent": false,
+  "acceleratorPresent": false,
   "mode": "degraded_no_hardware",
-  "runnable_stages": ["preprocess", "postprocess", "publish"],
-  "skipped_stages": ["capture", "inference"]
+  "runnableStages": ["preprocess", "postprocess", "publish"],
+  "skippedStages": ["capture", "inference"]
 }
 ```
 

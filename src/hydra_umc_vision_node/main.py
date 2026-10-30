@@ -33,7 +33,7 @@ from .family import check_family_status
 from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
 from .frame import FrameSpec, validate_frame
 from .hardware import PipelineMode, accelerator_available, active_stages, camera_available, determine_mode
-from .pipeline import build_manifest, manifest_to_dict
+from .pipeline import build_manifest, pipeline_status_dict
 
 PROJECT_NAME = "HYDRA-UMC-VISION-NODE"
 DIST_NAME = "hydra-umc-vision-node"
@@ -111,14 +111,9 @@ def _run_pipeline_status() -> int:
     mode = determine_mode(camera, accelerator)
     runnable, skipped = active_stages(manifest, mode)
 
-    output = {
-        "manifest": manifest_to_dict(manifest),
-        "camera_present": camera,
-        "accelerator_present": accelerator,
-        "mode": mode.value,
-        "runnable_stages": [s.name for s in runnable],
-        "skipped_stages": [s.name for s in skipped],
-    }
+    output = pipeline_status_dict(
+        manifest, camera, accelerator, mode.value, [s.name for s in runnable], [s.name for s in skipped]
+    )
     print(json.dumps(output, indent=2))
 
     return 0 if mode == PipelineMode.FULL else 1

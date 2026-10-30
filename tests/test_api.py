@@ -103,6 +103,9 @@ def test_pipeline_status(tmp_path: Path) -> None:
         assert "manifest" in body
         assert body["mode"] in {"full", "degraded_no_camera", "degraded_no_accelerator", "degraded_no_hardware"}
         assert isinstance(body["runnableStages"], list)
+        assert body["runnable_stages"] == body["runnableStages"]
+        assert body["camera_present"] == body["cameraPresent"]
+        assert body["manifest"]["stages"][0]["requiresCamera"] is True
 
 
 def test_validate_frame_valid(tmp_path: Path) -> None:

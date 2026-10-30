@@ -127,8 +127,8 @@ options:
 Prints this node's real perception pipeline manifest (`capture` →
 `preprocess` → `inference` → `postprocess` → `publish`, each stage
 declaring whether it really needs a camera and/or the Hailo-8
-accelerator), then real hardware probing (`camera_present`,
-`accelerator_present`) and the resulting degraded-mode decision. On this
+accelerator), then real hardware probing (`cameraPresent`,
+`acceleratorPresent`) and the resulting degraded-mode decision. On this
 dev machine — no CM5 camera, no Hailo-8 — the honest result is
 `degraded_no_hardware`, with `capture` and `inference` correctly marked
 as unable to run:
@@ -142,44 +142,44 @@ $ hydra-umc-vision-node pipeline-status
       {
         "name": "capture",
         "description": "Read a raw frame from the attached camera.",
-        "requires_camera": true,
-        "requires_accelerator": false
+        "requiresCamera": true,
+        "requiresAccelerator": false
       },
       {
         "name": "preprocess",
         "description": "Resize/normalize a captured frame for inference.",
-        "requires_camera": false,
-        "requires_accelerator": false
+        "requiresCamera": false,
+        "requiresAccelerator": false
       },
       {
         "name": "inference",
         "description": "Run the compiled HEF model on the Hailo-8 accelerator.",
-        "requires_camera": false,
-        "requires_accelerator": true
+        "requiresCamera": false,
+        "requiresAccelerator": true
       },
       {
         "name": "postprocess",
         "description": "Decode raw inference output into real detections.",
-        "requires_camera": false,
-        "requires_accelerator": false
+        "requiresCamera": false,
+        "requiresAccelerator": false
       },
       {
         "name": "publish",
         "description": "Publish detection results to the rest of the swarm.",
-        "requires_camera": false,
-        "requires_accelerator": false
+        "requiresCamera": false,
+        "requiresAccelerator": false
       }
     ]
   },
-  "camera_present": false,
-  "accelerator_present": false,
+  "cameraPresent": false,
+  "acceleratorPresent": false,
   "mode": "degraded_no_hardware",
-  "runnable_stages": [
+  "runnableStages": [
     "preprocess",
     "postprocess",
     "publish"
   ],
-  "skipped_stages": [
+  "skippedStages": [
     "capture",
     "inference"
   ]
@@ -187,6 +187,12 @@ $ hydra-umc-vision-node pipeline-status
 $ echo $?
 1
 ```
+
+The names are camelCase, the same in the command line and in `GET /pipeline-status`.
+The earlier snake_case names (`camera_present`, `accelerator_present`,
+`runnable_stages`, `skipped_stages` and `requires_camera` / `requires_accelerator`
+in each stage) are still present with the same values as aliases for one
+release cycle; they are not shown in the example.
 
 `pipeline-status` exits `1` whenever the real mode is anything other than
 `FULL` — this is a real, honest degradation signal a script can check,

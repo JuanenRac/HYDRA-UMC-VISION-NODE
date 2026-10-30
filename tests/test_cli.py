@@ -70,6 +70,9 @@ def test_pipeline_status_prints_real_json_and_reports_actual_hardware(
     output = json.loads(captured.out)
     assert output["manifest"]["stages"][0]["name"] == "capture"
     assert isinstance(output["camera_present"], bool)
+    assert output["cameraPresent"] == output["camera_present"]
+    assert output["runnableStages"] == output["runnable_stages"]
+    assert output["skippedStages"] == output["skipped_stages"]
     assert isinstance(output["accelerator_present"], bool)
     assert output["mode"] in (
         "full",

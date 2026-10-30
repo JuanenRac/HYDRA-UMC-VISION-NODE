@@ -27,7 +27,7 @@ from .codes import DecoderUnavailable, decode_codes, pylibdmtx_decoder
 from .family import check_family_status
 from .frame import MAX_CHANNELS, MAX_DIMENSION, MAX_FRAME_BYTES, FrameSpec, validate_frame
 from .hardware import accelerator_available, active_stages, camera_available, determine_mode
-from .pipeline import build_manifest, manifest_to_dict
+from .pipeline import build_manifest, pipeline_status_dict
 
 
 def _write_json(handler: BaseHTTPRequestHandler, status: int, payload: object) -> None:
@@ -123,14 +123,9 @@ class Handler(BaseHTTPRequestHandler):
         accelerator = accelerator_available()
         mode = determine_mode(camera, accelerator)
         runnable, skipped = active_stages(manifest, mode)
-        _write_json(self, 200, {
-            "manifest": manifest_to_dict(manifest),
-            "cameraPresent": camera,
-            "acceleratorPresent": accelerator,
-            "mode": mode.value,
-            "runnableStages": [s.name for s in runnable],
-            "skippedStages": [s.name for s in skipped],
-        })
+        _write_json(self, 200, pipeline_status_dict(
+            manifest, camera, accelerator, mode.value, [s.name for s in runnable], [s.name for s in skipped]
+        ))
 
     def do_POST(self) -> None:  # noqa: N802
         if not authorized(self, self.server.token):

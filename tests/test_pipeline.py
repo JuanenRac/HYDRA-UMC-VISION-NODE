@@ -53,3 +53,17 @@ def test_manifest_to_dict_round_trips_every_stage() -> None:
     assert len(data["stages"]) == len(manifest.stages)
     assert data["stages"][0]["name"] == "capture"
     assert data["stages"][0]["requires_camera"] is True
+    assert data["stages"][0]["requiresCamera"] is True
+    assert data["stages"][0]["requiresAccelerator"] == data["stages"][0]["requires_accelerator"]
+
+
+def test_pipeline_status_dict_names_each_value_in_camel_case_and_keeps_the_old_names_as_aliases() -> None:
+    from hydra_umc_vision_node.pipeline import pipeline_status_dict
+
+    data = pipeline_status_dict(build_manifest(), True, False, "degraded_no_accelerator", ["capture"], ["inference"])
+
+    assert data["cameraPresent"] is True and data["camera_present"] is True
+    assert data["acceleratorPresent"] is False and data["accelerator_present"] is False
+    assert data["runnableStages"] == data["runnable_stages"] == ["capture"]
+    assert data["skippedStages"] == data["skipped_stages"] == ["inference"]
+    assert data["mode"] == "degraded_no_accelerator"

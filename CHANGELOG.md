@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **One naming for `pipeline-status`:** the command line and `GET /pipeline-status` answer with the same camelCase names (`cameraPresent`, `acceleratorPresent`, `runnableStages`, `skippedStages`, and `requiresCamera` / `requiresAccelerator` in each stage of the manifest). The snake_case names the command line used before stay as aliases with the same values for one release cycle.
+
 ## [0.1.7] - Frame specs with pixel format and stride, a frozen-frame watcher and a live family status
 
 - **Frame specs with a pixel format and a stride, and a frozen-frame watcher:** `FrameSpec` may name a `pixel_format` (`GRAY`, `RGB`, `BGR`, `RGBA`, `BGRA`, `YUYV`, `NV12`) and a row `stride`, and the expected size follows them; an impossible combination (unknown format, odd width for `YUYV`, a stride smaller than a row) is reported as `invalid_spec`. A spec without them behaves as before. `FrozenFrameWatcher` flags a sensor that keeps returning byte-for-byte the same frame (`frozen_frame`), which a uniform-buffer check does not catch.

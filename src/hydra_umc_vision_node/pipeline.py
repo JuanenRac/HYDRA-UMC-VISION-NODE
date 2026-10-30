@@ -87,16 +87,48 @@ def build_manifest() -> PipelineManifest:
 
 def manifest_to_dict(manifest: PipelineManifest) -> dict:
     """A plain, JSON-serializable view of the manifest - what the CLI's
-    `pipeline-status` subcommand actually prints."""
+    `pipeline-status` subcommand and `GET /pipeline-status` both answer.
+
+    The names are camelCase. The snake_case names this answer used before are
+    still present as aliases for one release cycle, with the same values."""
     return {
         "version": manifest.version,
         "stages": [
             {
                 "name": s.name,
                 "description": s.description,
+                "requiresCamera": s.requires_camera,
+                "requiresAccelerator": s.requires_accelerator,
                 "requires_camera": s.requires_camera,
                 "requires_accelerator": s.requires_accelerator,
             }
             for s in manifest.stages
         ],
+    }
+
+
+def pipeline_status_dict(
+    manifest: PipelineManifest,
+    camera: bool,
+    accelerator: bool,
+    mode: str,
+    runnable: list[str],
+    skipped: list[str],
+) -> dict:
+    """The one answer of `pipeline-status`, for the command line and for HTTP.
+
+    camelCase is the name; the former snake_case keys (`camera_present`,
+    `accelerator_present`, `runnable_stages`, `skipped_stages`) are aliases
+    with the same values for one release cycle."""
+    return {
+        "manifest": manifest_to_dict(manifest),
+        "cameraPresent": camera,
+        "acceleratorPresent": accelerator,
+        "mode": mode,
+        "runnableStages": list(runnable),
+        "skippedStages": list(skipped),
+        "camera_present": camera,
+        "accelerator_present": accelerator,
+        "runnable_stages": list(runnable),
+        "skipped_stages": list(skipped),
     }
