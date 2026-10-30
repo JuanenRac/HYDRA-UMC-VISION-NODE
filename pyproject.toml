@@ -13,7 +13,7 @@ authors = [{ name = "JuanenRac", email = "electrohobby3d@gmail.com" }]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "PyYAML>=6.0"]
 
 [project.scripts]
 hydra-umc-vision-node = "hydra_umc_vision_node.main:main"

@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **`docker-compose.yml` is checked by the tests without Docker:** it must parse, every service must say where its image comes from, a dependency must name a service of the file, a build context that exists must hold a Dockerfile, and healthchecks and published ports must be well formed (PyYAML joins the development extras).
 - **One naming for `pipeline-status`:** the command line and `GET /pipeline-status` answer with the same camelCase names (`cameraPresent`, `acceleratorPresent`, `runnableStages`, `skippedStages`, and `requiresCamera` / `requiresAccelerator` in each stage of the manifest). The snake_case names the command line used before stay as aliases with the same values for one release cycle.
 
 ## [0.1.7] - Frame specs with pixel format and stride, a frozen-frame watcher and a live family status
