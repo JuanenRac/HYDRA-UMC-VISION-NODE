@@ -84,6 +84,8 @@ Raspberry Pi Compute Module 5 上，并搭配 Hailo-8 M.2 AI 加速器，其预�
 * 🎯 **精准感知（计划中）：** 围绕 YOLO 系列架构设计，用于工业组件检测。
 * 🛡️ **主动安全（计划中）：** 实时占用地图输入至 [HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES) 以进行人员入侵检测。
 * 🧩 **存在的意义：** 若没有专用节点，感知工作要么会使 [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部的 STM32H745 实时核心过载（该核心没有多余算力承担此任务），要么必须将每一帧摄像头画面通过网络传输到远程 GPU，从而增加安全回路无法承受的延迟。将其运行在紧邻机器人本体的 CM5 + Hailo-8 上，可使检测 → 修正 →（必要时）E-STOP 的回路保持本地化和快速。
+* 🖼️ **帧规格中的像素格式和行跨度:** 帧规格可以指明像素格式(`GRAY`、`RGB`、`BGR`、`RGBA`、`BGRA`、`YUYV`、`NV12`)和行跨度，期望的大小随之变化，不可能的组合会报告为 `invalid_spec`。冻结帧监视器会标出一直逐字节返回同一帧的传感器(`frozen_frame`)。
+* 🩺 **`family-status --live`(默认关闭):** 除了读取清单，还会对每个声明了服务的子项目各查询一次，超时很短，除非 `--host` 另有指定否则走回环地址，并打印各自报告的延迟和版本；有一个不响应就会失败。
 
 **诚实说明——今天实际运行的内容：** 无参数调用时仍会打印身份/版本/角色，但现在新增了一个真实的 `family-status [--workspace 路径]` 子命令：从本地检出中读取 `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API` 各自真实的清单，并诚实地报告发现的内容。上文描述的 Hailo-8 运行时、gRPC 控制
 API 或真实的子节点监督逻辑目前均尚未实现——它们是本项目存在的原因，而非
