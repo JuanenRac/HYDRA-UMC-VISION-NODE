@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The time limit of a simulation run is checked inside a frame:** a frame is now produced in pieces (`limits.chunkBytes` of the `--vision-sim` file, 256 KiB by default, 1024 bytes to 4 MiB; anything else refuses the file) and the clock is read between two pieces, so a run overshoots `limits.maxRunSeconds` by one piece instead of a whole frame. A frame cut in the middle is dropped (never recorded, never counted); when the limit comes before the first frame is complete the answer is `frames: 0`, `totalMs: null` and `truncated: true`. A frame that fits in one piece is never interrupted and the bytes of a frame do not depend on the piece size. Custom sources that only take `limit` keep working and are checked between frames.
+
 ## [0.1.8] - Simulated capture and model selection, latency per stage, a time limit for the simulation and a compose file checked in the CI, all off by default
 
 - **`POST /inference/simulate` has a time limit and runs one at a time:** the `--vision-sim` file takes an optional `limits.maxRunSeconds` (10 s by default; zero, negative, non-finite or non-numeric values refuse the whole file). When a run reaches it the loop stops between two frames and the response is the partial summary marked `truncated: true` with `requestedFrames` and `truncatedReason`; a complete run answers `truncated: false`. Only one simulation runs at a time (a second one answers `409`), so a long run never stacks handler threads, and the other routes keep answering. Tested with an injected clock and with parallel load.

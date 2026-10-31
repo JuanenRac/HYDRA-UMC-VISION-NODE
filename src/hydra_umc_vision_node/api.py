@@ -240,7 +240,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 summary = run_simulation(
                     source, model, self.server.latency, body.get("frames", 100),
-                    max_seconds=vision.max_run_seconds, clock=self.server.simulation_clock,
+                    max_seconds=vision.max_run_seconds, clock=self.server.simulation_clock, chunk_bytes=vision.chunk_bytes,
                 )
             finally:
                 self.server.simulation_lock.release()

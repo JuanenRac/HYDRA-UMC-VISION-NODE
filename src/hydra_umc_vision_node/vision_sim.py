@@ -14,16 +14,17 @@ shows them like those of a real pipeline. What the numbers say is only that the 
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import math
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
 from .latency import LatencyRecorder
 from .models import HostCapabilities, ModelError, ModelSpec, parse_host, parse_models
-from .sources import FrameSource, SourceError, build_source
+from .sources import DEFAULT_CHUNK_BYTES, MIN_CHUNK_BYTES, MAX_SOURCE_FRAME_BYTES, FrameSource, RunLimitReached, SourceError, build_source
 
 MAX_CONFIG_BYTES = 256 * 1024
 MAX_SOURCES = 16
@@ -44,6 +45,7 @@ class VisionConfig:
     models: tuple[ModelSpec, ...]
     sources: dict[str, FrameSource]
     max_run_seconds: float = DEFAULT_MAX_RUN_SECONDS
+    chunk_bytes: int = DEFAULT_CHUNK_BYTES
 
     def model(self, name: str) -> ModelSpec | None:
         return next((m for m in self.models if m.name == name), None)
@@ -53,23 +55,28 @@ def _reject_constant(name: str) -> float:
     raise ValueError(f"{name} is not a valid JSON number")
 
 
-def parse_limits(limits: object) -> float:
-    """`limits` is optional: {"maxRunSeconds": number} (wall-clock seconds one simulation run may take). Zero, negative,
-    non-finite or non-numeric values refuse the whole configuration instead of silently meaning "no limit"."""
+def parse_limits(limits: object) -> tuple[float, int]:
+    """`limits` is optional: {"maxRunSeconds": number, "chunkBytes": integer}. `maxRunSeconds` is the wall-clock time one
+    simulation run may take; `chunkBytes` is the size of the pieces a frame is produced in (the time is checked between
+    two pieces, so a run overshoots the limit by one piece at most). Zero, negative, non-finite or non-numeric values
+    refuse the whole configuration instead of silently meaning "no limit"."""
     if limits is None:
-        return DEFAULT_MAX_RUN_SECONDS
-    if not isinstance(limits, dict) or set(limits) - {"maxRunSeconds"}:
-        raise VisionConfigError("limits is an object with maxRunSeconds only")
+        return DEFAULT_MAX_RUN_SECONDS, DEFAULT_CHUNK_BYTES
+    if not isinstance(limits, dict) or set(limits) - {"maxRunSeconds", "chunkBytes"}:
+        raise VisionConfigError("limits is an object with maxRunSeconds and chunkBytes only")
     value = limits.get("maxRunSeconds", DEFAULT_MAX_RUN_SECONDS)
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 < value <= MAX_RUN_SECONDS_LIMIT:
         raise VisionConfigError(f"limits.maxRunSeconds must be a number above 0 and at most {MAX_RUN_SECONDS_LIMIT:g}")
-    return float(value)
+    chunk = limits.get("chunkBytes", DEFAULT_CHUNK_BYTES)
+    if isinstance(chunk, bool) or not isinstance(chunk, int) or not MIN_CHUNK_BYTES <= chunk <= MAX_SOURCE_FRAME_BYTES:
+        raise VisionConfigError(f"limits.chunkBytes must be an integer from {MIN_CHUNK_BYTES} to {MAX_SOURCE_FRAME_BYTES}")
+    return float(value), chunk
 
 
 def parse_vision_config(config: object, base: Path) -> VisionConfig:
     if not isinstance(config, dict) or set(config) - {"host", "models", "sources", "limits"}:
         raise VisionConfigError("the configuration is an object with host, models, sources and (optional) limits")
-    max_run_seconds = parse_limits(config.get("limits"))
+    max_run_seconds, chunk_bytes = parse_limits(config.get("limits"))
     try:
         host = parse_host(config.get("host", {}))
         models = parse_models(config.get("models", []))
@@ -84,7 +91,7 @@ def parse_vision_config(config: object, base: Path) -> VisionConfig:
             sources[source.name] = source
     except (ModelError, SourceError) as error:
         raise VisionConfigError(str(error)) from None
-    return VisionConfig(host, models, sources, max_run_seconds)
+    return VisionConfig(host, models, sources, max_run_seconds, chunk_bytes)
 
 
 def load_vision_config(path: str | Path) -> VisionConfig:
@@ -102,6 +109,19 @@ def load_vision_config(path: str | Path) -> VisionConfig:
     return parse_vision_config(config, file.resolve().parent)
 
 
+def _frames_of(source: FrameSource, limit: int, checkpoint: Callable[[], None], chunk_bytes: int):
+    """The frames of `source`, handing it the checkpoint and the piece size when it accepts them (older custom sources
+    that only take `limit` are checked between frames only)."""
+    parameters: Mapping[str, object]
+    try:
+        parameters = inspect.signature(source.frames).parameters
+    except (TypeError, ValueError):
+        parameters = {}
+    if "checkpoint" in parameters and "chunk_bytes" in parameters:
+        return source.frames(limit, checkpoint=checkpoint, chunk_bytes=chunk_bytes)
+    return source.frames(limit)
+
+
 def run_simulation(
     source: FrameSource,
     model: ModelSpec,
@@ -109,12 +129,16 @@ def run_simulation(
     frames: int,
     max_seconds: float | None = None,
     clock: Callable[[], float] = time.monotonic,
+    chunk_bytes: int = DEFAULT_CHUNK_BYTES,
 ) -> dict:
     """Run `frames` frames of `source` through the fake `model`, recording the stage instants of each in `recorder`.
 
-    `max_seconds` (wall-clock, measured with `clock`; None = no limit) stops the loop between two frames: the summary
-    of the frames done so far comes back with `truncated: true` and the reason. A frame already being produced is never
-    interrupted, so the run can overshoot the limit by the time of one frame."""
+    `max_seconds` (wall-clock, measured with `clock`; None = no limit) is checked between two frames AND, inside a frame,
+    between two pieces of `chunk_bytes` of its generation: the summary of the frames completed so far comes back with
+    `truncated: true` and the reason, and a frame cut in the middle is dropped (never recorded, never counted). A run
+    overshoots the limit by one piece at most (and by the hashing of one finished frame); a frame that fits in one piece
+    is never interrupted, as before. When the limit is reached before the first frame is complete the summary has
+    `frames: 0` and no totals."""
     if isinstance(frames, bool) or not isinstance(frames, int) or not 1 <= frames <= MAX_RUN_FRAMES:
         raise VisionConfigError(f"frames must be an integer from 1 to {MAX_RUN_FRAMES}")
     detections = 0
@@ -123,8 +147,13 @@ def run_simulation(
     roll = hashlib.blake2b(digest_size=8)
     truncated = False
     started = clock()
+
+    def checkpoint() -> None:
+        if max_seconds is not None and clock() - started >= max_seconds:
+            raise RunLimitReached
+
     try:
-        for frame in source.frames(frames):
+        for frame in _frames_of(source, frames, checkpoint, chunk_bytes):
             digest = hashlib.blake2b(frame.data + model.name.encode(), digest_size=8).digest()
             roll.update(digest)
             unit = [byte / 255.0 for byte in digest]
@@ -140,9 +169,11 @@ def run_simulation(
             if max_seconds is not None and count < frames and clock() - started >= max_seconds:
                 truncated = True
                 break
+    except RunLimitReached:
+        truncated = True
     except SourceError as error:
         raise VisionConfigError(str(error)) from None
-    if count == 0:
+    if count == 0 and not truncated:
         raise VisionConfigError(f"source {source.name} holds no frames")
     ordered = sorted(total_ms)
     summary = {
@@ -153,7 +184,7 @@ def run_simulation(
         "frames": count,
         "detections": detections,
         "outputDigest": roll.hexdigest(),
-        "totalMs": {"mean": sum(total_ms) / count, "max": ordered[-1]},
+        "totalMs": {"mean": sum(total_ms) / count, "max": ordered[-1]} if count else None,
         "truncated": truncated,
     }
     if truncated:

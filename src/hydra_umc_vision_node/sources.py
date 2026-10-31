@@ -29,8 +29,19 @@ MAX_SYNTHETIC_FRAMES = 100_000
 MAX_SEED = 2**32 - 1
 
 
+DEFAULT_CHUNK_BYTES = 256 * 1024
+MIN_CHUNK_BYTES = 1024
+
+
 class SourceError(ValueError):
     """A source declaration or a frame cannot be used."""
+
+
+class RunLimitReached(Exception):
+    """Raised by a checkpoint, between two pieces of one frame, when the time budget of the run is over."""
+
+
+Checkpoint = Callable[[], None]
 
 
 @dataclass(frozen=True)
@@ -48,8 +59,10 @@ class FrameSource(Protocol):
 
     def describe(self) -> dict: ...
 
-    def frames(self, limit: int) -> Iterator[Frame]:
-        """At most `limit` frames; fewer when the source has fewer."""
+    def frames(self, limit: int, checkpoint: Checkpoint | None = None, chunk_bytes: int = DEFAULT_CHUNK_BYTES) -> Iterator[Frame]:
+        """At most `limit` frames; fewer when the source has fewer. A frame is produced in pieces of about `chunk_bytes`
+        and `checkpoint` (may raise RunLimitReached) is called between two pieces, never before the first one.
+        A source that does not take these two arguments is still accepted: it is only checked between frames."""
         ...
 
 
@@ -79,18 +92,21 @@ class SyntheticSource:
         return {"name": self.name, "kind": self.kind, "simulated": True, "width": self.width, "height": self.height,
                 "channels": self.channels, "seed": self.seed, "frames": self.count}
 
-    def frame(self, index: int) -> Frame:
+    def frame(self, index: int, checkpoint: Checkpoint | None = None, chunk_bytes: int = DEFAULT_CHUNK_BYTES) -> Frame:
         row_len = self.width * self.channels
+        rows_per_chunk = max(1, chunk_bytes // row_len)
         base = bytes((x * 31 + self.seed * 17) & 255 for x in range(row_len))
         rows = []
         for y in range(self.height):
+            if checkpoint is not None and y and y % rows_per_chunk == 0:
+                checkpoint()
             shift = (y * 7 + index * 13 + self.seed) % row_len
             rows.append(base[shift:] + base[:shift])
         return Frame(index, self.width, self.height, self.channels, b"".join(rows))
 
-    def frames(self, limit: int) -> Iterator[Frame]:
+    def frames(self, limit: int, checkpoint: Checkpoint | None = None, chunk_bytes: int = DEFAULT_CHUNK_BYTES) -> Iterator[Frame]:
         for index in range(min(limit, self.count)):
-            yield self.frame(index)
+            yield self.frame(index, checkpoint, chunk_bytes)
 
 
 def _pnm_tokens(data: bytes, wanted: int) -> tuple[list[bytes], int]:
@@ -133,6 +149,25 @@ def parse_pnm(data: bytes, index: int) -> Frame:
     return Frame(index, width, height, channels, pixels)
 
 
+def _read_in_pieces(path: Path, chunk_bytes: int, checkpoint: Checkpoint | None) -> bytes:
+    """Read a file `chunk_bytes` at a time, calling `checkpoint` between two reads (never before the first)."""
+    pieces: list[bytes] = []
+    total = 0
+    size = path.stat().st_size
+    with path.open("rb") as handle:
+        while total < size:
+            if checkpoint is not None and pieces:
+                checkpoint()
+            piece = handle.read(chunk_bytes)
+            if not piece:
+                break
+            pieces.append(piece)
+            total += len(piece)
+            if total > MAX_SOURCE_FRAME_BYTES + 512:
+                raise SourceError(f"{path.name} is too large")
+    return b"".join(pieces)
+
+
 class FolderSource:
     kind = "folder"
 
@@ -159,12 +194,12 @@ class FolderSource:
             info.update(width=self.shape[0], height=self.shape[1], channels=self.shape[2])
         return info
 
-    def frames(self, limit: int) -> Iterator[Frame]:
+    def frames(self, limit: int, checkpoint: Checkpoint | None = None, chunk_bytes: int = DEFAULT_CHUNK_BYTES) -> Iterator[Frame]:
         for index, path in enumerate(self.files[:limit]):
             try:
                 if path.stat().st_size > MAX_SOURCE_FRAME_BYTES + 512:
                     raise SourceError(f"{path.name} is too large")
-                data = path.read_bytes()
+                data = _read_in_pieces(path, chunk_bytes, checkpoint)
             except OSError as error:
                 raise SourceError(f"{path.name} cannot be read: {error.strerror}") from None
             if path.suffix.lower() == ".raw":
