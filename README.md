@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
-  <img src="https://img.shields.io/badge/Tests-243%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-262%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.1.7` |
 | Maturity | Functional |
-| Tests | 243 (`python -m pytest -q tests`) |
+| Tests | 262 (`python -m pytest -q tests`) |
 | Stack | Python / CM5 / Hailo-8 |
 | Target | The Raspberry Pi CM5 of a HYDRA-UMC cell |
 | On real hardware | Not yet: no run on real hardware is recorded for this version |
@@ -52,7 +52,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Area | State | What it means here |
 |---|---|---|
 | Software | 🟡 | Works for its main purpose; the honesty check above lists what is still missing |
-| Tests | 🟢 | 243 automated tests, run on every change |
+| Tests | 🟢 | 262 automated tests, run on every change |
 | Real hardware | 🔴 | Not yet: no run on real hardware is recorded for this version |
 | Documentation | 🟢 | README in eight languages, checked against the manifest on every change |
 
@@ -83,7 +83,7 @@ This project is the **integration parent** of the Vision AI Node family: it does
 * 🧩 **Why it exists:** without a dedicated node, perception work would either overload the STM32H745 real-time core inside [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (which has no spare cycles for it) or force every camera frame over the wire to a remote GPU, adding latency the safety loop cannot afford. Running it on CM5 + Hailo-8, physically next to the robot, keeps the detect → correct → (if needed) E-STOP loop local and fast.
 * 🖼️ **Pixel format and stride in frame specs:** a frame spec may name a pixel format (`GRAY`, `RGB`, `BGR`, `RGBA`, `BGRA`, `YUYV`, `NV12`) and a row stride; the expected size follows them and an impossible combination is reported as `invalid_spec`. A frozen-frame watcher flags a sensor that keeps returning byte-for-byte the same frame (`frozen_frame`).
 * 🩺 **`family-status --live` (off by default):** besides reading the manifests, it asks every child that declares a service once, with a short timeout and on loopback unless `--host` says otherwise, and prints the latency and the version each one reports; it fails when one does not answer.
-* 🎞️ **`serve --vision-sim FILE` (off by default, simulation only):** simulated frame sources (a deterministic synthetic generator and a folder of raw or PGM/PPM frames), a registry of models with declared format, input size, precision and device (`cpu` or `hailo`), and a deterministic choice of the best model for the devices the host declares in the file (nothing is detected), with the reason for the choice and for every discard, plus a loop with a fake model that feeds the latency percentiles. Adds `GET /models`, `GET /sources`, `POST /models/select` and `POST /inference/simulate`; without the switch they answer 404. There is no real inference and no real camera: a camera or RTSP source still needs hardware.
+* 🎞️ **`serve --vision-sim FILE` (off by default, simulation only):** simulated frame sources (a deterministic synthetic generator and a folder of raw or PGM/PPM frames), a registry of models with declared format, input size, precision and device (`cpu` or `hailo`), and a deterministic choice of the best model for the devices the host declares in the file (nothing is detected), with the reason for the choice and for every discard, plus a loop with a fake model that feeds the latency percentiles. Adds `GET /models`, `GET /sources`, `POST /models/select` and `POST /inference/simulate`; without the switch they answer 404. There is no real inference and no real camera: a camera or RTSP source still needs hardware. A run is limited in wall-clock time (`limits.maxRunSeconds` of the file, 10 s by default; zero or negative refuses the file): past it the partial result comes back marked `truncated: true` with the reason, and only one simulation runs at a time (`409` for a second one) while the other routes keep answering.
 
 **Honesty check - what actually runs today:** bare invocation still prints identity/version/role, but there is now a real `family-status [--workspace PATH]` subcommand: it reads `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API`'s own real manifests from a local checkout and reports what it honestly finds. None of the Hailo-8 runtime, the gRPC control API, or real child supervision exists yet - they are the reason this project exists, not something it currently does. See [`CHANGELOG.md`](CHANGELOG.md) for exactly what has shipped so far, and the "Roadmap & Known limits" section below for what is still open.
 
@@ -158,7 +158,7 @@ Requires Python 3.10 or newer.
 
 ## 🧪 Testing
 
-243 automated tests run with `python -m pytest -q tests`. They need no hardware and nothing outside this machine.
+262 automated tests run with `python -m pytest -q tests`. They need no hardware and nothing outside this machine.
 
 The CI runs `HYDRA_UMC_CI=1 python tools/ci_validate.py`, which checks the manifest, the documents, the eight READMEs and the pictures.
 
@@ -181,7 +181,7 @@ The CI runs `HYDRA_UMC_CI=1 python tools/ci_validate.py`, which checks the manif
 2. **Virtual environment** — creates `.venv/` if it does not already exist (safe to re-run; an existing `.venv/` is reused, not recreated).
 3. **Editable install (with dev extras)** — `pip install -e ".[dev]"` installs this package into `.venv` in "editable" mode, so source edits under `src/` take effect immediately without reinstalling, pulls in `pytest`, and registers the `hydra-umc-vision-node` console entry point used by `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` byte-compiles every `.py` file under `src/`, catching syntax errors across the whole package even in files never actually imported by `main.py`.
-5. **Real test suite** — `pytest tests/` runs all 243 tests.
+5. **Real test suite** — `pytest tests/` runs all 262 tests.
 
 The script uses `set -euo pipefail` and stops at the first failing step, printing `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) only if every step succeeded.
 
@@ -324,7 +324,7 @@ HYDRA-UMC-VISION-NODE/
 
 **Known limits today**
 
-**What works today:** a real family-readiness check (`manifest.py`/`family.py`) that reads each of the 4 real children's own manifest and reports presence/version/maturity/role, a real pipeline manifest and degraded-mode detection (`pipeline.py`/`hardware.py`) that honestly probes for real camera/Hailo-8 hardware and reports exactly which pipeline stages can run, real hardware-independent frame corruption validation (`frame.py`), the `family-status`/`pipeline-status`/`validate-frame` CLI subcommands plus a `serve` subcommand exposing all three as a JSON/HTTP API (`api.py`), 243 passing tests, and a fully documented integration map for the 4 children in `docker-compose.yml` (built from the children's own Dockerfiles, never run with Docker) - see [`CHANGELOG.md`](CHANGELOG.md) for the full real build/run output.
+**What works today:** a real family-readiness check (`manifest.py`/`family.py`) that reads each of the 4 real children's own manifest and reports presence/version/maturity/role, a real pipeline manifest and degraded-mode detection (`pipeline.py`/`hardware.py`) that honestly probes for real camera/Hailo-8 hardware and reports exactly which pipeline stages can run, real hardware-independent frame corruption validation (`frame.py`), the `family-status`/`pipeline-status`/`validate-frame` CLI subcommands plus a `serve` subcommand exposing all three as a JSON/HTTP API (`api.py`), 262 passing tests, and a fully documented integration map for the 4 children in `docker-compose.yml` (built from the children's own Dockerfiles, never run with Docker) - see [`CHANGELOG.md`](CHANGELOG.md) for the full real build/run output.
 
 **What is still open, in no particular order and with no committed timeline:**
 

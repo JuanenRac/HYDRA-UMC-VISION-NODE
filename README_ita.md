@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
-  <img src="https://img.shields.io/badge/Tests-243%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-262%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versione | `0.1.7` |
 | Maturità | Funzionale |
-| Test | 243 (`python -m pytest -q tests`) |
+| Test | 262 (`python -m pytest -q tests`) |
 | Tecnologia | Python / CM5 / Hailo-8 |
 | Destinazione | Il Raspberry Pi CM5 di una cella HYDRA-UMC |
 | Su hardware reale | Non ancora: per questa versione non risulta alcuna esecuzione su hardware reale |
@@ -52,7 +52,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 | Area | Stato | Cosa significa qui |
 |---|---|---|
 | Software | 🟡 | Funziona per il suo scopo principale; la verifica di onestà qui sopra elenca ciò che manca ancora |
-| Test | 🟢 | 243 test automatici, eseguiti a ogni modifica |
+| Test | 🟢 | 262 test automatici, eseguiti a ogni modifica |
 | Hardware reale | 🔴 | Non ancora: per questa versione non risulta alcuna esecuzione su hardware reale |
 | Documentazione | 🟢 | README in otto lingue, verificato rispetto al manifesto a ogni modifica |
 
@@ -83,7 +83,7 @@ Questo progetto è il **genitore di integrazione** della famiglia Vision AI Node
 * 🧩 **Perché esiste:** senza un nodo dedicato, il lavoro di percezione sovraccaricherebbe il core real-time STM32H745 dentro [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (che non ha cicli liberi per questo), oppure costringerebbe ogni fotogramma a viaggiare verso una GPU remota, aggiungendo una latenza che il loop di sicurezza non può permettersi. Eseguirlo su CM5 + Hailo-8, fisicamente accanto al robot, mantiene il ciclo rileva → correggi → (se serve) E-STOP locale e veloce.
 * 🖼️ **Formato di pixel e passo di riga nelle specifiche dei fotogrammi:** una specifica può nominare un formato di pixel (`GRAY`, `RGB`, `BGR`, `RGBA`, `BGRA`, `YUYV`, `NV12`) e un passo di riga; la dimensione attesa li segue e una combinazione impossibile è segnalata come `invalid_spec`. Un controllo del fotogramma congelato segnala un sensore che restituisce byte per byte lo stesso fotogramma (`frozen_frame`).
 * 🩺 **`family-status --live` (disattivato per impostazione predefinita):** oltre a leggere i manifesti, interroga una volta ogni figlio che dichiara un servizio, con un timeout breve e su loopback salvo diversa indicazione di `--host`, e stampa la latenza e la versione che ciascuno riporta; fallisce quando uno non risponde.
-* 🎞️ **`serve --vision-sim FILE` (disattivato per impostazione predefinita, solo simulazione):** sorgenti di fotogrammi simulate (un generatore sintetico deterministico e una cartella di fotogrammi raw o PGM/PPM), un registro di modelli con formato, dimensione di ingresso, precisione e dispositivo (`cpu` o `hailo`) dichiarati, e una scelta deterministica del modello migliore per i dispositivi che l'host dichiara nel file (non si rileva nulla), con la ragione della scelta e di ogni scarto, più un ciclo con un modello finto che alimenta i percentili di latenza. Aggiunge `GET /models`, `GET /sources`, `POST /models/select` e `POST /inference/simulate`; senza l'interruttore rispondono 404. Non c'è inferenza reale né telecamera reale: una sorgente telecamera o RTSP richiede ancora hardware.
+* 🎞️ **`serve --vision-sim FILE` (disattivato per impostazione predefinita, solo simulazione):** sorgenti di fotogrammi simulate (un generatore sintetico deterministico e una cartella di fotogrammi raw o PGM/PPM), un registro di modelli con formato, dimensione di ingresso, precisione e dispositivo (`cpu` o `hailo`) dichiarati, e una scelta deterministica del modello migliore per i dispositivi che l'host dichiara nel file (non si rileva nulla), con la ragione della scelta e di ogni scarto, più un ciclo con un modello finto che alimenta i percentili di latenza. Aggiunge `GET /models`, `GET /sources`, `POST /models/select` e `POST /inference/simulate`; senza l'interruttore rispondono 404. Non c'è inferenza reale né telecamera reale: una sorgente telecamera o RTSP richiede ancora hardware. Un'esecuzione ha un tempo massimo reale (`limits.maxRunSeconds` del file, 10 s per impostazione predefinita; zero o negativo rifiuta il file): oltre, torna il risultato parziale marcato `truncated: true` con il motivo, e gira una sola simulazione alla volta (`409` per una seconda) mentre le altre rotte continuano a rispondere.
 
 **Verifica di onestà - cosa funziona davvero oggi:** l'invocazione senza argomenti stampa ancora identità/versione/ruolo, ma ora esistono tre sottocomandi reali: `family-status [--workspace PERCORSO]` (legge i manifesti reali propri dei 4 figli reali), `pipeline-status` (sonda hardware reale e riporta il modo reale e onesto - `full`, oppure un modo degradato onesto su una macchina senza camera/Hailo-8, come questa macchina di sviluppo) e `validate-frame <percorso> --width --height` (verifica reale di corruzione strutturale di un buffer di frame). Nulla del runtime Hailo-8, dell'API di controllo gRPC o della supervisione reale dei figli esiste ancora - sono la ragione d'essere di questo progetto, non qualcosa che fa oggi. Vedi [`CHANGELOG.md`](CHANGELOG.md) per ciò che è stato consegnato esattamente finora, e la sezione "Stato Attuale e Prossimi Passi" più sotto per ciò che resta aperto.
 
@@ -158,7 +158,7 @@ Richiede Python 3.10 o successivo.
 
 ## 🧪 Test
 
-243 test automatici si eseguono con `python -m pytest -q tests`. Non richiedono hardware né nulla al di fuori di questa macchina.
+262 test automatici si eseguono con `python -m pytest -q tests`. Non richiedono hardware né nulla al di fuori di questa macchina.
 
 La CI esegue `HYDRA_UMC_CI=1 python tools/ci_validate.py`, che controlla il manifesto, i documenti, gli otto README e le immagini.
 
@@ -181,7 +181,7 @@ La CI esegue `HYDRA_UMC_CI=1 python tools/ci_validate.py`, che controlla il mani
 2. **Ambiente virtuale** — crea `.venv/` se non esiste già (sicuro da rieseguire; un `.venv/` esistente viene riutilizzato, non ricreato).
 3. **Installazione editabile** — `pip install -e .` installa questo pacchetto in `.venv` in modalità "editabile", quindi le modifiche al codice sotto `src/` hanno effetto immediato senza reinstallare, e registra l'entry point da console `hydra-umc-vision-node` usato da `run.sh`.
 4. **Compile-check** — `python -m compileall -q src` compila in bytecode ogni file `.py` sotto `src/`, individuando errori di sintassi in tutto il pacchetto anche in file mai realmente importati da `main.py`.
-5. **Suite di test reale** — `pytest tests/` esegue tutti i 243 test.
+5. **Suite di test reale** — `pytest tests/` esegue tutti i 262 test.
 
 Lo script usa `set -euo pipefail` e si ferma al primo passo che fallisce, stampando `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) solo se tutti e 5 i passi hanno avuto successo.
 
@@ -324,7 +324,7 @@ HYDRA-UMC-VISION-NODE/
 
 **Limiti noti oggi**
 
-**Cosa funziona oggi:** una vera verifica di disponibilità della famiglia (`manifest.py`/`family.py`), un vero manifesto della pipeline e un vero rilevamento del modo degradato (`pipeline.py`/`hardware.py`) che sonda onestamente hardware camera/Hailo-8 reale, una vera validazione di corruzione dei frame indipendente dall'hardware (`frame.py`), i sottocomandi CLI `family-status`/`pipeline-status`/`validate-frame` più un sottocomando `serve` che espone i tre come API JSON/HTTP (`api.py`), 243 test reali che passano (vedi [`CHANGELOG.md`](CHANGELOG.md) per l'output esatto di build/run catturato), un incremento di versione contachilometri integrato nel build, e una mappa di integrazione completamente documentata per i 4 figli in `docker-compose.yml` (costruita dai Dockerfile dei figli, mai eseguita con Docker).
+**Cosa funziona oggi:** una vera verifica di disponibilità della famiglia (`manifest.py`/`family.py`), un vero manifesto della pipeline e un vero rilevamento del modo degradato (`pipeline.py`/`hardware.py`) che sonda onestamente hardware camera/Hailo-8 reale, una vera validazione di corruzione dei frame indipendente dall'hardware (`frame.py`), i sottocomandi CLI `family-status`/`pipeline-status`/`validate-frame` più un sottocomando `serve` che espone i tre come API JSON/HTTP (`api.py`), 262 test reali che passano (vedi [`CHANGELOG.md`](CHANGELOG.md) per l'output esatto di build/run catturato), un incremento di versione contachilometri integrato nel build, e una mappa di integrazione completamente documentata per i 4 figli in `docker-compose.yml` (costruita dai Dockerfile dei figli, mai eseguita con Docker).
 
 **Cosa resta aperto, senza ordine particolare e senza calendario impegnato:**
 

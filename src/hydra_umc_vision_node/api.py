@@ -21,6 +21,9 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import json
+import threading
+import time
+from collections.abc import Callable
 
 from .access import authorized, reject
 from .codes import DecoderUnavailable, decode_codes, pylibdmtx_decoder
@@ -230,7 +233,17 @@ class Handler(BaseHTTPRequestHandler):
                 raise VisionConfigError(f"model {name} cannot run: {decision['reason']}")
             model = vision.model(name)
             assert model is not None
-            summary = run_simulation(source, model, self.server.latency, body.get("frames", 100))
+            # one simulation at a time: another run in progress is a 409, never a queue of stuck handler threads
+            if not self.server.simulation_lock.acquire(blocking=False):
+                _write_error(self, 409, "another simulation is already running: retry when it has finished")
+                return
+            try:
+                summary = run_simulation(
+                    source, model, self.server.latency, body.get("frames", 100),
+                    max_seconds=vision.max_run_seconds, clock=self.server.simulation_clock,
+                )
+            finally:
+                self.server.simulation_lock.release()
         except (ModelError, VisionConfigError, LatencyError) as error:
             _write_error(self, 400, str(error))
             return
@@ -362,12 +375,15 @@ def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
 
 
 class VisionNodeServer(ThreadingHTTPServer):
-    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder, latency: LatencyRecorder | None = None, vision: VisionConfig | None = None) -> None:
+    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder, latency: LatencyRecorder | None = None, vision: VisionConfig | None = None, simulation_clock: Callable[[], float] = time.monotonic) -> None:
         super().__init__(address, Handler)
         # per-stage latency percentiles (latency.py); None (the default) leaves GET /latency and POST /latency/record answering 404
         self.latency = latency
         # simulated sources and model registry (vision_sim.py); None (the default) leaves GET /models, GET /sources, POST /models/select and POST /inference/simulate answering 404
         self.vision = vision
+        # at most one POST /inference/simulate runs at a time; the clock that measures its time limit is replaceable for tests
+        self.simulation_lock = threading.Lock()
+        self.simulation_clock = simulation_clock
         # reads the DataMatrix codes of a frame (codes.py); replaceable, so the route is tested without the library
         self.code_decoder = code_decoder
         # empty means no token (loopback only; see access.py)

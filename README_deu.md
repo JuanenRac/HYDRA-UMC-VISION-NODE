@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
-  <img src="https://img.shields.io/badge/Tests-243%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-262%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.1.7` |
 | Reifegrad | Funktionsfähig |
-| Tests | 243 (`python -m pytest -q tests`) |
+| Tests | 262 (`python -m pytest -q tests`) |
 | Technik | Python / CM5 / Hailo-8 |
 | Ziel | Der Raspberry Pi CM5 einer HYDRA-UMC-Zelle |
 | Auf echter Hardware | Noch nicht: für diese Version ist kein Lauf auf echter Hardware vermerkt |
@@ -52,7 +52,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 | Bereich | Stand | Was das hier bedeutet |
 |---|---|---|
 | Software | 🟡 | Funktioniert für seinen Hauptzweck; die Ehrlichkeitsprüfung oben nennt, was noch fehlt |
-| Tests | 🟢 | 243 automatische Tests, bei jeder Änderung ausgeführt |
+| Tests | 🟢 | 262 automatische Tests, bei jeder Änderung ausgeführt |
 | Echte Hardware | 🔴 | Noch nicht: für diese Version ist kein Lauf auf echter Hardware vermerkt |
 | Dokumentation | 🟢 | README in acht Sprachen, bei jeder Änderung gegen das Manifest geprüft |
 
@@ -83,7 +83,7 @@ Dieses Projekt ist der **Integrations-Elternteil** der Vision-AI-Node-Familie: E
 * 🧩 **Warum es existiert:** Ohne einen dedizierten Knoten würde die Wahrnehmungsarbeit den Echtzeitkern STM32H745 in [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) überlasten (der dafür keine freien Zyklen hat) oder jeden Kameraframe zu einer entfernten GPU zwingen, was eine Latenz hinzufügt, die sich die Sicherheitsschleife nicht leisten kann. Der Betrieb auf CM5 + Hailo-8, physisch neben dem Roboter, hält die Schleife Erkennen → Korrigieren → (falls nötig) E-STOP lokal und schnell.
 * 🖼️ **Pixelformat und Zeilenabstand in Frame-Spezifikationen:** Eine Spezifikation kann ein Pixelformat (`GRAY`, `RGB`, `BGR`, `RGBA`, `BGRA`, `YUYV`, `NV12`) und einen Zeilenabstand nennen; die erwartete Größe folgt ihnen, und eine unmögliche Kombination wird als `invalid_spec` gemeldet. Ein Wächter für eingefrorene Bilder markiert einen Sensor, der Byte für Byte dasselbe Bild liefert (`frozen_frame`).
 * 🩺 **`family-status --live` (standardmäßig aus):** Neben dem Lesen der Manifeste fragt es jedes Kind, das einen Dienst deklariert, einmal mit kurzer Zeitgrenze an, auf Loopback, sofern `--host` nichts anderes sagt, und gibt Latenz und gemeldete Version aus; es schlägt fehl, wenn eines nicht antwortet.
-* 🎞️ **`serve --vision-sim DATEI` (standardmäßig aus, nur Simulation):** simulierte Bildquellen (ein deterministischer synthetischer Generator und ein Ordner mit Raw- oder PGM/PPM-Bildern), eine Modellregistrierung mit deklariertem Format, Eingabegröße, Genauigkeit und Gerät (`cpu` oder `hailo`) und eine deterministische Wahl des besten Modells für die Geräte, die der Host in der Datei angibt (es wird nichts erkannt), mit Begründung der Wahl und jedes Ausschlusses, dazu eine Schleife mit einem Attrappenmodell, die die Latenz-Perzentile speist. Fügt `GET /models`, `GET /sources`, `POST /models/select` und `POST /inference/simulate` hinzu; ohne den Schalter antworten sie mit 404. Es gibt weder echte Inferenz noch eine echte Kamera: eine Kamera- oder RTSP-Quelle braucht weiterhin Hardware.
+* 🎞️ **`serve --vision-sim DATEI` (standardmäßig aus, nur Simulation):** simulierte Bildquellen (ein deterministischer synthetischer Generator und ein Ordner mit Raw- oder PGM/PPM-Bildern), eine Modellregistrierung mit deklariertem Format, Eingabegröße, Genauigkeit und Gerät (`cpu` oder `hailo`) und eine deterministische Wahl des besten Modells für die Geräte, die der Host in der Datei angibt (es wird nichts erkannt), mit Begründung der Wahl und jedes Ausschlusses, dazu eine Schleife mit einem Attrappenmodell, die die Latenz-Perzentile speist. Fügt `GET /models`, `GET /sources`, `POST /models/select` und `POST /inference/simulate` hinzu; ohne den Schalter antworten sie mit 404. Es gibt weder echte Inferenz noch eine echte Kamera: eine Kamera- oder RTSP-Quelle braucht weiterhin Hardware. Ein Lauf ist zeitlich begrenzt (`limits.maxRunSeconds` der Datei, standardmäßig 10 s; null oder negativ weist die Datei ab): danach kommt das Teilergebnis mit `truncated: true` und dem Grund zurück, und es läuft nur eine Simulation gleichzeitig (`409` für eine zweite), während die übrigen Routen weiter antworten.
 
 **Ehrlichkeitscheck - was heute wirklich läuft:** Der bloße Aufruf gibt weiterhin Identität/Version/Rolle aus, aber es gibt jetzt drei echte Unterbefehle: `family-status [--workspace PFAD]` (liest die echten, eigenen Manifeste der 4 echten Kinder), `pipeline-status` (sondiert echte Hardware und meldet den echten, ehrlichen Modus - `full`, oder einen ehrlichen degradierten Modus auf einer Maschine ohne Kamera/Hailo-8, wie dieser Entwicklungsmaschine) und `validate-frame <pfad> --width --height` (echte strukturelle Beschädigungsprüfung eines Frame-Puffers). Nichts von der Hailo-8-Laufzeit, der gRPC-Steuerungs-API oder der echten Kind-Überwachung existiert bereits - sie sind der Daseinsgrund dieses Projekts, nicht etwas, das es heute tut. Siehe [`CHANGELOG.md`](CHANGELOG.md) für genau das, was bisher geliefert wurde, und den Abschnitt "Aktueller Status & Nächste Schritte" unten für das, was noch offen ist.
 
@@ -158,7 +158,7 @@ Benötigt Python 3.10 oder neuer.
 
 ## 🧪 Tests
 
-243 automatische Tests laufen mit `python -m pytest -q tests`. Sie brauchen weder Hardware noch etwas außerhalb dieses Rechners.
+262 automatische Tests laufen mit `python -m pytest -q tests`. Sie brauchen weder Hardware noch etwas außerhalb dieses Rechners.
 
 Die CI führt `HYDRA_UMC_CI=1 python tools/ci_validate.py` aus; das prüft das Manifest, die Dokumente, die acht READMEs und die Bilder.
 
@@ -181,7 +181,7 @@ Die CI führt `HYDRA_UMC_CI=1 python tools/ci_validate.py` aus; das prüft das M
 2. **Virtuelle Umgebung** — erstellt `.venv/`, falls noch nicht vorhanden (sicher erneut auszuführen; ein vorhandenes `.venv/` wird wiederverwendet, nicht neu erstellt).
 3. **Editierbare Installation** — `pip install -e .` installiert dieses Paket im "editierbaren" Modus in `.venv`, sodass Quelländerungen unter `src/` sofort wirksam werden, ohne Neuinstallation, und registriert den von `run.sh` genutzten Konsolen-Einstiegspunkt `hydra-umc-vision-node`.
 4. **Compile-Check** — `python -m compileall -q src` kompiliert jede `.py`-Datei unter `src/` zu Bytecode und findet so Syntaxfehler im gesamten Paket, auch in Dateien, die `main.py` nie tatsächlich importiert.
-5. **Echte Test-Suite** — `pytest tests/` führt alle 243 Tests aus.
+5. **Echte Test-Suite** — `pytest tests/` führt alle 262 Tests aus.
 
 Das Skript verwendet `set -euo pipefail` und stoppt beim ersten fehlschlagenden Schritt; `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) wird nur ausgegeben, wenn alle 5 Schritte erfolgreich waren.
 
@@ -324,7 +324,7 @@ HYDRA-UMC-VISION-NODE/
 
 **Bekannte Grenzen heute**
 
-**Was heute funktioniert:** eine echte Familien-Bereitschaftsprüfung (`manifest.py`/`family.py`), ein echtes Pipeline-Manifest und eine echte Erkennung des degradierten Modus (`pipeline.py`/`hardware.py`), die ehrlich nach echter Kamera-/Hailo-8-Hardware sucht, eine echte, hardwareunabhängige Frame-Beschädigungsprüfung (`frame.py`), die CLI-Unterbefehle `family-status`/`pipeline-status`/`validate-frame` plus einen Unterbefehl `serve`, der alle drei als JSON/HTTP-API bereitstellt (`api.py`), 243 bestandene echte Tests (siehe [`CHANGELOG.md`](CHANGELOG.md) für die genau erfasste Build-/Run-Ausgabe).
+**Was heute funktioniert:** eine echte Familien-Bereitschaftsprüfung (`manifest.py`/`family.py`), ein echtes Pipeline-Manifest und eine echte Erkennung des degradierten Modus (`pipeline.py`/`hardware.py`), die ehrlich nach echter Kamera-/Hailo-8-Hardware sucht, eine echte, hardwareunabhängige Frame-Beschädigungsprüfung (`frame.py`), die CLI-Unterbefehle `family-status`/`pipeline-status`/`validate-frame` plus einen Unterbefehl `serve`, der alle drei als JSON/HTTP-API bereitstellt (`api.py`), 262 bestandene echte Tests (siehe [`CHANGELOG.md`](CHANGELOG.md) für die genau erfasste Build-/Run-Ausgabe).
 
 **Was noch offen ist, ohne bestimmte Reihenfolge und ohne verbindlichen Zeitplan:**
 

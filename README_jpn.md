@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
-  <img src="https://img.shields.io/badge/Tests-243%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-262%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | バージョン | `0.1.7` |
 | 成熟度 | 機能する |
-| テスト | 243 (`python -m pytest -q tests`) |
+| テスト | 262 (`python -m pytest -q tests`) |
 | 技術 | Python / CM5 / Hailo-8 |
 | 対象 | HYDRA-UMC セルの Raspberry Pi CM5 |
 | 実機での確認 | まだです：このバージョンについて実機での動作記録はありません |
@@ -52,7 +52,7 @@ GPL-3.0-or-later - see LICENSE
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
 | ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
-| テスト | 🟢 | 自動テスト 243 件。変更のたびに実行されます |
+| テスト | 🟢 | 自動テスト 262 件。変更のたびに実行されます |
 | 実機 | 🔴 | まだです：このバージョンについて実機での動作記録はありません |
 | ドキュメント | 🟢 | 8 言語の README。変更のたびにマニフェストと照合されます |
 
@@ -88,7 +88,7 @@ Raspberry Pi Compute Module 5 に Hailo-8 M.2 AI アクセラレーターを組�
 * 🧩 **存在理由：** 専用ノードがなければ、知覚処理は [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部の STM32H745 リアルタイムコア（これに割く余剰サイクルはありません）を過負荷にするか、あるいはすべてのカメラフレームをリモート GPU へ送信せざるを得ず、安全ループが許容できない遅延を追加することになります。ロボット本体のすぐそばで CM5 + Hailo-8 上で実行することで、検知 → 補正 →（必要であれば）E-STOP のループをローカルかつ高速に保ちます。
 * 🖼️ **フレーム仕様のピクセル形式と行ストライド:** フレーム仕様にはピクセル形式(`GRAY`、`RGB`、`BGR`、`RGBA`、`BGRA`、`YUYV`、`NV12`)と行ストライドを指定でき、期待サイズはそれに従います。成り立たない組み合わせは `invalid_spec` として報告されます。フリーズ検出は、バイト単位で同じフレームを返し続けるセンサーを `frozen_frame` として知らせます。
 * 🩺 **`family-status --live`(既定ではオフ):** マニフェストを読むだけでなく、サービスを宣言している子プロジェクトごとに、短いタイムアウトで一度だけ問い合わせます(`--host` で変えない限りループバック経由)。それぞれが報告する遅延とバージョンを表示し、応答しないものがあれば失敗します。
-* 🎞️ **`serve --vision-sim FILE`(既定ではオフ、シミュレーションのみ):** 模擬フレームソース(決定的な合成ジェネレーターと、raw または PGM/PPM フレームのフォルダー)、形式・入力サイズ・精度・デバイス(`cpu` または `hailo`)を宣言したモデルレジストリ、ホストがファイルで宣言したデバイス(何も検出しません)に対する最良モデルの決定的な選択(選択と各除外の理由つき)、そして遅延パーセンタイルに値を送る偽モデルのループを備えます。`GET /models`、`GET /sources`、`POST /models/select`、`POST /inference/simulate` が加わり、スイッチがなければ 404 を返します。実際の推論も実際のカメラもありません。カメラや RTSP のソースにはハードウェアが必要です。
+* 🎞️ **`serve --vision-sim FILE`(既定ではオフ、シミュレーションのみ):** 模擬フレームソース(決定的な合成ジェネレーターと、raw または PGM/PPM フレームのフォルダー)、形式・入力サイズ・精度・デバイス(`cpu` または `hailo`)を宣言したモデルレジストリ、ホストがファイルで宣言したデバイス(何も検出しません)に対する最良モデルの決定的な選択(選択と各除外の理由つき)、そして遅延パーセンタイルに値を送る偽モデルのループを備えます。`GET /models`、`GET /sources`、`POST /models/select`、`POST /inference/simulate` が加わり、スイッチがなければ 404 を返します。実際の推論も実際のカメラもありません。カメラや RTSP のソースにはハードウェアが必要です。 1 回の実行には実時間の上限があります(ファイルの `limits.maxRunSeconds`、既定は 10 秒。0 や負の値はファイルを拒否します)。超えると理由付きで `truncated: true` と記された途中結果が返り、シミュレーションは同時に 1 つだけ実行され(2 つ目は `409`)、他のルートは応答し続けます。
 
 **正直な現状確認 —— 今日実際に動くもの：** 引数なしの呼び出しは引き続き識別情報/バージョン/役割を表示しますが、今では実際の `family-status [--workspace パス]` サブコマンドもあります：ローカルチェックアウトから `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API` それぞれの実際のマニフェストを読み取り、見つけたものを正直に報告します。上記で説明した Hailo-8 ランタイム、
 gRPC 制御 API、実際の子プロセス監督ロジックはいずれもまだ存在して
@@ -181,7 +181,7 @@ Python 3.10 以上が必要です。
 
 ## 🧪 テスト
 
-`python -m pytest -q tests` で自動テスト 243 件を実行します。 ハードウェアも、このマシンの外にあるものも必要ありません。
+`python -m pytest -q tests` で自動テスト 262 件を実行します。 ハードウェアも、このマシンの外にあるものも必要ありません。
 
 CI は `HYDRA_UMC_CI=1 python tools/ci_validate.py` を実行し、マニフェスト、文書、8 つの README、図を検査します。
 
@@ -204,7 +204,7 @@ CI は `HYDRA_UMC_CI=1 python tools/ci_validate.py` を実行し、マニフェ�
 2. **仮想環境** — `.venv/` がまだ存在しない場合は作成します（再実行しても安全です。既存の `.venv/` は再作成されず再利用されます）。
 3. **Editable インストール（dev エクストラ付き）** — `pip install -e ".[dev]"` は本パッケージを「editable」モードで `.venv` にインストールするため、`src/` 下のソース変更は再インストールなしに即座に反映され、`pytest` がインストールされ、`run.sh` が使用する `hydra-umc-vision-node` コンソールエントリポイントが登録されます。
 4. **コンパイルチェック** — `python -m compileall -q src` は `src/` 下のすべての `.py` ファイルをバイトコンパイルし、`main.py` から一度も実際にインポートされないファイルであっても、パッケージ全体にわたる構文エラーを検出します。
-5. **実際のテストスイート** — `pytest tests/` が全 243 件のテストを実行します。
+5. **実際のテストスイート** — `pytest tests/` が全 262 件のテストを実行します。
 
 スクリプトは `set -euo pipefail` を使用し、最初に失敗したステップで停止
 します。すべてのステップが成功した場合にのみ `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) を
@@ -360,7 +360,7 @@ HYDRA-UMC-VISION-NODE/
 
 **現時点の既知の制限**
 
-**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際のパイプラインマニフェストと実際のデグレードモード検出（`pipeline.py`/`hardware.py`）——実際のカメラ/Hailo-8 ハードウェアを正直に探索し、どのパイプラインステージが実行可能かを正確に報告します——、実際の、ハードウェアに依存しないフレーム破損検証（`frame.py`）、`family-status`/`pipeline-status`/`validate-frame` の各 CLI サブコマンドに加えてこの 3 つを JSON/HTTP API として公開する `serve` サブコマンド（`api.py`）、通過した 243 件のテスト、そして `docker-compose.yml` における 4 つの
+**今日実現していること：** 実際のファミリーレディネスチェック（`manifest.py`/`family.py`）——4 つの実際の子プロジェクトそれぞれのマニフェストを読み取り、存在/バージョン/成熟度/役割を報告します——、実際のパイプラインマニフェストと実際のデグレードモード検出（`pipeline.py`/`hardware.py`）——実際のカメラ/Hailo-8 ハードウェアを正直に探索し、どのパイプラインステージが実行可能かを正確に報告します——、実際の、ハードウェアに依存しないフレーム破損検証（`frame.py`）、`family-status`/`pipeline-status`/`validate-frame` の各 CLI サブコマンドに加えてこの 3 つを JSON/HTTP API として公開する `serve` サブコマンド（`api.py`）、通過した 262 件のテスト、そして `docker-compose.yml` における 4 つの
 子プロジェクトの完全な統合マップの文書化（子プロジェクト自身の Dockerfile から構築され、Docker では実行されていない）——実際の完全なビルド/実行出力は [`CHANGELOG.md`](CHANGELOG.md) を参照してください。
 
 **まだ残っている作業（順不同、確定した期限なし）：**
