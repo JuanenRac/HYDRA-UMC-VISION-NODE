@@ -35,6 +35,7 @@ from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
 from .frame import FrameSpec, validate_frame
 from .hardware import PipelineMode, accelerator_available, active_stages, camera_available, determine_mode
 from .pipeline import build_manifest, pipeline_status_dict
+from .vision_sim import VisionConfigError, load_vision_config
 
 PROJECT_NAME = "HYDRA-UMC-VISION-NODE"
 DIST_NAME = "hydra-umc-vision-node"
@@ -140,7 +141,7 @@ def _run_validate_frame(path: Path, width: int, height: int, channels: int) -> i
     return 1
 
 
-def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None, latency_window: int | None = None) -> int:
+def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None, latency_window: int | None = None, vision_sim: str | None = None) -> int:
     try:
         token = load_token(token_file)
     except ValueError as error:
@@ -159,9 +160,18 @@ def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = N
         except LatencyError as error:
             print(f"[vision-node] error: --latency-window: {error}", file=sys.stderr)
             return 2
-    server = VisionNodeServer((addr, port), workspace, token, latency=recorder)
+    vision = None
+    if vision_sim is not None:
+        try:
+            vision = load_vision_config(vision_sim)
+        except VisionConfigError as error:
+            print(f"[vision-node] error: --vision-sim: {error}", file=sys.stderr)
+            return 2
+    server = VisionNodeServer((addr, port), workspace, token, latency=recorder, vision=vision)
     print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace}; {'Bearer token required' if token else 'no token, loopback only'})")
     print("[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats")
+    if vision is not None:
+        print("[vision-node] SIMULATION ON (no camera, no inference): GET /models, GET /sources, POST /models/select, POST /inference/simulate")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -217,6 +227,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--port", type=int, default=8094, help="port for the HTTP API")
     serve_parser.add_argument("--token-file", default=None, help="file with the bearer token every request must present (or the HYDRA_UMC_VISION_NODE_TOKEN environment variable). Needed to bind an address that is not loopback.")
     serve_parser.add_argument("--latency-window", type=int, default=None, metavar="FRAMES", help="turn on GET /latency and POST /latency/record (off by default): the p50/p95 of every stage per camera over the last FRAMES frames, 1 to 10000")
+    serve_parser.add_argument("--vision-sim", default=None, metavar="FILE", help="turn on the simulated capture and inference (off by default): a JSON file with the host capabilities, the model registry and the simulated sources; adds GET /models, GET /sources, POST /models/select and POST /inference/simulate. No camera and no real inference.")
     serve_parser.add_argument(
         "--workspace",
         type=Path,
@@ -238,7 +249,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate-frame":
         return _run_validate_frame(args.path, args.width, args.height, args.channels)
     if args.command == "serve":
-        return _run_serve(args.addr, args.port, args.workspace, args.token_file, args.latency_window)
+        return _run_serve(args.addr, args.port, args.workspace, args.token_file, args.latency_window, args.vision_sim)
 
     _print_identity()
     return 0
