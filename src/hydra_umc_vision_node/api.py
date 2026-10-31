@@ -34,7 +34,7 @@ from .pipeline import build_manifest, pipeline_status_dict
 def _write_json(handler: BaseHTTPRequestHandler, status: int, payload: object) -> None:
     def default(o: object) -> object:
         if hasattr(o, "__dataclass_fields__"):
-            return asdict(o)
+            return asdict(o)  # type: ignore[call-overload]
         if hasattr(o, "value"):  # enum
             return o.value
         return str(o)

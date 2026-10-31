@@ -71,7 +71,7 @@ class LatencyRecorder:
                     raise LatencyError(f"the instant of {name} must be a finite number")
                 ordered.append((name, float(value)))
         durations: dict[str, float] = {}
-        for (_, before), (name, at) in zip(ordered, ordered[1:]):
+        for (_, before), (name, at) in zip(ordered, ordered[1:], strict=False):
             if at < before:
                 raise LatencyError(f"the instant of {name} is earlier than the stage before it")
             durations[name] = (at - before) * 1000.0
