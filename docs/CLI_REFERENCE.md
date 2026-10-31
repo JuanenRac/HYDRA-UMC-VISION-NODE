@@ -311,8 +311,48 @@ $ hydra-umc-vision-node serve --port 8094
 | `/stats` | `GET` | — | Reports the server's own default workspace path. |
 | `/latency` | `GET` | — | Only with `serve --latency-window FRAMES` (404 otherwise): `window` and, per camera, the `count`, `p50Ms`, `p95Ms` and `maxMs` of each stage and of `total` (capture to the last stage) over the last FRAMES frames. |
 | `/latency/record` | `POST` | JSON body `{"camera", "stamps"}` | Only with `--latency-window`: stores the instants (seconds, one clock) a frame passed through `capture`, `preprocess`, `inference`, `postprocess` and `publish`; `400` for an unknown stage, a missing `capture`, an instant that is not finite or goes backwards, or a bad camera name. |
+| `/models` | `GET` | — | Only with `serve --vision-sim FILE` (404 otherwise): the host capabilities and the models of the file, each with its format, input size, precision and device. Simulation only. |
+| `/sources` | `GET` | — | Only with `--vision-sim`: the simulated frame sources of the file. |
+| `/models/select` | `POST` | JSON body `{"constraints"}` (optional) | Only with `--vision-sim`: the best model for the devices the host declares, and for every model its status (`selected`, `outranked` or `discarded`) with the reason. `400` for an unknown key or a malformed constraint. |
+| `/inference/simulate` | `POST` | JSON body `{"source", "frames", "model", "constraints"}` | Only with `--vision-sim` and `--latency-window` (`409` without the latter): runs 1 to 1000 frames of a simulated source through a fake model (the one named, or the one selected) and records the stage instants in the latency module. `400` for an unknown source or model, a model whose device is not available, or a malformed body (at most 4096 bytes); `409` when no model fits. |
 
 `?workspace=` on `/family-status` may only point inside the workspace the server was started with (`400` otherwise), and `POST /validate-frame` answers `400` for a non-positive size or one above 8192x8192x4 / 64 MiB before reading the body.
+
+### Simulated capture and model selection (`serve --vision-sim FILE`)
+
+Off by default: without the option none of the four routes above exist (they answer `404`) and the node behaves as before.
+**This is a simulation.** There is no real inference and no real camera: the "model" is a fixed function of the frame bytes
+and the model name (it reports a number of detections and the durations of the stages, around the `simLatencyMs` the model
+declares, on a virtual clock), so a run is repeatable and takes no real time. A camera or RTSP source and a Hailo-8 runtime
+still need hardware and are not part of this; a new kind of source is one class registered with `register_source_kind`.
+
+The file is JSON (at most 256 KiB, unknown keys refused, no `NaN`). A bad file stops the start with exit code `2`:
+
+```json
+{
+  "host": {"devices": ["hailo", "cpu"], "formats": ["onnx", "hef"], "precisions": ["int8", "fp16", "fp32"]},
+  "models": [
+    {"name": "yolo-hailo", "format": "hef", "inputWidth": 640, "inputHeight": 640, "precision": "int8", "device": "hailo", "simLatencyMs": 6},
+    {"name": "yolo-cpu", "format": "onnx", "inputWidth": 320, "inputHeight": 320, "precision": "fp32", "device": "cpu", "simLatencyMs": 45}
+  ],
+  "sources": [
+    {"name": "bench", "kind": "synthetic", "width": 64, "height": 48, "channels": 3, "seed": 7, "frames": 100},
+    {"name": "samples", "kind": "folder", "path": "frames", "width": 64, "height": 48, "channels": 3}
+  ]
+}
+```
+
+* **The host is what the file says.** Nothing is probed: a model for `hailo` is only usable when `hailo` is in `host.devices`.
+  The order of `devices` and `precisions` is the order of preference.
+* **Models** declare `format` (`onnx`, `hef`, `tflite`, `sim`), the input size, `precision` (`fp32`, `fp16`, `int8`) and `device`
+  (`cpu`, `hailo`). At most 64 models, unique names.
+* **The choice is deterministic:** among the models that fit (device, format and precision offered by the host, and the optional
+  constraints `devices`, `formats`, `precisions`, `maxInputPixels`, `minInputWidth`, `minInputHeight`), the first device of the
+  host wins, then the larger input, then the first precision of the host, then the name. The same input gives the same answer
+  whatever the order of the models, and a model whose device is not available is never chosen.
+* **Sources:** `synthetic` (a moving gradient from a seed; same seed, same bytes) and `folder` (the `.raw`, `.pgm` and `.ppm`
+  files of a folder inside the folder of the configuration file, in name order; `.raw` needs `width`, `height` and `channels`;
+  at most 256 files). A frame holds at most 4 MiB and a name is 1 to 64 characters of letters, digits and `_ . : -`; at most 16 sources.
 
 `GET /family-status` (all 4 children present, same real checkout as the CLI example above):
 

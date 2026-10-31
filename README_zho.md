@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
-  <img src="https://img.shields.io/badge/Tests-151%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-243%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | 版本 | `0.1.7` |
 | 成熟度 | 可用 |
-| 测试 | 151 (`python -m pytest -q tests`) |
+| 测试 | 243 (`python -m pytest -q tests`) |
 | 技术栈 | Python / CM5 / Hailo-8 |
 | 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
 | 真实硬件 | 尚未：此版本没有在真实硬件上运行的记录 |
@@ -52,7 +52,7 @@ GPL-3.0-or-later - see LICENSE
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
 | 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
-| 测试 | 🟢 | 151 项自动测试，每次变更都会运行 |
+| 测试 | 🟢 | 243 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🔴 | 尚未：此版本没有在真实硬件上运行的记录 |
 | 文档 | 🟢 | 八种语言的 README，每次变更都会与清单核对 |
 
@@ -86,6 +86,7 @@ Raspberry Pi Compute Module 5 上，并搭配 Hailo-8 M.2 AI 加速器，其预�
 * 🧩 **存在的意义：** 若没有专用节点，感知工作要么会使 [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部的 STM32H745 实时核心过载（该核心没有多余算力承担此任务），要么必须将每一帧摄像头画面通过网络传输到远程 GPU，从而增加安全回路无法承受的延迟。将其运行在紧邻机器人本体的 CM5 + Hailo-8 上，可使检测 → 修正 →（必要时）E-STOP 的回路保持本地化和快速。
 * 🖼️ **帧规格中的像素格式和行跨度:** 帧规格可以指明像素格式(`GRAY`、`RGB`、`BGR`、`RGBA`、`BGRA`、`YUYV`、`NV12`)和行跨度，期望的大小随之变化，不可能的组合会报告为 `invalid_spec`。冻结帧监视器会标出一直逐字节返回同一帧的传感器(`frozen_frame`)。
 * 🩺 **`family-status --live`(默认关闭):** 除了读取清单，还会对每个声明了服务的子项目各查询一次，超时很短，除非 `--host` 另有指定否则走回环地址，并打印各自报告的延迟和版本；有一个不响应就会失败。
+* 🎞️ **`serve --vision-sim 文件`(默认关闭，仅模拟):** 模拟的帧来源(确定性的合成生成器和一个 raw 或 PGM/PPM 帧文件夹)、声明了格式、输入尺寸、精度和设备(`cpu` 或 `hailo`)的模型注册表，以及针对主机在文件中声明的设备(不做任何检测)确定性地选出最佳模型，并给出选择和每次淘汰的理由，另有一个用假模型驱动、为延迟百分位提供数据的循环。新增 `GET /models`、`GET /sources`、`POST /models/select` 和 `POST /inference/simulate`；不开启开关时它们返回 404。没有真实推理，也没有真实摄像头：摄像头或 RTSP 来源仍然需要硬件。
 
 **诚实说明——今天实际运行的内容：** 无参数调用时仍会打印身份/版本/角色，但现在新增了一个真实的 `family-status [--workspace 路径]` 子命令：从本地检出中读取 `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API` 各自真实的清单，并诚实地报告发现的内容。上文描述的 Hailo-8 运行时、gRPC 控制
 API 或真实的子节点监督逻辑目前均尚未实现——它们是本项目存在的原因，而非
@@ -171,7 +172,7 @@ V4L2 设备、通往 HYDRA-UMC 核心的 gRPC 端口）连接在一起。文件�
 
 ## 🧪 测试
 
-运行 `python -m pytest -q tests` 会执行 151 个自动测试。 不需要硬件，也不需要这台机器以外的任何东西。
+运行 `python -m pytest -q tests` 会执行 243 个自动测试。 不需要硬件，也不需要这台机器以外的任何东西。
 
 CI 运行 `HYDRA_UMC_CI=1 python tools/ci_validate.py`，检查清单、文档、八个 README 和图片。
 
@@ -194,7 +195,7 @@ CI 运行 `HYDRA_UMC_CI=1 python tools/ci_validate.py`，检查清单、文档�
 2. **虚拟环境** —— 若 `.venv/` 尚不存在则创建它（可安全重复运行；已存在的 `.venv/` 会被复用，而非重新创建）。
 3. **可编辑安装（含 dev 附加依赖）** —— `pip install -e ".[dev]"` 以"可编辑"模式将本包安装到 `.venv` 中，因此对 `src/` 下源代码的修改会立即生效而无需重新安装，安装 `pytest`，并注册 `run.sh` 所使用的 `hydra-umc-vision-node` 控制台入口点。
 4. **编译检查** —— `python -m compileall -q src` 对 `src/` 下的每个 `.py` 文件进行字节码编译，即使某个文件从未被 `main.py` 实际导入，也能捕获整个包中的语法错误。
-5. **真实测试套件** —— `pytest tests/` 运行全部 151 个测试。
+5. **真实测试套件** —— `pytest tests/` 运行全部 243 个测试。
 
 脚本使用 `set -euo pipefail`，在第一个失败步骤处停止，只有全部步骤
 均成功时才打印 `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`)。
@@ -343,7 +344,7 @@ HYDRA-UMC-VISION-NODE/
 
 **当前已知限制**
 
-**今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），151 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
+**今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），243 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
 项目的完整集成蓝图文档（由各子项目自己的 Dockerfile 构建，从未用 Docker 运行过）——具体的真实构建/运行输出见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 **仍待完成的内容（顺序不分先后，无既定时间表）：**
