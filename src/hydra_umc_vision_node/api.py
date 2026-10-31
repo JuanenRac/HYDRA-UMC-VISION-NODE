@@ -27,6 +27,7 @@ from .codes import DecoderUnavailable, decode_codes, pylibdmtx_decoder
 from .family import check_family_status
 from .frame import MAX_CHANNELS, MAX_DIMENSION, MAX_FRAME_BYTES, FrameSpec, validate_frame
 from .hardware import accelerator_available, active_stages, camera_available, determine_mode
+from .latency import LatencyError, LatencyRecorder
 from .pipeline import build_manifest, pipeline_status_dict
 
 
@@ -56,6 +57,14 @@ def _query_params(handler: BaseHTTPRequestHandler) -> dict[str, str]:
     if repeated:
         raise ValueError(f"query parameters must occur exactly once: {repeated}")
     return {key: value[0] for key, value in values.items()}
+
+
+# Largest body of POST /latency/record (a few stage instants)
+LATENCY_BODY_BYTES = 4096
+
+
+def _reject_constant(name: str) -> float:
+    raise ValueError(f"{name} is not a valid JSON number")
 
 
 # GET path the project manifest declares as the health probe; it carries no token
@@ -89,6 +98,8 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_family_status(params)
         elif path == "/pipeline-status":
             self._handle_pipeline_status()
+        elif path == "/latency" and self.server.latency is not None:
+            _write_json(self, 200, self.server.latency.snapshot())
         elif path == "/stats":
             _write_json(self, 200, {"workspace": str(self.server.workspace)})
         else:
@@ -141,8 +152,25 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_validate_frame(params)
         elif path == "/read-code":
             self._handle_read_code(params)
+        elif path == "/latency/record" and self.server.latency is not None:
+            self._handle_latency_record()
         else:
             _write_error(self, 404, "not found")
+
+    def _handle_latency_record(self) -> None:
+        """Record the instants one frame passed through the stages: {"camera": name, "stamps": {stage: seconds}}."""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            if length < 0 or length > LATENCY_BODY_BYTES:
+                raise ValueError(f"request body must contain 0-{LATENCY_BODY_BYTES} bytes")
+            body = json.loads(self.rfile.read(length) if length else b"{}", parse_constant=_reject_constant)
+            if not isinstance(body, dict):
+                raise ValueError("the body must be a JSON object")
+            durations = self.server.latency.record(body.get("camera"), body.get("stamps"))  # type: ignore[union-attr]
+        except (ValueError, LatencyError) as error:
+            _write_error(self, 400, str(error))
+            return
+        _write_json(self, 200, {"recorded": True, "totalMs": durations["total"]})
 
     def _handle_read_code(self, params: dict[str, str]) -> None:
         """Read the DataMatrix codes of one raw frame: the frame travels as the body, exactly as for /validate-frame."""
@@ -255,8 +283,10 @@ def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
 
 
 class VisionNodeServer(ThreadingHTTPServer):
-    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder) -> None:
+    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder, latency: LatencyRecorder | None = None) -> None:
         super().__init__(address, Handler)
+        # per-stage latency percentiles (latency.py); None (the default) leaves GET /latency and POST /latency/record answering 404
+        self.latency = latency
         # reads the DataMatrix codes of a frame (codes.py); replaceable, so the route is tested without the library
         self.code_decoder = code_decoder
         # empty means no token (loopback only; see access.py)

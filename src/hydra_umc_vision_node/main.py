@@ -29,6 +29,7 @@ from pathlib import Path
 
 from .access import bind_problem, load_token
 from .api import VisionNodeServer
+from .latency import LatencyError, LatencyRecorder
 from .family import check_family_status
 from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
 from .frame import FrameSpec, validate_frame
@@ -139,7 +140,7 @@ def _run_validate_frame(path: Path, width: int, height: int, channels: int) -> i
     return 1
 
 
-def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None) -> int:
+def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None, latency_window: int | None = None) -> int:
     try:
         token = load_token(token_file)
     except ValueError as error:
@@ -151,7 +152,14 @@ def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = N
         return 2
     if not workspace.is_dir():
         print(f"[vision-node] warning: workspace {workspace} is not a directory - every child will report as missing", file=sys.stderr)
-    server = VisionNodeServer((addr, port), workspace, token)
+    recorder = None
+    if latency_window is not None:
+        try:
+            recorder = LatencyRecorder(latency_window)
+        except LatencyError as error:
+            print(f"[vision-node] error: --latency-window: {error}", file=sys.stderr)
+            return 2
+    server = VisionNodeServer((addr, port), workspace, token, latency=recorder)
     print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace}; {'Bearer token required' if token else 'no token, loopback only'})")
     print("[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats")
     try:
@@ -208,6 +216,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--addr", default="127.0.0.1", help="address to bind the HTTP API to")
     serve_parser.add_argument("--port", type=int, default=8094, help="port for the HTTP API")
     serve_parser.add_argument("--token-file", default=None, help="file with the bearer token every request must present (or the HYDRA_UMC_VISION_NODE_TOKEN environment variable). Needed to bind an address that is not loopback.")
+    serve_parser.add_argument("--latency-window", type=int, default=None, metavar="FRAMES", help="turn on GET /latency and POST /latency/record (off by default): the p50/p95 of every stage per camera over the last FRAMES frames, 1 to 10000")
     serve_parser.add_argument(
         "--workspace",
         type=Path,
@@ -229,7 +238,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate-frame":
         return _run_validate_frame(args.path, args.width, args.height, args.channels)
     if args.command == "serve":
-        return _run_serve(args.addr, args.port, args.workspace, args.token_file)
+        return _run_serve(args.addr, args.port, args.workspace, args.token_file, args.latency_window)
 
     _print_identity()
     return 0

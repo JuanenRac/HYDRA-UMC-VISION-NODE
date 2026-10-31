@@ -309,6 +309,8 @@ $ hydra-umc-vision-node serve --port 8094
 | `/pipeline-status` | `GET` | — | Same check as the `pipeline-status` subcommand. |
 | `/validate-frame` | `POST` | `width`, `height` (required), `channels` (optional, default `3`) | Same check as the `validate-frame` subcommand, but the raw frame bytes travel as the request body instead of a local file path — the only thing a real remote caller can hand this server. |
 | `/stats` | `GET` | — | Reports the server's own default workspace path. |
+| `/latency` | `GET` | — | Only with `serve --latency-window FRAMES` (404 otherwise): `window` and, per camera, the `count`, `p50Ms`, `p95Ms` and `maxMs` of each stage and of `total` (capture to the last stage) over the last FRAMES frames. |
+| `/latency/record` | `POST` | JSON body `{"camera", "stamps"}` | Only with `--latency-window`: stores the instants (seconds, one clock) a frame passed through `capture`, `preprocess`, `inference`, `postprocess` and `publish`; `400` for an unknown stage, a missing `capture`, an instant that is not finite or goes backwards, or a bad camera name. |
 
 `?workspace=` on `/family-status` may only point inside the workspace the server was started with (`400` otherwise), and `POST /validate-frame` answers `400` for a non-positive size or one above 8192x8192x4 / 64 MiB before reading the body.
 

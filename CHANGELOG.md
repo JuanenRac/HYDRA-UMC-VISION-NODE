@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Latency per stage (off by default):** `serve --latency-window FRAMES` (1 to 10000) turns on `POST /latency/record`, which takes `{"camera": name, "stamps": {stage: seconds}}` (the instants a frame passed through `capture`, `preprocess`, `inference`, `postprocess` and `publish` on one clock; a skipped stage is measured from the one before), and `GET /latency`, which answers the p50, the p95, the worst case and the count of each stage and of the whole path per camera over the last FRAMES frames. At most 64 cameras are tracked; both routes answer 404 while the switch is off.
+
 - **The compose file is checked in the CI with Docker:** a workflow resolves `docker-compose.yml` with `docker compose config`, besides the check of the tests that runs without Docker.
 - **`docker-compose.yml` is checked by the tests without Docker:** it must parse, every service must say where its image comes from, a dependency must name a service of the file, a build context that exists must hold a Dockerfile, and healthchecks and published ports must be well formed (PyYAML joins the development extras).
 - **One naming for `pipeline-status`:** the command line and `GET /pipeline-status` answer with the same camelCase names (`cameraPresent`, `acceleratorPresent`, `runnableStages`, `skippedStages`, and `requiresCamera` / `requiresAccelerator` in each stage of the manifest). The snake_case names the command line used before stay as aliases with the same values for one release cycle.
