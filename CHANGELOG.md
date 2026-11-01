@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **`GET /metrics` in the text format of Prometheus:** the version, the uptime, the responses by class of status (2xx to 5xx) and the health, the aggregate of the checks of the service; only numbers about the service, never a path, an address, a token or a body. Behind the bearer token when the service has one. The code is the canonical `service_metrics.py` of HYDRA-UMC-SDK, copied byte for byte. 4 tests against a real server.
+
 ## [0.1.9] - The time limit of a simulation is checked inside each frame, in chunks that the configuration sets
 
 - **The time limit of a simulation run is checked inside a frame:** a frame is now produced in pieces (`limits.chunkBytes` of the `--vision-sim` file, 256 KiB by default, 1024 bytes to 4 MiB; anything else refuses the file) and the clock is read between two pieces, so a run overshoots `limits.maxRunSeconds` by one piece instead of a whole frame. A frame cut in the middle is dropped (never recorded, never counted); when the limit comes before the first frame is complete the answer is `frames: 0`, `totalMs: null` and `truncated: true`. A frame that fits in one piece is never interrupted and the bytes of a frame do not depend on the piece size. Custom sources that only take `limit` keep working and are checked between frames.
