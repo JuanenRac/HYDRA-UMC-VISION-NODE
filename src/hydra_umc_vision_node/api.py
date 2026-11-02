@@ -33,7 +33,7 @@ from .frame import MAX_CHANNELS, MAX_DIMENSION, MAX_FRAME_BYTES, FrameSpec, vali
 from .hardware import accelerator_available, active_stages, camera_available, determine_mode
 from .latency import LatencyError, LatencyRecorder
 from .loopback import LoopbackError, StreamUnavailable, pillow_decoder, run_loopback, source_items, stream_items
-from .registry_gate import GateResult, mode_allowed, resolve_model
+from .registry_gate import GateResult, mode_allowed, report_loaded, resolve_model
 from .models import ModelError, evaluate, parse_constraints
 from .pipeline import build_manifest, pipeline_status_dict
 from .vision_sim import VisionConfig, VisionConfigError, run_simulation
@@ -123,7 +123,7 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
             _write_json(self, 200, {"simulated": True, **self.server.vision.loopback.describe()})  # type: ignore[union-attr]
         elif path == "/models/registry" and self._registry_on():
             gate = self.server.model_gate
-            _write_json(self, 200, {"config": self.server.vision.registry.describe(), "last": gate.describe() if gate else None})  # type: ignore[union-attr]
+            _write_json(self, 200, {"config": self.server.vision.registry.describe(), "last": gate.describe() if gate else None, "report": self.server.model_report})  # type: ignore[union-attr]
         elif path == "/stats":
             _write_json(self, 200, {"workspace": str(self.server.workspace)})
         else:
@@ -237,7 +237,8 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
         registry = self.server.vision.registry  # type: ignore[union-attr]
         assert registry is not None
         self.server.model_gate = resolve_model(registry)
-        _write_json(self, 200, {"config": registry.describe(), **self.server.model_gate.describe()})
+        self.server.model_report = report_loaded(registry, self.server.model_gate)
+        _write_json(self, 200, {"config": registry.describe(), **self.server.model_gate.describe(), "report": self.server.model_report})
 
     def _handle_loopback_run(self) -> None:
         """Run the reference pipeline: {"source": name} or {"stream": true}, and "frames" (1 to 100, default 10)."""
@@ -455,6 +456,8 @@ class VisionNodeServer(ThreadingHTTPServer):
         super().__init__(address, Handler)
         # the last answer of the model registry (registry_gate.py); None until it was asked
         self.model_gate: GateResult | None = None
+        # what the registry answered to the report of the loaded model (registry_gate.report_loaded)
+        self.model_report: dict = {"state": "off"}
         # turns a JPEG of the MJPEG stream into pixels (loopback.py); replaceable, so the route is tested without Pillow
         self.stream_decoder = stream_decoder
         # per-stage latency percentiles (latency.py); None (the default) leaves GET /latency and POST /latency/record answering 404

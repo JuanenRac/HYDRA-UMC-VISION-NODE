@@ -35,7 +35,7 @@ from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
 from .frame import FrameSpec, validate_frame
 from .hardware import PipelineMode, accelerator_available, active_stages, camera_available, determine_mode
 from .pipeline import build_manifest, pipeline_status_dict
-from .registry_gate import resolve_model
+from .registry_gate import report_loaded, resolve_model
 from .vision_sim import VisionConfigError, load_vision_config
 
 PROJECT_NAME = "HYDRA-UMC-VISION-NODE"
@@ -172,6 +172,7 @@ def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = N
     if vision is not None and vision.registry is not None and vision.registry.enabled:
         # at start the node asks the registry which model it would run, and only reaches the full mode when that model is ready
         server.model_gate = resolve_model(vision.registry)
+        server.model_report = report_loaded(vision.registry, server.model_gate)
         print(f"[vision-node] model registry: {server.model_gate.state} ({vision.registry.model_name} on {vision.registry.target_arch})")
     print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace}; {'Bearer token required' if token else 'no token, loopback only'})")
     print("[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats")

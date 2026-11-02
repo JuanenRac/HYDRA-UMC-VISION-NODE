@@ -20,7 +20,7 @@ import pytest
 from hydra_umc_vision_node.api import VisionNodeServer
 from hydra_umc_vision_node.hardware import PipelineMode, active_stages, determine_mode
 from hydra_umc_vision_node.pipeline import build_manifest
-from hydra_umc_vision_node.registry_gate import GateError, GateResult, mode_allowed, normalize_arch, parse_registry_config, resolve_model
+from hydra_umc_vision_node.registry_gate import GateError, GateResult, mode_allowed, normalize_arch, parse_registry_config, report_loaded, resolve_model
 from hydra_umc_vision_node.vision_sim import VisionConfigError, parse_vision_config
 
 ENTRY = {"name": "yolo", "version": "1.2.0", "sha256": "b" * 64, "hailo_arch": "hailo8", "hef_path": "yolo.hef", "task": "detect"}
@@ -210,3 +210,80 @@ def test_without_the_gate_the_status_is_what_it_was(tmp_path: Path, monkeypatch:
 def test_a_bad_registry_block_refuses_the_file(tmp_path: Path) -> None:
     with pytest.raises(VisionConfigError):
         parse_vision_config({"registry": {"enabled": True}}, tmp_path)
+
+
+# ------------------------------------------------------------------------------------------------- report of the loaded model
+
+
+def _reporting(port: int, **extra: Any):
+    config = parse_registry_config({"enabled": True, "url": f"http://127.0.0.1:{port}", "modelName": "yolo", "targetArch": "hailo8", "reportLoaded": True, **extra})
+    assert config is not None
+    return config
+
+
+READY = GateResult("ready", True, "READY", "ok", {"name": "yolo", "version": "1.2.0", "sha256": "b" * 64, "hailo_arch": "hailo8"})
+
+
+def test_the_report_is_off_unless_the_block_asks_for_it() -> None:
+    config = parse_registry_config({"enabled": True, "url": "http://127.0.0.1:1", "modelName": "yolo", "targetArch": "hailo8"})
+    assert config is not None and config.report_loaded is False and config.node_name == "vision-node"
+    calls: list[str] = []
+    assert report_loaded(config, READY, lambda *a: calls.append("x") or (200, b"{}")) == {"state": "off"} and calls == []
+
+
+def test_the_report_sends_the_identity_and_the_token_and_keeps_the_verdict(tmp_path: Path) -> None:
+    token = tmp_path / "token.txt"
+    token.write_text("secret-token\n", encoding="utf-8")
+    seen: list[tuple[str, dict, str]] = []
+
+    def post(config: Any, target: str, body: bytes, bearer: str) -> tuple[int, bytes]:
+        seen.append((target, json.loads(body), bearer))
+        return 200, json.dumps({"verdict": "current"}).encode()
+
+    config = _reporting(8095, nodeName="cell-a", tokenFile=str(token))
+    result = report_loaded(config, READY, post)
+    assert result == {"state": "reported", "verdict": "current"}
+    assert seen == [("/models/loaded", {"node": "cell-a", "model_name": "yolo", "model_version": "1.2.0", "model_sha256": "b" * 64, "hailo_arch": "hailo8"}, "secret-token")]
+    assert "secret-token" not in json.dumps(result) and config.describe()["tokenFile"] is True and "secret" not in json.dumps(config.describe())
+
+
+def test_the_report_never_raises_and_changes_nothing_when_it_fails(tmp_path: Path) -> None:
+    config = _reporting(8095)
+    assert report_loaded(config, None)["state"] == "skipped"
+    assert report_loaded(config, GateResult("not_ready", False))["state"] == "skipped"
+
+    def broken(*args: Any) -> tuple[int, bytes]:
+        raise ConnectionRefusedError
+
+    assert report_loaded(config, READY, broken) == {"state": "unreachable", "detail": "ConnectionRefusedError"}
+    assert report_loaded(config, READY, lambda *a: (401, b'{"error": "token"}'))["state"] == "refused"
+    assert report_loaded(config, READY, lambda *a: (200, b"not json"))["state"] == "invalid_answer"
+    assert report_loaded(_reporting(8095, tokenFile=str(tmp_path / "missing")), READY, lambda *a: (200, b"{}")) == {"state": "token_unreadable"}
+
+
+@pytest.mark.parametrize("extra", [{"reportLoaded": "yes"}, {"nodeName": "a b"}, {"tokenFile": ""}, {"tokenFile": 3}])
+def test_a_bad_report_setting_is_refused(extra: dict) -> None:
+    block = {"url": "http://127.0.0.1:1", "modelName": "m", "targetArch": "hailo8", **extra}
+    with pytest.raises(GateError):
+        parse_registry_config(block)
+
+
+def test_resolve_reports_the_loaded_model_through_a_real_post(tmp_path: Path, registry: int) -> None:
+    posted: list[bytes] = []
+
+    def do_post(self: BaseHTTPRequestHandler) -> None:
+        posted.append(self.rfile.read(int(self.headers["Content-Length"])))
+        body = json.dumps({"verdict": "outdated"}).encode()
+        self.send_response(200)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    FakeRegistry.do_POST = do_post  # type: ignore[attr-defined]
+    try:
+        for url, server in _serving(tmp_path, registry, reportLoaded=True):
+            status, resolved = _call(url + "/models/resolve", {})
+            assert status == 200 and resolved["report"] == {"state": "reported", "verdict": "outdated"}
+            assert _call(url + "/models/registry")[1]["report"]["verdict"] == "outdated" and json.loads(posted[0])["model_sha256"] == "b" * 64
+    finally:
+        del FakeRegistry.do_POST  # type: ignore[attr-defined]

@@ -27,7 +27,7 @@ KNOWN_ARCHS = frozenset({"hailo8", "hailo8r", "hailo8l", "hailo15h", "hailo15m",
 MAX_ANSWER_BYTES = 64 * 1024
 DEFAULT_TIMEOUT_SECONDS = 3.0
 MAX_TIMEOUT_SECONDS = 60.0
-_CONFIG_KEYS = {"enabled", "url", "allowRemote", "modelName", "targetArch", "task", "requireReady", "timeoutSeconds"}
+_CONFIG_KEYS = {"enabled", "url", "allowRemote", "modelName", "targetArch", "task", "requireReady", "timeoutSeconds", "reportLoaded", "nodeName", "tokenFile"}
 
 
 class GateError(ValueError):
@@ -55,10 +55,14 @@ class RegistryConfig:
     task: str | None
     require_ready: bool
     timeout_seconds: float
+    report_loaded: bool = False
+    node_name: str = "vision-node"
+    token_file: str | None = None
 
     def describe(self) -> dict:
         return {"enabled": self.enabled, "url": f"http://{self.host}:{self.port}{self.path}", "modelName": self.model_name,
-                "targetArch": self.target_arch, "task": self.task, "requireReady": self.require_ready, "timeoutSeconds": self.timeout_seconds}
+                "targetArch": self.target_arch, "task": self.task, "requireReady": self.require_ready, "timeoutSeconds": self.timeout_seconds,
+                "reportLoaded": self.report_loaded, "nodeName": self.node_name, "tokenFile": bool(self.token_file)}
 
 
 def parse_registry_config(config: object) -> RegistryConfig | None:
@@ -70,7 +74,8 @@ def parse_registry_config(config: object) -> RegistryConfig | None:
     enabled = config.get("enabled", False)
     require_ready = config.get("requireReady", True)
     allow_remote = config.get("allowRemote", False)
-    for key, value in (("enabled", enabled), ("requireReady", require_ready), ("allowRemote", allow_remote)):
+    report_loaded = config.get("reportLoaded", False)
+    for key, value in (("enabled", enabled), ("requireReady", require_ready), ("allowRemote", allow_remote), ("reportLoaded", report_loaded)):
         if not isinstance(value, bool):
             raise GateError(f"registry.{key} must be true or false")
     try:
@@ -83,11 +88,17 @@ def parse_registry_config(config: object) -> RegistryConfig | None:
     task = config.get("task")
     if task is not None and (not isinstance(task, str) or not NAME.fullmatch(task)):
         raise GateError("registry.task is 1 to 64 characters of letters, digits and _ . : -")
+    node_name = config.get("nodeName", "vision-node")
+    if not isinstance(node_name, str) or not NAME.fullmatch(node_name):
+        raise GateError("registry.nodeName is 1 to 64 characters of letters, digits and _ . : -")
+    token_file = config.get("tokenFile")
+    if token_file is not None and (not isinstance(token_file, str) or not token_file.strip()):
+        raise GateError("registry.tokenFile is the path of a file that holds the bearer token")
     timeout = config.get("timeoutSeconds", DEFAULT_TIMEOUT_SECONDS)
     if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or not 0 < timeout <= MAX_TIMEOUT_SECONDS:
         raise GateError(f"registry.timeoutSeconds must be a number above 0 and at most {MAX_TIMEOUT_SECONDS:g}")
     return RegistryConfig(enabled, endpoint.host, endpoint.port, endpoint.path.rstrip("/"), name, normalize_arch(config.get("targetArch")),
-                          task, require_ready, float(timeout))
+                          task, require_ready, float(timeout), report_loaded, node_name, token_file)
 
 
 @dataclass(frozen=True)
@@ -161,3 +172,57 @@ def mode_allowed(config: RegistryConfig | None, result: GateResult | None) -> bo
     if config is None or not config.enabled or not config.require_ready:
         return None
     return bool(result is not None and result.ready)
+
+
+Post = Callable[[RegistryConfig, str, bytes, str], tuple[int, bytes]]
+
+
+def http_post(config: RegistryConfig, target: str, body: bytes, token: str) -> tuple[int, bytes]:
+    """One POST of a JSON body to the registry service. Redirects are not followed and the answer is read up to MAX_ANSWER_BYTES."""
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    connection = http.client.HTTPConnection(config.host, config.port, timeout=config.timeout_seconds)
+    try:
+        connection.request("POST", target, body=body, headers=headers)
+        response = connection.getresponse()
+        return response.status, response.read(MAX_ANSWER_BYTES + 1)
+    finally:
+        connection.close()
+
+
+def report_loaded(config: RegistryConfig, result: GateResult | None, post: Post = http_post) -> dict:
+    """Tell DETECTION-HEF which model this node has resolved (`POST /models/loaded`) and keep its verdict.
+
+    Only with `reportLoaded: true` and only when the registry resolved a model. The token is read from `tokenFile` at the moment of the report and is never
+    kept, logged or returned. Never raises: any failure is a state, and a refused or failed report changes nothing about the mode of the node.
+    """
+    if not config.report_loaded:
+        return {"state": "off"}
+    if result is None or result.model is None:
+        return {"state": "skipped", "detail": "the registry did not resolve a model"}
+    token = ""
+    if config.token_file:
+        try:
+            with open(config.token_file, encoding="utf-8") as handle:
+                token = handle.read(4096).strip()
+        except OSError:
+            return {"state": "token_unreadable"}
+    model = result.model
+    body = json.dumps({"node": config.node_name, "model_name": model["name"], "model_version": model["version"],
+                       "model_sha256": model["sha256"], "hailo_arch": model["hailo_arch"]}).encode("utf-8")
+    try:
+        status, answer = post(config, f"{config.path}/models/loaded", body, token)
+    except (OSError, http.client.HTTPException) as error:
+        return {"state": "unreachable", "detail": type(error).__name__}
+    if len(answer) > MAX_ANSWER_BYTES:
+        return {"state": "invalid_answer", "detail": "the answer of the registry is too large"}
+    try:
+        data = json.loads(answer.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError):
+        return {"state": "invalid_answer", "detail": f"HTTP {status}: the answer is not JSON"}
+    if status != 200 or not isinstance(data, dict):
+        message = data.get("error") if isinstance(data, dict) else None
+        return {"state": "refused", "detail": f"HTTP {status}: {str(message)[:200] if message else 'the registry refused the report'}"}
+    verdict = data.get("verdict")
+    return {"state": "reported", "verdict": verdict if isinstance(verdict, str) else None}
