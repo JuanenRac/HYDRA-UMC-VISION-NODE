@@ -20,7 +20,6 @@ from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import urlparse
 
-import json
 import threading
 import time
 from collections.abc import Callable
