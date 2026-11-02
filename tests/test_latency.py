@@ -159,3 +159,25 @@ def test_routes_record_and_report_when_on(tmp_path: Path) -> None:
         assert status == 400 and "earlier" in body["error"]
     finally:
         _stop(server, thread)
+
+
+def test_the_record_route_refuses_a_body_above_its_limit_and_one_that_is_not_an_object(tmp_path: Path) -> None:
+    server = VisionNodeServer(("127.0.0.1", 0), tmp_path, latency=LatencyRecorder(window=50))
+    thread = _serve(server)
+    try:
+        base = f"http://127.0.0.1:{server.server_address[1]}"
+        huge = {"camera": "cam0", "stamps": {"capture": 0.0, "publish": 1.0}, "padding": "x" * 8192}
+        status, body = _call(f"{base}/latency/record", huge)
+        assert status == 400 and "bytes" in body["error"]
+        status, body = _call(f"{base}/latency/record", [1, 2])  # type: ignore[arg-type]
+        assert status == 400 and "object" in body["error"]
+    finally:
+        _stop(server, thread)
+
+
+def test_the_server_limits_the_requests_it_handles_at_the_same_time(tmp_path: Path) -> None:
+    from hydra_umc_vision_node.http_common import BoundedThreadingHTTPServer
+
+    server = VisionNodeServer(("127.0.0.1", 0), tmp_path)
+    assert isinstance(server, BoundedThreadingHTTPServer) and server.max_threads >= 1
+    server.server_close()

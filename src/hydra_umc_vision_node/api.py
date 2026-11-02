@@ -16,9 +16,9 @@ themselves are the only thing that travels over HTTP.
 from __future__ import annotations
 
 from dataclasses import asdict
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import urlparse
 
 import json
 import threading
@@ -29,6 +29,7 @@ from .service_metrics import MetricsHandlerMixin
 from .access import authorized, reject
 from .codes import DecoderUnavailable, decode_codes, pylibdmtx_decoder
 from .family import check_family_status
+from .http_common import SOCKET_TIMEOUT_SECONDS, BoundedThreadingHTTPServer, query_params, read_json_object, write_error, write_json
 from .frame import MAX_CHANNELS, MAX_DIMENSION, MAX_FRAME_BYTES, FrameSpec, validate_frame
 from .hardware import accelerator_available, active_stages, camera_available, determine_mode
 from .latency import LatencyError, LatencyRecorder
@@ -39,40 +40,24 @@ from .pipeline import build_manifest, pipeline_status_dict
 from .vision_sim import VisionConfig, VisionConfigError, run_simulation
 
 
+def _json_default(o: object) -> object:
+    if hasattr(o, "__dataclass_fields__"):
+        return asdict(o)  # type: ignore[call-overload]
+    if hasattr(o, "value"):  # enum
+        return o.value
+    return str(o)
+
+
 def _write_json(handler: BaseHTTPRequestHandler, status: int, payload: object) -> None:
-    def default(o: object) -> object:
-        if hasattr(o, "__dataclass_fields__"):
-            return asdict(o)  # type: ignore[call-overload]
-        if hasattr(o, "value"):  # enum
-            return o.value
-        return str(o)
-    body = json.dumps(payload, default=default).encode("utf-8")
-    handler.send_response(status)
-    handler.send_header("Content-Type", "application/json")
-    handler.send_header("Content-Length", str(len(body)))
-    handler.end_headers()
-    handler.wfile.write(body)
+    write_json(handler, status, payload, default=_json_default)
 
 
-def _write_error(handler: BaseHTTPRequestHandler, status: int, message: str) -> None:
-    _write_json(handler, status, {"error": message})
-
-
-def _query_params(handler: BaseHTTPRequestHandler) -> dict[str, str]:
-    parsed = urlparse(handler.path)
-    values = parse_qs(parsed.query, keep_blank_values=True)
-    repeated = sorted(key for key, value in values.items() if len(value) != 1)
-    if repeated:
-        raise ValueError(f"query parameters must occur exactly once: {repeated}")
-    return {key: value[0] for key, value in values.items()}
+_write_error = write_error
+_query_params = query_params
 
 
 # Largest body of POST /latency/record (a few stage instants)
 LATENCY_BODY_BYTES = 4096
-
-
-def _reject_constant(name: str) -> float:
-    raise ValueError(f"{name} is not a valid JSON number")
 
 
 # Largest body of POST /models/select and POST /inference/simulate
@@ -89,7 +74,7 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
     # Seconds a client may stay silent on its connection before the server
     # drops it, so a client that connects and sends nothing cannot hold a
     # handler thread forever. Socket I/O only; never the time a check takes.
-    timeout = 15.0
+    timeout = SOCKET_TIMEOUT_SECONDS
 
     def log_message(self, format: str, *args: object) -> None:  # noqa: A002
         pass  # quiet by default, same reasoning as this family's other api.py files
@@ -202,12 +187,7 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
     def _read_json_object(self, allowed: set[str]) -> dict | None:
         """The JSON object of the body (at most VISION_BODY_BYTES, only the `allowed` keys), or None after the error has been answered."""
         try:
-            length = int(self.headers.get("Content-Length", 0))
-            if length < 0 or length > VISION_BODY_BYTES:
-                raise ValueError(f"request body must contain 0-{VISION_BODY_BYTES} bytes")
-            body = json.loads(_read_exactly(self.rfile, length) if length else b"{}", parse_constant=_reject_constant)
-            if not isinstance(body, dict):
-                raise ValueError("the body must be a JSON object")
+            body = read_json_object(self, VISION_BODY_BYTES)
             unknown = sorted(set(body) - allowed)
             if unknown:
                 raise ValueError(f"unknown keys: {unknown}")
@@ -329,12 +309,7 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
     def _handle_latency_record(self) -> None:
         """Record the instants one frame passed through the stages: {"camera": name, "stamps": {stage: seconds}}."""
         try:
-            length = int(self.headers.get("Content-Length", 0))
-            if length < 0 or length > LATENCY_BODY_BYTES:
-                raise ValueError(f"request body must contain 0-{LATENCY_BODY_BYTES} bytes")
-            body = json.loads(self.rfile.read(length) if length else b"{}", parse_constant=_reject_constant)
-            if not isinstance(body, dict):
-                raise ValueError("the body must be a JSON object")
+            body = read_json_object(self, LATENCY_BODY_BYTES)
             durations = self.server.latency.record(body.get("camera"), body.get("stamps"))  # type: ignore[union-attr]
         except (ValueError, LatencyError) as error:
             _write_error(self, 400, str(error))
@@ -451,7 +426,7 @@ def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
     return b"".join(parts)
 
 
-class VisionNodeServer(ThreadingHTTPServer):
+class VisionNodeServer(BoundedThreadingHTTPServer):
     def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder, latency: LatencyRecorder | None = None, vision: VisionConfig | None = None, simulation_clock: Callable[[], float] = time.monotonic, stream_decoder: Callable = pillow_decoder) -> None:
         super().__init__(address, Handler)
         # the last answer of the model registry (registry_gate.py); None until it was asked
