@@ -35,6 +35,7 @@ from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
 from .frame import FrameSpec, validate_frame
 from .hardware import PipelineMode, accelerator_available, active_stages, camera_available, determine_mode
 from .pipeline import build_manifest, pipeline_status_dict
+from .registry_gate import resolve_model
 from .vision_sim import VisionConfigError, load_vision_config
 
 PROJECT_NAME = "HYDRA-UMC-VISION-NODE"
@@ -168,10 +169,18 @@ def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = N
             print(f"[vision-node] error: --vision-sim: {error}", file=sys.stderr)
             return 2
     server = VisionNodeServer((addr, port), workspace, token, latency=recorder, vision=vision)
+    if vision is not None and vision.registry is not None and vision.registry.enabled:
+        # at start the node asks the registry which model it would run, and only reaches the full mode when that model is ready
+        server.model_gate = resolve_model(vision.registry)
+        print(f"[vision-node] model registry: {server.model_gate.state} ({vision.registry.model_name} on {vision.registry.target_arch})")
     print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace}; {'Bearer token required' if token else 'no token, loopback only'})")
     print("[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats")
     if vision is not None:
         print("[vision-node] SIMULATION ON (no camera, no inference): GET /models, GET /sources, POST /models/select, POST /inference/simulate")
+        if vision.loopback is not None and vision.loopback.enabled:
+            print("[vision-node] LOOPBACK ON (CPU detector, no Hailo): GET /loopback, POST /loopback/run")
+        if vision.registry is not None and vision.registry.enabled:
+            print("[vision-node] MODEL REGISTRY ON: GET /models/registry, POST /models/resolve")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

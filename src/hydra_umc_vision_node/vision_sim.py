@@ -23,7 +23,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .latency import LatencyRecorder
+from .loopback import LoopbackConfig, LoopbackError, parse_loopback_config
 from .models import HostCapabilities, ModelError, ModelSpec, parse_host, parse_models
+from .registry_gate import GateError, RegistryConfig, parse_registry_config
 from .sources import DEFAULT_CHUNK_BYTES, MIN_CHUNK_BYTES, MAX_SOURCE_FRAME_BYTES, FrameSource, RunLimitReached, SourceError, build_source
 
 MAX_CONFIG_BYTES = 256 * 1024
@@ -46,6 +48,9 @@ class VisionConfig:
     sources: dict[str, FrameSource]
     max_run_seconds: float = DEFAULT_MAX_RUN_SECONDS
     chunk_bytes: int = DEFAULT_CHUNK_BYTES
+    # both optional blocks are off unless the file says `"enabled": true` (loopback.py, registry_gate.py)
+    loopback: LoopbackConfig | None = None
+    registry: RegistryConfig | None = None
 
     def model(self, name: str) -> ModelSpec | None:
         return next((m for m in self.models if m.name == name), None)
@@ -74,8 +79,8 @@ def parse_limits(limits: object) -> tuple[float, int]:
 
 
 def parse_vision_config(config: object, base: Path) -> VisionConfig:
-    if not isinstance(config, dict) or set(config) - {"host", "models", "sources", "limits"}:
-        raise VisionConfigError("the configuration is an object with host, models, sources and (optional) limits")
+    if not isinstance(config, dict) or set(config) - {"host", "models", "sources", "limits", "loopback", "registry"}:
+        raise VisionConfigError("the configuration is an object with host, models, sources and (optional) limits, loopback and registry")
     max_run_seconds, chunk_bytes = parse_limits(config.get("limits"))
     try:
         host = parse_host(config.get("host", {}))
@@ -89,9 +94,11 @@ def parse_vision_config(config: object, base: Path) -> VisionConfig:
             if source.name in sources:
                 raise VisionConfigError(f"source names must be unique: {source.name}")
             sources[source.name] = source
-    except (ModelError, SourceError) as error:
+        loopback = parse_loopback_config(config.get("loopback"))
+        registry = parse_registry_config(config.get("registry"))
+    except (ModelError, SourceError, LoopbackError, GateError) as error:
         raise VisionConfigError(str(error)) from None
-    return VisionConfig(host, models, sources, max_run_seconds, chunk_bytes)
+    return VisionConfig(host, models, sources, max_run_seconds, chunk_bytes, loopback, registry)
 
 
 def load_vision_config(path: str | Path) -> VisionConfig:

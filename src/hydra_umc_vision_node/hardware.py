@@ -45,15 +45,20 @@ class PipelineMode(enum.Enum):
     DEGRADED_NO_CAMERA = "degraded_no_camera"
     DEGRADED_NO_ACCELERATOR = "degraded_no_accelerator"
     DEGRADED_NO_HARDWARE = "degraded_no_hardware"
+    # camera and accelerator are there but the registry does not say the model is ready (registry_gate.py)
+    DEGRADED_MODEL_NOT_READY = "degraded_model_not_ready"
 
 
-def determine_mode(camera_present: bool, accelerator_present: bool) -> PipelineMode:
+def determine_mode(camera_present: bool, accelerator_present: bool, model_ready: bool | None = None) -> PipelineMode:
     """The real decision: what mode does this node run in, given
     whether a camera and an accelerator are actually present. Pure
     function of two booleans - no filesystem access, so every real
-    hardware combination is directly, deterministically testable."""
+    hardware combination is directly, deterministically testable.
+
+    `model_ready` is None when nothing is asked of the model registry (the default, as before). With it False the node
+    does not reach the full mode even if both devices are there: the model it would run is not ready."""
     if camera_present and accelerator_present:
-        return PipelineMode.FULL
+        return PipelineMode.FULL if model_ready is not False else PipelineMode.DEGRADED_MODEL_NOT_READY
     if not camera_present and not accelerator_present:
         return PipelineMode.DEGRADED_NO_HARDWARE
     if not camera_present:
@@ -81,6 +86,7 @@ def active_stages(
     accelerator_present = mode not in (
         PipelineMode.DEGRADED_NO_ACCELERATOR,
         PipelineMode.DEGRADED_NO_HARDWARE,
+        PipelineMode.DEGRADED_MODEL_NOT_READY,
     )
 
     runnable = []

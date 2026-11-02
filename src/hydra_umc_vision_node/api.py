@@ -32,6 +32,8 @@ from .family import check_family_status
 from .frame import MAX_CHANNELS, MAX_DIMENSION, MAX_FRAME_BYTES, FrameSpec, validate_frame
 from .hardware import accelerator_available, active_stages, camera_available, determine_mode
 from .latency import LatencyError, LatencyRecorder
+from .loopback import LoopbackError, StreamUnavailable, pillow_decoder, run_loopback, source_items, stream_items
+from .registry_gate import GateResult, mode_allowed, resolve_model
 from .models import ModelError, evaluate, parse_constraints
 from .pipeline import build_manifest, pipeline_status_dict
 from .vision_sim import VisionConfig, VisionConfigError, run_simulation
@@ -117,10 +119,23 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
             _write_json(self, 200, {"simulated": True, "host": vision.host.describe(), "models": [m.describe() for m in vision.models]})
         elif path == "/sources" and self.server.vision is not None:
             _write_json(self, 200, {"simulated": True, "sources": [s.describe() for s in self.server.vision.sources.values()]})
+        elif path == "/loopback" and self._loopback_on():
+            _write_json(self, 200, {"simulated": True, **self.server.vision.loopback.describe()})  # type: ignore[union-attr]
+        elif path == "/models/registry" and self._registry_on():
+            gate = self.server.model_gate
+            _write_json(self, 200, {"config": self.server.vision.registry.describe(), "last": gate.describe() if gate else None})  # type: ignore[union-attr]
         elif path == "/stats":
             _write_json(self, 200, {"workspace": str(self.server.workspace)})
         else:
             _write_error(self, 404, "not found")
+
+    def _loopback_on(self) -> bool:
+        vision = self.server.vision
+        return vision is not None and vision.loopback is not None and vision.loopback.enabled
+
+    def _registry_on(self) -> bool:
+        vision = self.server.vision
+        return vision is not None and vision.registry is not None and vision.registry.enabled
 
     def _handle_family_status(self, params: dict[str, str]) -> None:
         workspace = self.server.workspace
@@ -149,11 +164,13 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
         manifest = build_manifest()
         camera = camera_available()
         accelerator = accelerator_available()
-        mode = determine_mode(camera, accelerator)
+        registry = self.server.vision.registry if self.server.vision is not None else None
+        mode = determine_mode(camera, accelerator, mode_allowed(registry, self.server.model_gate))
         runnable, skipped = active_stages(manifest, mode)
-        _write_json(self, 200, pipeline_status_dict(
-            manifest, camera, accelerator, mode.value, [s.name for s in runnable], [s.name for s in skipped]
-        ))
+        answer = pipeline_status_dict(manifest, camera, accelerator, mode.value, [s.name for s in runnable], [s.name for s in skipped])
+        if self._registry_on():
+            answer["modelGate"] = self.server.model_gate.describe() if self.server.model_gate else {"state": "not_asked", "ready": False}
+        _write_json(self, 200, answer)
 
     def do_POST(self) -> None:  # noqa: N802
         if not authorized(self, self.server.token):
@@ -175,6 +192,10 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
             self._handle_models_select()
         elif path == "/inference/simulate" and self.server.vision is not None:
             self._handle_inference_simulate()
+        elif path == "/loopback/run" and self._loopback_on():
+            self._handle_loopback_run()
+        elif path == "/models/resolve" and self._registry_on():
+            self._handle_models_resolve()
         else:
             _write_error(self, 404, "not found")
 
@@ -208,6 +229,57 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
             _write_error(self, 400, str(error))
             return
         _write_json(self, 200, {"simulated": True, **result})
+
+    def _handle_models_resolve(self) -> None:
+        """Ask the registry of DETECTION-HEF whether the configured model is ready; the answer decides whether the node may reach the full mode."""
+        if self._read_json_object(set()) is None:
+            return
+        registry = self.server.vision.registry  # type: ignore[union-attr]
+        assert registry is not None
+        self.server.model_gate = resolve_model(registry)
+        _write_json(self, 200, {"config": registry.describe(), **self.server.model_gate.describe()})
+
+    def _handle_loopback_run(self) -> None:
+        """Run the reference pipeline: {"source": name} or {"stream": true}, and "frames" (1 to 100, default 10)."""
+        body = self._read_json_object({"source", "stream", "frames"})
+        if body is None:
+            return
+        vision = self.server.vision
+        assert vision is not None and vision.loopback is not None
+        wanted = body.get("source")
+        use_stream = body.get("stream") is True
+        if use_stream == (wanted is not None):
+            _write_error(self, 400, "give exactly one of source (a name of GET /sources) or stream: true")
+            return
+        frames = body.get("frames", 10)
+        count = frames if isinstance(frames, int) and not isinstance(frames, bool) else 0
+        if not self.server.simulation_lock.acquire(blocking=False):
+            _write_error(self, 409, "another run is already in progress: retry when it has finished")
+            return
+        try:
+            if use_stream:
+                if vision.loopback.streamer is None:
+                    _write_error(self, 409, "no loopback.streamer is configured")
+                    return
+                items = stream_items(vision.loopback.streamer, count, self.server.stream_decoder)
+                label = "streamer"
+            else:
+                source = vision.sources.get(wanted) if isinstance(wanted, str) else None
+                if source is None:
+                    _write_error(self, 400, "source must be the name of a source of GET /sources")
+                    return
+                items = source_items(source, count)
+                label = source.name
+            result = run_loopback(items, vision.loopback, label, frames, self.server.latency)
+        except StreamUnavailable as error:
+            _write_error(self, 503, str(error))
+            return
+        except LoopbackError as error:
+            _write_error(self, 400, str(error))
+            return
+        finally:
+            self.server.simulation_lock.release()
+        _write_json(self, 200, result)
 
     def _handle_inference_simulate(self) -> None:
         """Run a simulated capture and inference: {"source", "frames", "model" (optional), "constraints" (optional)}."""
@@ -379,8 +451,12 @@ def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
 
 
 class VisionNodeServer(ThreadingHTTPServer):
-    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder, latency: LatencyRecorder | None = None, vision: VisionConfig | None = None, simulation_clock: Callable[[], float] = time.monotonic) -> None:
+    def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder, latency: LatencyRecorder | None = None, vision: VisionConfig | None = None, simulation_clock: Callable[[], float] = time.monotonic, stream_decoder: Callable = pillow_decoder) -> None:
         super().__init__(address, Handler)
+        # the last answer of the model registry (registry_gate.py); None until it was asked
+        self.model_gate: GateResult | None = None
+        # turns a JPEG of the MJPEG stream into pixels (loopback.py); replaceable, so the route is tested without Pillow
+        self.stream_decoder = stream_decoder
         # per-stage latency percentiles (latency.py); None (the default) leaves GET /latency and POST /latency/record answering 404
         self.latency = latency
         # simulated sources and model registry (vision_sim.py); None (the default) leaves GET /models, GET /sources, POST /models/select and POST /inference/simulate answering 404
