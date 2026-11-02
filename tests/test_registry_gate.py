@@ -281,7 +281,7 @@ def test_resolve_reports_the_loaded_model_through_a_real_post(tmp_path: Path, re
 
     FakeRegistry.do_POST = do_post  # type: ignore[attr-defined]
     try:
-        for url, server in _serving(tmp_path, registry, reportLoaded=True):
+        for url, _server in _serving(tmp_path, registry, reportLoaded=True):
             status, resolved = _call(url + "/models/resolve", {})
             assert status == 200 and resolved["report"] == {"state": "reported", "verdict": "outdated"}
             assert _call(url + "/models/registry")[1]["report"]["verdict"] == "outdated" and json.loads(posted[0])["model_sha256"] == "b" * 64
