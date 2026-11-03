@@ -143,7 +143,7 @@ def _run_validate_frame(path: Path, width: int, height: int, channels: int) -> i
     return 1
 
 
-def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None, latency_window: int | None = None, vision_sim: str | None = None) -> int:
+def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None, latency_window: int | None = None, vision_sim: str | None = None, health_open: bool = False) -> int:
     try:
         token = load_token(token_file)
     except ValueError as error:
@@ -184,7 +184,7 @@ def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = N
         if vision.registry is not None and vision.registry.enabled:
             print("[vision-node] MODEL REGISTRY ON: GET /models/registry, POST /models/resolve")
     try:
-        server.health_open = health_open_requested(args.health_open)
+        server.health_open = health_open_requested(health_open)
         server.serve_forever()
     except KeyboardInterrupt:
         pass
@@ -262,7 +262,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate-frame":
         return _run_validate_frame(args.path, args.width, args.height, args.channels)
     if args.command == "serve":
-        return _run_serve(args.addr, args.port, args.workspace, args.token_file, args.latency_window, args.vision_sim)
+        return _run_serve(args.addr, args.port, args.workspace, args.token_file, args.latency_window, args.vision_sim, health_open=args.health_open)
 
     _print_identity()
     return 0
