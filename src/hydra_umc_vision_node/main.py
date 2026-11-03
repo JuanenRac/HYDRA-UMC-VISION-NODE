@@ -29,6 +29,7 @@ from pathlib import Path
 
 from .access import bind_problem, load_token
 from .api import VisionNodeServer
+from .health_route import health_open_requested
 from .latency import LatencyError, LatencyRecorder
 from .family import check_family_status
 from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
@@ -183,6 +184,7 @@ def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = N
         if vision.registry is not None and vision.registry.enabled:
             print("[vision-node] MODEL REGISTRY ON: GET /models/registry, POST /models/resolve")
     try:
+        server.health_open = health_open_requested(args.health_open)
         server.serve_forever()
     except KeyboardInterrupt:
         pass
@@ -234,6 +236,7 @@ def build_parser() -> argparse.ArgumentParser:
              "exact same functions the CLI subcommands above already run.",
     )
     serve_parser.add_argument("--addr", default="127.0.0.1", help="address to bind the HTTP API to")
+    serve_parser.add_argument("--health-open", action="store_true", help="answer GET /health (open to loopback, to other callers only with the bearer token); closed by default, or set HYDRA_UMC_VISION_NODE_HEALTH_OPEN=1")
     serve_parser.add_argument("--port", type=int, default=8094, help="port for the HTTP API")
     serve_parser.add_argument("--token-file", default=None, help="file with the bearer token every request must present (or the HYDRA_UMC_VISION_NODE_TOKEN environment variable). Needed to bind an address that is not loopback.")
     serve_parser.add_argument("--latency-window", type=int, default=None, metavar="FRAMES", help="turn on GET /latency and POST /latency/record (off by default): the p50/p95 of every stage per camera over the last FRAMES frames, 1 to 10000")

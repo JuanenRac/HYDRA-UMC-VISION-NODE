@@ -24,6 +24,7 @@ import threading
 import time
 from collections.abc import Callable
 
+from .health_route import HealthRouteMixin
 from .service_metrics import MetricsHandlerMixin
 from .access import authorized, reject
 from .codes import DecoderUnavailable, decode_codes, pylibdmtx_decoder
@@ -66,7 +67,7 @@ VISION_BODY_BYTES = 4096
 HEALTH_PATH = "/stats"
 
 
-class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
+class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
     server: "VisionNodeServer"
     metrics_service = "hydra-umc-vision-node"
 
@@ -79,6 +80,8 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
         pass  # quiet by default, same reasoning as this family's other api.py files
 
     def do_GET(self) -> None:  # noqa: N802
+        if self.serve_health(self.server.token):
+            return
         if self.serve_metrics(authorized=authorized(self, self.server.token)):
             return
         # the health path of the manifest stays open so the service registry can probe the service without the token
