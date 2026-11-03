@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.2.1] - The node can report the model it loaded to the detection service, the shared HTTP module bounds the requests of its API and a health route is available behind a switch that is closed by default
+
 - **A uniform `GET /health`, closed by default:** `serve --health-open` (or `HYDRA_UMC_VISION_NODE_HEALTH_OPEN=1`) makes the service answer `GET /health` with `{"status": "ok", "service": ..., "version": ...}`, the same body in every service of the family, so a watchdog reads the health of any of them the same way. Without the switch the route answers `404` like a route that does not exist. A caller that is not on loopback must present the bearer token of the service (a service started without a token never answers one). The body carries no path, configuration or secret; the health path the manifest declares does not change.
 
 - **The HTTP helpers are the shared ones of the family:** the node now uses the canonical `http_common.py` of HYDRA-UMC-SDK (copied byte for byte) for its JSON answers, query string, JSON bodies and the threading server. The body of `POST /latency/record` was read without checking that the declared length was a number or above the limit of its sibling routes; both routes now refuse a length that is not a number, negative or above the limit (an oversized body is drained in small pieces), and a body that is not a JSON object. The server answers `503` with `Retry-After` instead of starting another thread once 32 requests are being handled. 2 tests.
