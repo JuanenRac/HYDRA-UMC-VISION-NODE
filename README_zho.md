@@ -96,6 +96,7 @@ Raspberry Pi Compute Module 5 上，并搭配 Hailo-8 M.2 AI 加速器，其预�
 * 🔁 **参考流水线“loopback”（默认关闭，无需 Hailo）：** `--vision-sim` 文件中的 `loopback` 块会启用 `POST /loopback/run`，它从模拟源或 VISION-STREAMER 的 MJPEG 流取帧，运行一个简单的 CPU 检测器（亮度阈值，不声称任何精度），并为每一帧返回流水线契约的 `FrameMeta` 和 `DetectionFrame`，后者带有检测器的身份。已用假的流服务和解码器测试；没有真实摄像头。
 * 🧭 **模型来自注册表（默认关闭）：** 同一文件的 `registry` 块指明 DETECTION-HEF 服务、模型和目标架构（`HAILO8` 与 `hailo8` 是同一款芯片）。启动时以及调用 `POST /models/resolve` 时，节点会查询 `GET /registry/load`，只有注册表表示模型就绪，`GET /pipeline-status` 才会达到 `full`；模型缺失、校验和不符、芯片不同或注册表无响应时，都会停留在 `degraded_model_not_ready`。
 * 🩺 **统一的 `GET /health`，默认关闭：** `serve --health-open`（或 `HYDRA_UMC_VISION_NODE_HEALTH_OPEN=1`）使服务以 `{"status": "ok", "service": ..., "version": ...}` 响应 `GET /health`，家族中每个服务的响应体相同；没有该开关时，该路由像不存在的路由一样返回 `404`。非回环地址的调用方必须出示服务的 bearer 令牌，响应体不含路径、配置或密钥。
+* 🪪 **HYDRA-UMC-SERVER 的身份（默认关闭）：** `serve --identity-key-file 文件`（或 `HYDRA_UMC_VISION_NODE_IDENTITY_KEY_FILE=文件`）会让服务在自己的令牌之外，也接受服务器在登录时签发的已签名令牌：查看者只能读取而不能更改，没有凭据的请求即使在环回地址上也会被拒绝。不开启该开关时一切照旧。
 
 **诚实说明——今天实际运行的内容：** 无参数调用时仍会打印身份/版本/角色，但现在新增了一个真实的 `family-status [--workspace 路径]` 子命令：从本地检出中读取 `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API` 各自真实的清单，并诚实地报告发现的内容。上文描述的 Hailo-8 运行时、gRPC 控制
 API 或真实的子节点监督逻辑目前均尚未实现——它们是本项目存在的原因，而非

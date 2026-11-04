@@ -430,6 +430,7 @@ def _read_exactly(rfile, length: int, chunk: int = 1 << 20) -> bytes:
 
 class VisionNodeServer(BoundedThreadingHTTPServer):
     health_open: bool = False  # GET /health answers only when the operator opens it (health_route.py)
+    identity_key: bytes | None = None  # the signing key of HYDRA-UMC-SERVER, when the operator turned the identity of the server on (server_identity.py)
     def __init__(self, address: tuple[str, int], workspace: Path, token: str = "", code_decoder=pylibdmtx_decoder, latency: LatencyRecorder | None = None, vision: VisionConfig | None = None, simulation_clock: Callable[[], float] = time.monotonic, stream_decoder: Callable = pillow_decoder) -> None:
         super().__init__(address, Handler)
         # the last answer of the model registry (registry_gate.py); None until it was asked

@@ -30,6 +30,7 @@ from pathlib import Path
 from .access import bind_problem, load_token
 from .api import VisionNodeServer
 from .health_route import health_open_requested
+from .server_identity import identity_key_from
 from .latency import LatencyError, LatencyRecorder
 from .family import check_family_status
 from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
@@ -143,13 +144,15 @@ def _run_validate_frame(path: Path, width: int, height: int, channels: int) -> i
     return 1
 
 
-def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None, latency_window: int | None = None, vision_sim: str | None = None, health_open: bool = False) -> int:
+def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = None, latency_window: int | None = None, vision_sim: str | None = None, health_open: bool = False, identity_key_file: str | None = None) -> int:
     try:
         token = load_token(token_file)
+        identity_key = identity_key_from(identity_key_file)
     except ValueError as error:
         print(f"[vision-node] error: {error}", file=sys.stderr)
         return 2
-    problem = bind_problem(addr, token)
+    # with the identity of the SERVER on, no request is ever open, so an address that is not loopback does not need a token of its own
+    problem = None if identity_key is not None else bind_problem(addr, token)
     if problem:
         print(f"[vision-node] error: {problem}", file=sys.stderr)
         return 2
@@ -171,12 +174,13 @@ def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = N
             return 2
     configure_hardware(vision.hardware if vision is not None else None)
     server = VisionNodeServer((addr, port), workspace, token, latency=recorder, vision=vision)
+    server.identity_key = identity_key
     if vision is not None and vision.registry is not None and vision.registry.enabled:
         # at start the node asks the registry which model it would run, and only reaches the full mode when that model is ready
         server.model_gate = resolve_model(vision.registry)
         server.model_report = report_loaded(vision.registry, server.model_gate)
         print(f"[vision-node] model registry: {server.model_gate.state} ({vision.registry.model_name} on {vision.registry.target_arch})")
-    print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace}; {'Bearer token required' if token else 'no token, loopback only'})")
+    print(f"[vision-node] HTTP API listening on {addr}:{port} (workspace={workspace}; {'Bearer token required' if token else 'no token, loopback only'}{'; tokens of HYDRA-UMC-SERVER accepted, no request is open' if identity_key is not None else ''})")
     print("[vision-node] GET /family-status, GET /pipeline-status, POST /validate-frame, GET /stats")
     if vision is not None:
         print("[vision-node] SIMULATION ON (no camera, no inference): GET /models, GET /sources, POST /models/select, POST /inference/simulate")
@@ -238,6 +242,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve_parser.add_argument("--addr", default="127.0.0.1", help="address to bind the HTTP API to")
     serve_parser.add_argument("--health-open", action="store_true", help="answer GET /health (open to loopback, to other callers only with the bearer token); closed by default, or set HYDRA_UMC_VISION_NODE_HEALTH_OPEN=1")
+    serve_parser.add_argument("--identity-key-file", default=None, help="file with the signing key of HYDRA-UMC-SERVER (its JWT_SECRET): a valid token of the SERVER is then accepted, and a request with no credential is refused even on loopback (off by default; or set HYDRA_UMC_VISION_NODE_IDENTITY_KEY_FILE)")
     serve_parser.add_argument("--port", type=int, default=8094, help="port for the HTTP API")
     serve_parser.add_argument("--token-file", default=None, help="file with the bearer token every request must present (or the HYDRA_UMC_VISION_NODE_TOKEN environment variable). Needed to bind an address that is not loopback.")
     serve_parser.add_argument("--latency-window", type=int, default=None, metavar="FRAMES", help="turn on GET /latency and POST /latency/record (off by default): the p50/p95 of every stage per camera over the last FRAMES frames, 1 to 10000")
@@ -263,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "validate-frame":
         return _run_validate_frame(args.path, args.width, args.height, args.channels)
     if args.command == "serve":
-        return _run_serve(args.addr, args.port, args.workspace, args.token_file, args.latency_window, args.vision_sim, health_open=args.health_open)
+        return _run_serve(args.addr, args.port, args.workspace, args.token_file, args.latency_window, args.vision_sim, health_open=args.health_open, identity_key_file=args.identity_key_file)
 
     _print_identity()
     return 0

@@ -117,3 +117,73 @@ def test_serve_refuses_a_non_loopback_address_without_a_token(capsys: pytest.Cap
     assert _run_serve("0.0.0.0", 0, Path("."), None) == 2
     assert "not loopback" in capsys.readouterr().err
 
+
+
+# ---- the identity of HYDRA-UMC-SERVER (off by default; see server_identity.py)
+IDENTITY_KEY = b"a-signing-key-of-the-server-0123456789"
+
+
+def _signed_token(role: str = "operator", key: bytes = IDENTITY_KEY, exp_offset: int = 600) -> str:
+    import base64
+    import hashlib
+    import hmac
+    import json
+    import time
+
+    def b64(data: bytes) -> str:
+        return base64.urlsafe_b64encode(data).rstrip(b"=").decode("ascii")
+
+    head = b64(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
+    body = b64(json.dumps({"username": "ana", "role": role, "exp": int(time.time()) + exp_offset}).encode())
+    return f"{head}.{body}.{b64(hmac.new(key, f'{head}.{body}'.encode(), hashlib.sha256).digest())}"
+
+
+def _get_status(base: str, token: str | None = None, method: str = "GET") -> int:
+    request = urllib.request.Request(base + "/pipeline-status", method=method, data=b"{}" if method == "POST" else None)
+    if token:
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status
+    except urllib.error.HTTPError as error:
+        with error:
+            return error.code
+
+
+@contextmanager
+def _serving_with_identity(token: str, key: bytes | None):
+    import tempfile
+
+    server = VisionNodeServer(("127.0.0.1", 0), Path(tempfile.mkdtemp()), token=token)
+    server.identity_key = key
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{server.server_address[1]}"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join()
+
+
+def test_the_identity_of_the_server_is_off_by_default() -> None:
+    assert VisionNodeServer.identity_key is None
+    with _serving_with_identity("", None) as base:
+        assert _get_status(base) == 200  # open on loopback, as before
+        assert _get_status(base, _signed_token()) == 200  # a token of the SERVER means nothing, and nothing is asked
+    with _serving_with_identity(TOKEN, None) as base:
+        assert _get_status(base) == 401
+        assert _get_status(base, _signed_token()) == 401
+        assert _get_status(base, TOKEN) == 200
+
+
+def test_with_the_identity_on_a_token_of_the_server_is_accepted_and_nothing_is_open() -> None:
+    with _serving_with_identity("", IDENTITY_KEY) as base:
+        assert _get_status(base) == 401  # no credential, even on loopback and without a token of the service
+        assert _get_status(base, "not-a-token") == 401
+        assert _get_status(base, _signed_token("viewer")) == 200
+        assert _get_status(base, _signed_token(key=b"another-key-of-more-than-32-characters!")) == 401
+        assert _get_status(base, _signed_token(exp_offset=-5)) == 401
+    with _serving_with_identity(TOKEN, IDENTITY_KEY) as base:
+        assert _get_status(base, TOKEN) == 200  # the own token keeps working
+        assert _get_status(base, _signed_token("admin")) == 200

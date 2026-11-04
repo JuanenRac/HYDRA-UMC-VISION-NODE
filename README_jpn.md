@@ -98,6 +98,7 @@ Raspberry Pi Compute Module 5 に Hailo-8 M.2 AI アクセラレーターを組�
 * 🔁 **リファレンスパイプライン「loopback」（既定でオフ、Hailo 不要）：** `--vision-sim` ファイルの `loopback` ブロックで `POST /loopback/run` が有効になります。模擬ソースまたは VISION-STREAMER の MJPEG ストリームからフレームを取り、単純な CPU 検出器（明るさのしきい値、精度は主張しません）を実行し、フレームごとにパイプライン契約の `FrameMeta` と `DetectionFrame` を返します（後者には検出器の識別情報が付きます）。偽のストリーマーとデコーダーでテスト済み。実カメラはありません。
 * 🧭 **モデルはレジストリから取得（既定でオフ）：** 同じファイルの `registry` ブロックで DETECTION-HEF サービス、モデル、対象アーキテクチャを指定します（`HAILO8` と `hailo8` は同じチップ）。起動時と `POST /models/resolve` でノードは `GET /registry/load` に問い合わせ、レジストリがモデルを準備完了と答えたときだけ `GET /pipeline-status` は `full` になります。モデルの欠落、チェックサム不一致、別のチップ、応答しないレジストリでは `degraded_model_not_ready` のままです。
 * 🩺 **統一された `GET /health`（既定では閉じています）：** `serve --health-open`（または `HYDRA_UMC_VISION_NODE_HEALTH_OPEN=1`）を指定すると、サービスは `GET /health` に `{"status": "ok", "service": ..., "version": ...}` で応答します。ファミリーのすべてのサービスで同じ本文です。スイッチがなければ、ルートは存在しないルートと同じく `404` を返します。ループバック以外の呼び出し元はサービスのベアラートークンが必要で、本文にはパス・設定・秘密情報は含まれません。
+* 🪪 **HYDRA-UMC-SERVER の ID（既定ではオフ）:** `serve --identity-key-file FILE`（または `HYDRA_UMC_VISION_NODE_IDENTITY_KEY_FILE=FILE`）を指定すると、サービスは自身のトークンに加えて、サーバーがログイン時に発行する署名付きトークンを受け付けます。閲覧者は読み取りだけで変更はできず、資格情報のないリクエストはループバックでも拒否されます。スイッチがなければ何も変わりません。
 
 **正直な現状確認 —— 今日実際に動くもの：** 引数なしの呼び出しは引き続き識別情報/バージョン/役割を表示しますが、今では実際の `family-status [--workspace パス]` サブコマンドもあります：ローカルチェックアウトから `HYDRA-UMC-VISION-STREAMER`/`HYDRA-UMC-DETECTION-HEF`/`HYDRA-UMC-SAFETY-ZONES`/`HYDRA-UMC-VISUAL-SERVOING-API` それぞれの実際のマニフェストを読み取り、見つけたものを正直に報告します。上記で説明した Hailo-8 ランタイム、
 gRPC 制御 API、実際の子プロセス監督ロジックはいずれもまだ存在して
