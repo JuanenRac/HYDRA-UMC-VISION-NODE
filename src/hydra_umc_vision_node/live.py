@@ -32,10 +32,27 @@ class ChildHealth:
     detail: str = ""
 
 
+# GET /health is closed (404) on a service until its own switch opens it; /stats always answers.
+UNIFORM_HEALTH_PATH = "/health"
+HEALTH_FALLBACK_PATH = "/stats"
+
+
 def probe_service(
     host: str, port: int, path: str, timeout: float = DEFAULT_TIMEOUT_SECONDS
 ) -> tuple[str, float | None, str | None, str]:
-    """One GET of `path`: (state, latency in ms, version the service says it is, detail)."""
+    """One GET of `path`: (state, latency in ms, version the service says it is, detail).
+
+    The uniform `/health` route falls back to `/stats` when it answers 404 (switch closed); any other answer stands.
+    """
+    result = _probe_once(host, port, path, timeout)
+    if path == UNIFORM_HEALTH_PATH and result[3] == "HTTP 404":
+        return _probe_once(host, port, HEALTH_FALLBACK_PATH, timeout)
+    return result
+
+
+def _probe_once(
+    host: str, port: int, path: str, timeout: float
+) -> tuple[str, float | None, str | None, str]:
     started = time.monotonic()
     connection = http.client.HTTPConnection(host, port, timeout=timeout)
     try:

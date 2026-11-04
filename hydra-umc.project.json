@@ -24,6 +24,6 @@
   "service": {
     "port": 8094,
     "systemd_unit": "hydra-umc-vision-node.service",
-    "health_path": "/stats"
+    "health_path": "/health"
   }
 }

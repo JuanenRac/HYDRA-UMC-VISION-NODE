@@ -91,3 +91,28 @@ def test_family_status_live_fails_when_a_service_does_not_answer(tmp_path: Path,
     assert main(["family-status", "--workspace", str(tmp_path)]) == 0
     assert main(["family-status", "--workspace", str(tmp_path), "--live", "--timeout", "0.3"]) == 1
     assert "DOWN" in capsys.readouterr().out
+
+
+class _ClosedHealth(_Stats):
+    def do_GET(self) -> None:  # noqa: N802 - the name http.server asks for
+        self.status = 404 if self.path == "/health" else 200
+        super().do_GET()
+
+
+def test_a_closed_uniform_health_route_falls_back_to_stats_only_on_404() -> None:
+    server = _serve(_ClosedHealth)
+    try:
+        state, _, version, _ = probe_service("127.0.0.1", server.server_port, "/health")
+        assert (state, version) == ("up", "1.2.3")
+        assert probe_service("127.0.0.1", server.server_port, "/other")[0] == "up"
+    finally:
+        server.shutdown()
+
+    class Broken(_Stats):
+        status = 503
+
+    server = _serve(Broken)
+    try:
+        assert probe_service("127.0.0.1", server.server_port, "/health")[3] == "HTTP 503"
+    finally:
+        server.shutdown()

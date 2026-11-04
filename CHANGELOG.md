@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The manifest declares the uniform `GET /health` route and the live check falls back to `/stats`:** `service.health_path` is `/health` now. A service keeps that route closed (404) until its own switch opens it, so the live health check of the family retries `/stats` after a 404 on `/health`; any other answer stands as it is.
+
 ## [0.2.1] - The node can report the model it loaded to the detection service, the shared HTTP module bounds the requests of its API and a health route is available behind a switch that is closed by default
 
 - **A uniform `GET /health`, closed by default:** `serve --health-open` (or `HYDRA_UMC_VISION_NODE_HEALTH_OPEN=1`) makes the service answer `GET /health` with `{"status": "ok", "service": ..., "version": ...}`, the same body in every service of the family, so a watchdog reads the health of any of them the same way. Without the switch the route answers `404` like a route that does not exist. A caller that is not on loopback must present the bearer token of the service (a service started without a token never answers one). The body carries no path, configuration or secret; the health path the manifest declares does not change.
