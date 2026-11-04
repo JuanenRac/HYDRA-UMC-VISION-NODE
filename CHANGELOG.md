@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Hardware detection finds every camera and accelerator, and only real device nodes count:** the probes look for glob patterns (`/dev/video*`, `/dev/hailo*`) instead of the single nodes `/dev/video0` and `/dev/hailo0`, so a second camera or accelerator is found; a path counts only when it is a readable character device (a leftover regular file or a node the service may not read is no hardware). The `--vision-sim` file takes an optional `hardware` block (`cameraDevices`, `acceleratorDevices`: lists of 1 to 16 paths or patterns) that replaces the defaults; anything else refuses the file. 3 tests; not tried with real devices.
 - **The manifest declares the uniform `GET /health` route and the live check falls back to `/stats`:** `service.health_path` is `/health` now. A service keeps that route closed (404) until its own switch opens it, so the live health check of the family retries `/stats` after a 404 on `/health`; any other answer stands as it is.
 
 ## [0.2.1] - The node can report the model it loaded to the detection service, the shared HTTP module bounds the requests of its API and a health route is available behind a switch that is closed by default

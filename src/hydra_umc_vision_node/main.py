@@ -34,7 +34,7 @@ from .latency import LatencyError, LatencyRecorder
 from .family import check_family_status
 from .live import DEFAULT_TIMEOUT_SECONDS, check_family_health
 from .frame import FrameSpec, validate_frame
-from .hardware import PipelineMode, accelerator_available, active_stages, camera_available, determine_mode
+from .hardware import PipelineMode, configure_hardware, accelerator_available, active_stages, camera_available, determine_mode
 from .pipeline import build_manifest, pipeline_status_dict
 from .registry_gate import report_loaded, resolve_model
 from .vision_sim import VisionConfigError, load_vision_config
@@ -169,6 +169,7 @@ def _run_serve(addr: str, port: int, workspace: Path, token_file: str | None = N
         except VisionConfigError as error:
             print(f"[vision-node] error: --vision-sim: {error}", file=sys.stderr)
             return 2
+    configure_hardware(vision.hardware if vision is not None else None)
     server = VisionNodeServer((addr, port), workspace, token, latency=recorder, vision=vision)
     if vision is not None and vision.registry is not None and vision.registry.enabled:
         # at start the node asks the registry which model it would run, and only reaches the full mode when that model is ready

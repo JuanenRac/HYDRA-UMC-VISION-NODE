@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .latency import LatencyRecorder
+from .hardware import HardwareConfig, HardwareConfigError, parse_hardware_config
 from .loopback import LoopbackConfig, LoopbackError, parse_loopback_config
 from .models import HostCapabilities, ModelError, ModelSpec, parse_host, parse_models
 from .registry_gate import GateError, RegistryConfig, parse_registry_config
@@ -51,6 +52,8 @@ class VisionConfig:
     # both optional blocks are off unless the file says `"enabled": true` (loopback.py, registry_gate.py)
     loopback: LoopbackConfig | None = None
     registry: RegistryConfig | None = None
+    # which device nodes count as a camera / an accelerator (hardware.py); None keeps the defaults
+    hardware: HardwareConfig | None = None
 
     def model(self, name: str) -> ModelSpec | None:
         return next((m for m in self.models if m.name == name), None)
@@ -79,8 +82,8 @@ def parse_limits(limits: object) -> tuple[float, int]:
 
 
 def parse_vision_config(config: object, base: Path) -> VisionConfig:
-    if not isinstance(config, dict) or set(config) - {"host", "models", "sources", "limits", "loopback", "registry"}:
-        raise VisionConfigError("the configuration is an object with host, models, sources and (optional) limits, loopback and registry")
+    if not isinstance(config, dict) or set(config) - {"host", "models", "sources", "limits", "loopback", "registry", "hardware"}:
+        raise VisionConfigError("the configuration is an object with host, models, sources and (optional) limits, loopback, registry and hardware")
     max_run_seconds, chunk_bytes = parse_limits(config.get("limits"))
     try:
         host = parse_host(config.get("host", {}))
@@ -96,9 +99,10 @@ def parse_vision_config(config: object, base: Path) -> VisionConfig:
             sources[source.name] = source
         loopback = parse_loopback_config(config.get("loopback"))
         registry = parse_registry_config(config.get("registry"))
-    except (ModelError, SourceError, LoopbackError, GateError) as error:
+        hardware = parse_hardware_config(config.get("hardware"))
+    except (ModelError, SourceError, LoopbackError, GateError, HardwareConfigError) as error:
         raise VisionConfigError(str(error)) from None
-    return VisionConfig(host, models, sources, max_run_seconds, chunk_bytes, loopback, registry)
+    return VisionConfig(host, models, sources, max_run_seconds, chunk_bytes, loopback, registry, hardware)
 
 
 def load_vision_config(path: str | Path) -> VisionConfig:

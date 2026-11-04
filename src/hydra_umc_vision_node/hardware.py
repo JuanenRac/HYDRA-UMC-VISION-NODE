@@ -20,6 +20,10 @@ ever needs real hardware to observe something interesting.
 from __future__ import annotations
 
 import enum
+import glob
+import os
+import stat
+from dataclasses import dataclass
 from pathlib import Path
 
 from .pipeline import PipelineManifest, PipelineStage
@@ -27,17 +31,87 @@ from .pipeline import PipelineManifest, PipelineStage
 CAMERA_DEVICE = Path("/dev/video0")
 ACCELERATOR_DEVICE = Path("/dev/hailo0")
 
+# Device nodes that count as a camera / an accelerator. They are glob patterns, so a second camera
+# (/dev/video2) or a second accelerator (/dev/hailo1) is found too; the `hardware` block of the
+# --vision-sim file replaces both lists (the values are configuration, not code).
+DEFAULT_CAMERA_PATTERNS = ("/dev/video*",)
+DEFAULT_ACCELERATOR_PATTERNS = ("/dev/hailo*",)
+MAX_PATTERNS = 16
+MAX_PATTERN_LENGTH = 256
+
+
+class HardwareConfigError(ValueError):
+    """The hardware block of the configuration cannot be used."""
+
+
+@dataclass(frozen=True)
+class HardwareConfig:
+    camera_patterns: tuple[str, ...] = DEFAULT_CAMERA_PATTERNS
+    accelerator_patterns: tuple[str, ...] = DEFAULT_ACCELERATOR_PATTERNS
+
+
+_config = HardwareConfig()
+
+
+def _patterns(value: object, name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+    if value is None:
+        return default
+    if (
+        not isinstance(value, list)
+        or not 1 <= len(value) <= MAX_PATTERNS
+        or not all(isinstance(item, str) and 0 < len(item) <= MAX_PATTERN_LENGTH and "\x00" not in item for item in value)
+    ):
+        raise HardwareConfigError(f"hardware.{name} must be a list of 1 to {MAX_PATTERNS} non-empty paths or patterns")
+    return tuple(value)
+
+
+def parse_hardware_config(block: object) -> HardwareConfig:
+    """The optional `hardware` block: `cameraDevices` and `acceleratorDevices`, lists of paths or glob patterns."""
+    if block is None:
+        return HardwareConfig()
+    if not isinstance(block, dict) or set(block) - {"cameraDevices", "acceleratorDevices"}:
+        raise HardwareConfigError("hardware is an object with cameraDevices and acceleratorDevices")
+    return HardwareConfig(
+        _patterns(block.get("cameraDevices"), "cameraDevices", DEFAULT_CAMERA_PATTERNS),
+        _patterns(block.get("acceleratorDevices"), "acceleratorDevices", DEFAULT_ACCELERATOR_PATTERNS),
+    )
+
+
+def configure_hardware(config: HardwareConfig | None) -> None:
+    """Sets the patterns the probes use (None goes back to the defaults)."""
+    global _config
+    _config = config if config is not None else HardwareConfig()
+
+
+def _usable_node(path: str) -> bool:
+    """A device node that exists, is a character device (or a symlink to one) and can be opened for reading.
+    A leftover regular file, a directory or a node the service may not read does not count as hardware."""
+    try:
+        mode = os.stat(path).st_mode
+    except OSError:
+        return False
+    return stat.S_ISCHR(mode) and os.access(path, os.R_OK)
+
+
+def find_devices(patterns: tuple[str, ...]) -> list[str]:
+    found: list[str] = []
+    for pattern in patterns:
+        for path in sorted(glob.glob(pattern)) if glob.has_magic(pattern) else [pattern]:
+            if path not in found and _usable_node(path):
+                found.append(path)
+    return found
+
 
 def camera_available() -> bool:
     """Real check for a camera device node. False (not an exception) is
     the correct, honest answer on any machine without one attached."""
-    return CAMERA_DEVICE.exists()
+    return bool(find_devices(_config.camera_patterns))
 
 
 def accelerator_available() -> bool:
     """Real check for a Hailo-8 accelerator device node. Same honesty
     as camera_available(): false, not a crash, when there is none."""
-    return ACCELERATOR_DEVICE.exists()
+    return bool(find_devices(_config.accelerator_patterns))
 
 
 class PipelineMode(enum.Enum):

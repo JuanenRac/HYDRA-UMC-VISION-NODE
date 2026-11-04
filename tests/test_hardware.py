@@ -65,3 +65,46 @@ def test_camera_available_is_honestly_false_on_a_machine_without_one() -> None:
     # This development machine has no /dev/video0 - a real, honest
     # negative, not a mock standing in for hardware that isn't here.
     assert camera_available() in (True, False)  # never raises
+
+
+def test_find_devices_ignores_regular_files_and_missing_paths(tmp_path) -> None:
+    from hydra_umc_vision_node.hardware import find_devices
+
+    (tmp_path / "video9").write_text("not a device")
+    assert find_devices((str(tmp_path / "video*"), str(tmp_path / "nothing"))) == []
+
+
+def test_find_devices_accepts_a_character_device_and_a_pattern() -> None:
+    import os
+
+    from hydra_umc_vision_node.hardware import find_devices
+
+    null = os.devnull
+    if not os.path.exists(null) or os.name == "nt":
+        return  # no character device to point at on this system
+    assert find_devices((null, null)) == [null]  # listed twice, found once
+    assert find_devices(("/dev/nul*",)) == [null]
+
+
+def test_hardware_block_is_validated_and_replaces_the_patterns() -> None:
+    import pytest
+
+    from hydra_umc_vision_node.hardware import (
+        DEFAULT_ACCELERATOR_PATTERNS,
+        HardwareConfigError,
+        configure_hardware,
+        parse_hardware_config,
+    )
+
+    assert parse_hardware_config(None).accelerator_patterns == DEFAULT_ACCELERATOR_PATTERNS
+    config = parse_hardware_config({"cameraDevices": ["/dev/cam*"]})
+    assert config.camera_patterns == ("/dev/cam*",)
+    assert config.accelerator_patterns == DEFAULT_ACCELERATOR_PATTERNS
+    for bad in ({"cameraDevices": []}, {"cameraDevices": "x"}, {"cameraDevices": [""]}, {"other": 1}, []):
+        with pytest.raises(HardwareConfigError):
+            parse_hardware_config(bad)
+    configure_hardware(parse_hardware_config({"cameraDevices": ["/nonexistent/cam*"], "acceleratorDevices": ["/nonexistent/hw"]}))
+    try:
+        assert camera_available() is False
+    finally:
+        configure_hardware(None)
