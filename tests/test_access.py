@@ -187,3 +187,23 @@ def test_with_the_identity_on_a_token_of_the_server_is_accepted_and_nothing_is_o
     with _serving_with_identity(TOKEN, IDENTITY_KEY) as base:
         assert _get_status(base, TOKEN) == 200  # the own token keeps working
         assert _get_status(base, _signed_token("admin")) == 200
+
+
+def test_with_the_identity_on_not_even_the_health_path_is_open() -> None:
+    import urllib.error
+    import urllib.request
+
+    def status(url: str, bearer: str | None = None) -> int:
+        request = urllib.request.Request(url, headers={"Authorization": f"Bearer {bearer}"} if bearer else {})
+        try:
+            with urllib.request.urlopen(request, timeout=5) as response:
+                return response.status
+        except urllib.error.HTTPError as error:
+            error.read()
+            return error.code
+
+    with _serving_with_identity("", None) as base:
+        assert status(base + "/stats") == 200  # open while the identity is off
+    with _serving_with_identity("", IDENTITY_KEY) as base:
+        assert status(base + "/stats") == 401
+        assert status(base + "/stats", _signed_token("viewer")) == 200
