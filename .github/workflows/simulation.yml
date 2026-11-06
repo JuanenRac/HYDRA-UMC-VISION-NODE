@@ -1,0 +1,48 @@
+# =============================================================================
+# HYDRA-UMC-VISION-NODE - Simulation bench
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+#
+# Runs the node against simulated capture and inference only (no camera, no accelerator) and loads the example configuration
+# with the parser of the server. See docs/SIMULATION.md.
+# =============================================================================
+name: Simulation bench
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulation:
+    name: Run the simulated capture and inference
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Install the node
+        run: python -m pip install -e ".[dev]"
+      - name: Load the example configuration with the parser of the server
+        run: |
+          python - <<'PY'
+          from hydra_umc_vision_node.vision_sim import load_vision_config
+          config = load_vision_config("docs/examples/vision-sim.example.json")
+          assert [m.name for m in config.models] == ["hailo-yolo", "cpu-small"], config.models
+          assert list(config.sources) == ["cam0"], config.sources
+          print("SIMULATION_EXAMPLE=OK")
+          PY
+      - name: Run the simulated capture, inference, loopback and limits
+        run: >
+          python -m pytest -q
+          tests/test_vision_sim.py tests/test_simulation_limits.py tests/test_sources.py tests/test_loopback.py
+          tests/test_pipeline.py tests/test_hardware.py tests/test_latency.py tests/test_live.py

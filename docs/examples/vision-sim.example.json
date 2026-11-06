@@ -1,0 +1,11 @@
+{
+  "host": {"devices": ["cpu"], "precisions": ["fp32", "int8"]},
+  "models": [
+    {"name": "hailo-yolo", "format": "hef", "inputWidth": 640, "inputHeight": 640, "precision": "int8", "device": "hailo", "simLatencyMs": 4},
+    {"name": "cpu-small", "format": "onnx", "inputWidth": 320, "inputHeight": 320, "precision": "fp32", "device": "cpu", "simLatencyMs": 40}
+  ],
+  "sources": [
+    {"name": "cam0", "kind": "synthetic", "width": 16, "height": 8, "channels": 3, "seed": 3, "frames": 20}
+  ],
+  "limits": {"maxRunSeconds": 10}
+}
