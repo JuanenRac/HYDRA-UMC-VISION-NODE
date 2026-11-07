@@ -22,6 +22,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Resolve the compose file (variables, mounts, ports) without building anything
+        env:
+          HYDRA_UMC_VISION_NODE_TOKEN: ci-placeholder
         run: docker compose -f docker-compose.yml config --quiet
   stack:
     name: Build the four child images and probe the node API (advisory)
@@ -48,6 +50,8 @@ jobs:
           done
       - name: Build every image of the map
         if: ${{ steps.docker.outputs.available == 'true' }}
+        env:
+          HYDRA_UMC_VISION_NODE_TOKEN: ci-placeholder
         run: docker compose build
       - name: Start the node alone and probe its API
         if: ${{ steps.docker.outputs.available == 'true' }}
@@ -58,7 +62,11 @@ jobs:
           echo "COMPOSE_UP=PASS"
       - name: Show the logs when it failed
         if: ${{ failure() && steps.docker.outputs.available == 'true' }}
+        env:
+          HYDRA_UMC_VISION_NODE_TOKEN: ci-placeholder
         run: docker compose logs --no-color --tail 80
       - name: Stop the stack
         if: ${{ always() && steps.docker.outputs.available == 'true' }}
+        env:
+          HYDRA_UMC_VISION_NODE_TOKEN: ci-placeholder
         run: docker compose down --volumes --remove-orphans

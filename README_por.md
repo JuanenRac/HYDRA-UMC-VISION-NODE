@@ -140,9 +140,9 @@ Dos 5 projetos da família do Nó de IA de Visão, este é o único que:
 
 Nenhum dos 5 projetos leva uma pasta `hardware/` ou `firmware/`: o CM5 + Hailo-8 é hardware comercial, sem placa própria para desenhar, ao contrário (por exemplo) das placas STM32H745/STM32G474 à medida dentro do [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC).
 
-### `docker-compose.yml`: o mapa de integração, construído a partir dos Dockerfiles dos próprios filhos (nunca executado com Docker aqui)
+### `docker-compose.yml`: o mapa de integração, construído a partir dos Dockerfiles dos próprios filhos (construído no CI; lá só arranca o nó)
 
-O `docker-compose.yml` na raiz do projeto define o serviço próprio deste nó mais todos os 4 filhos, ligados com os dispositivos/volumes/portas que cada um deverá precisar (o nó de dispositivo do Hailo-8, os dispositivos V4L2 por câmara, as portas gRPC para o núcleo HYDRA-UMC). Está muito comentado, a explicar *porque* cada peça lá está. Os 4 filhos trazem agora o seu próprio `Dockerfile` e o stack é construído a partir deles, mas **nunca foi construído nem executado num ambiente com Docker** (no ambiente de desenvolvimento não há nenhum): a sua forma e os seus comandos foram conferidos à mão com esses Dockerfiles e com as unidades systemd reais do CM5. Existe para que a forma da integração seja decidida e documentada uma só vez, em vez de improvisada separadamente por cada filho.
+O `docker-compose.yml` na raiz do projeto define o serviço próprio deste nó mais todos os 4 filhos, ligados com os dispositivos/volumes/portas que cada um deverá precisar (o nó de dispositivo do Hailo-8, os dispositivos V4L2 por câmara, as portas gRPC para o núcleo HYDRA-UMC). Está muito comentado, a explicar *porque* cada peça lá está. Os 4 filhos trazem agora o seu próprio `Dockerfile` e o stack é construído a partir deles, mas **construído no CI com Docker Compose, e o próprio nó é arrancado e sondado lá**; os contentores filhos (câmara, acelerador Hailo) nunca correram, e a sua forma e os seus comandos foram conferidos à mão com esses Dockerfiles e com as unidades systemd reais do CM5. Existe para que a forma da integração seja decidida e documentada uma só vez, em vez de improvisada separadamente por cada filho.
 
 ### Decisões de desenho já tomadas neste esqueleto
 
@@ -320,7 +320,7 @@ HYDRA-UMC-VISION-NODE/
 ├── bump_manifest_version.py     Sincroniza a versão do hydra-umc.project.json com a nativa (--sync)
 ├── build.sh / build.bat         venv + instalação editável (extras de desenvolvimento) + verificação de compilação + testes
 ├── run.sh / run.bat             Executa o ponto de entrada a partir do venv local (reencaminha argumentos)
-├── docker-compose.yml           Mapa de integração dos 4 filhos do Nó de IA de Visão (não verificado com Docker)
+├── docker-compose.yml           Mapa de integração dos 4 filhos do Nó de IA de Visão (construído no CI)
 ├── CHANGELOG.md                 Histórico versão a versão (esquema conta-quilómetros, sem datas)
 ├── Dockerfile                   imagem de contentor
 ├── build-test.sh                verificação de compilação sem alterações
@@ -342,7 +342,7 @@ HYDRA-UMC-VISION-NODE/
 * A API de controlo gRPC para o núcleo HYDRA-UMC.
 * A supervisão real dos 4 serviços filhos (o `family-status` de hoje só verifica presença/maturidade, não a saúde em execução; o `docker-compose.yml` só documenta a forma prevista).
 * A sincronização do pipeline multicâmara quando o [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) tiver um pipeline de captura real com que sincronizar.
-* Construir e executar o `docker-compose.yml` a sério num ambiente com Docker (os 4 filhos já trazem o seu `Dockerfile`).
+* Executar a sério os contentores filhos do `docker-compose.yml` (dispositivos de câmara e acelerador); o CI já constrói todas as imagens e arranca o nó.
 
 ## 🌍 Idiomas
 

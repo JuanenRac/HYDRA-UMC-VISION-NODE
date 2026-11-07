@@ -6,8 +6,8 @@
 # containers. All 4 (HYDRA-UMC-VISION-STREAMER, HYDRA-UMC-DETECTION-HEF,
 # HYDRA-UMC-SAFETY-ZONES, HYDRA-UMC-VISUAL-SERVOING-API) now ship a real
 # Dockerfile of their own, matching the exact CLI/ports their real CM5
-# systemd units already run (see each one's own systemd/*.service) - not
-# built by the compose workflow in CI (the node itself is also probed there), but every
+# systemd units already run (see each one's own systemd/*.service) - built by the
+# compose workflow in CI (the node is also probed there), and every
 # path/flag is the same one already verified live on the real CM5.
 # vision-node itself (this repo) now has a real Dockerfile too - the real
 # gRPC control API on port 50051 is still future work (v0 is the
@@ -27,6 +27,9 @@ services:
       - ..:/workspace:ro               # the sibling checkouts: family-status reads their hydra-umc.project.json
     ports:
       - "8094:8094"                    # the HTTP API (family-status, pipeline-status, validate-frame); the gRPC control API does not exist yet
+    environment:
+      # the node refuses a non-loopback bind without a token (set one in .env or the shell)
+      HYDRA_UMC_VISION_NODE_TOKEN: ${HYDRA_UMC_VISION_NODE_TOKEN:?set HYDRA_UMC_VISION_NODE_TOKEN}
     mem_limit: 384m                    # matches systemd/hydra-umc-vision-node.service's own MemoryMax
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8094/stats', timeout=3)"]

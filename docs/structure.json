@@ -597,14 +597,14 @@
             "pt": "Mapa de integração dos 4 filhos do Nó de IA"
           },
           "tree_desc": {
-            "en": "Integration map of the 4 Vision AI Node children (not verified with Docker)",
-            "es": "Mapa de integración de los 4 hijos (sin verificar con Docker)",
-            "de": "Integrationskarte der 4 Kinder (nicht mit Docker geprüft)",
-            "fr": "Carte d'intégration des 4 enfants (non vérifiée avec Docker)",
-            "it": "Mappa di integrazione dei 4 figli (non verificata con Docker)",
-            "ja": "Vision AI Node の 4 つの子プロジェクトの統合マップ（Docker では未検証）",
-            "zh": "Vision AI Node 4 个子项目的集成蓝图（未用 Docker 验证）",
-            "pt": "Mapa de integração dos 4 filhos do Nó de IA de Visão (não verificado com Docker)"
+            "en": "Integration map of the 4 Vision AI Node children (built in CI)",
+            "es": "Mapa de integración de los 4 hijos (construido en CI)",
+            "de": "Integrationskarte der 4 Kinder (in der CI gebaut)",
+            "fr": "Carte d'intégration des 4 enfants (construite en CI)",
+            "it": "Mappa di integrazione dei 4 figli (costruita in CI)",
+            "ja": "Vision AI Node の 4 つの子プロジェクトの統合マップ（CI で構築）",
+            "zh": "Vision AI Node 4 个子项目的集成蓝图（在 CI 中构建）",
+            "pt": "Mapa de integração dos 4 filhos do Nó de IA de Visão (construído no CI)"
           }
         },
         {

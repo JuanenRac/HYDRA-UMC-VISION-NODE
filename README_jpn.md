@@ -154,15 +154,14 @@ Vision AI Node ファミリーの 5 つのプロジェクトの中で、本プ�
 5 つのプロジェクトのいずれも `hardware/` や `firmware/` フォルダを持って
 いません。CM5 + Hailo-8 は市販のハードウェアであり、[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部のカスタム STM32H745/STM32G474 基板とは異なり、独自に設計する基板はありません。
 
-### `docker-compose.yml`：統合マップ。子プロジェクト自身の Dockerfile から構築される（ここでは Docker で実行したことはない）
+### `docker-compose.yml`：統合マップ。子プロジェクト自身の Dockerfile から構築される（CI で構築され、そこではノードだけが起動される）
 
 プロジェクトルートの `docker-compose.yml` は、本ノード自身のサービスと
 4 つの子プロジェクトすべてを定義し、それぞれが必要とすると想定される
 デバイス/ボリューム/ポート（Hailo-8 デバイスノード、カメラごとの V4L2
 デバイス、HYDRA-UMC コアへの gRPC ポート）を結び付けています。各要素が
 なぜそこにあるのかを説明する詳細なコメントが付いています。4 つの子プロジェクトはいずれも
-独自の `Dockerfile` を提供しており、スタックはそれらから構築されますが、**Docker のある環境で構築・
-実行されたことは一度もありません**（開発環境にはありません）。その形とコマンドは、
+独自の `Dockerfile` を提供しており、スタックはそれらから構築されますが、**CI で Docker Compose により構築され、ノード自体もそこで起動・確認されます**。子コンテナ（カメラ、Hailo アクセラレータ）は一度も動いたことがなく、その形とコマンドは、
 それらの Dockerfile と CM5 の実際の systemd ユニットに照らして手作業で確認しただけです。
 これは、統合の形が一度だけ決定・文書化され、各子プロジェクトがばらばらに即興で対応することの
 ないようにするために存在します。
@@ -356,7 +355,7 @@ HYDRA-UMC-VISION-NODE/
 ├── bump_manifest_version.py     hydra-umc.project.json のバージョンをネイティブ版と同期(--sync)
 ├── build.sh / build.bat         venv + editable インストール（dev エクストラ付き） + コンパイルチェック + テスト
 ├── run.sh / run.bat             ローカル venv からエントリポイントを実行（引数を転送）
-├── docker-compose.yml           Vision AI Node の 4 つの子プロジェクトの統合マップ（Docker では未検証）
+├── docker-compose.yml           Vision AI Node の 4 つの子プロジェクトの統合マップ（CI で構築）
 ├── CHANGELOG.md                 各バージョンの変更点
 ├── Dockerfile                   コンテナイメージ
 ├── build-test.sh                変更を伴わないビルド確認
@@ -379,7 +378,7 @@ HYDRA-UMC-VISION-NODE/
 * HYDRA-UMC コアへの gRPC 制御 API。
 * 4 つの子サービスの実際の監督（現在の `family-status` は存在/成熟度のみを確認し、ランタイムの健全性は確認しません。`docker-compose.yml` は意図された形を文書化しているだけです）。
 * [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) が実際のキャプチャパイプラインを持ち次第、マルチカメラパイプラインの同期。
-* `docker-compose.yml` を Docker のある環境で実際に構築・実行すること（4 つの子プロジェクトはすでに `Dockerfile` を提供しています）。
+* `docker-compose.yml` の子コンテナ（カメラ・アクセラレータのデバイス）を実際に実行すること。CI はすでに全イメージを構築しノードを起動しています。
 
 ## 🌍 言語
 

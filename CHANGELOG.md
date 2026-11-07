@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The compose map is built and the node probed in CI, and the map now sets the token the node requires:** the compose workflow clones the four children, builds every image and starts the node alone to read `GET /stats` (advisory job). The first run showed that the map bound the node to `0.0.0.0` without a token, so the container refused to start; `docker-compose.yml` now takes `HYDRA_UMC_VISION_NODE_TOKEN` from the environment and fails with a clear message when it is missing.
 - **A fake camera and fake device nodes exercise the node without hardware:** `tests/test_fake_camera_and_accelerator.py` registers a camera as a kind of source (a square that moves a known step per frame) and checks that the boxes of the loopback detector follow it frame by frame and validate against the contract; device nodes made of files drive the real detection of the mode (full, no camera, no accelerator, nothing, model not ready) and the choice of the stages that run, including a second camera and a second accelerator found by the pattern. Also in the simulation bench. Simulator evidence only; no real camera or accelerator was used.
 - **The build test of the repository compiles only on CI or when allowed:** for the stacks that compile (`rust`, `go`, `android`, `flutter`, `firmware-c`), `tools/build_test.py` prints `BUILD_TEST=SKIPPED` with exit status 2 on a plain PC, never a pass; `ALLOW_LOCAL_BUILD=1` allows it and a CI runner always may. The `python` and `node` stacks are not locked.
 
