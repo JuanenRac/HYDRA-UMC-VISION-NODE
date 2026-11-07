@@ -55,6 +55,8 @@ jobs:
         run: docker compose build
       - name: Start the node alone and probe its API
         if: ${{ steps.docker.outputs.available == 'true' }}
+        env:
+          HYDRA_UMC_VISION_NODE_TOKEN: ci-placeholder
         run: |
           docker compose up --detach --no-deps --wait --wait-timeout 300 vision-node
           curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused http://127.0.0.1:8094/stats
