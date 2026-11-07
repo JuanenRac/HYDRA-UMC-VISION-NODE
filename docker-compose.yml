@@ -7,7 +7,7 @@
 # HYDRA-UMC-SAFETY-ZONES, HYDRA-UMC-VISUAL-SERVOING-API) now ship a real
 # Dockerfile of their own, matching the exact CLI/ports their real CM5
 # systemd units already run (see each one's own systemd/*.service) - not
-# build-tested here (no Docker runtime on this dev machine), but every
+# built by the compose workflow in CI (the node itself is also probed there), but every
 # path/flag is the same one already verified live on the real CM5.
 # vision-node itself (this repo) now has a real Dockerfile too - the real
 # gRPC control API on port 50051 is still future work (v0 is the

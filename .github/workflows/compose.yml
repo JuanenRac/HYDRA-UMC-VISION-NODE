@@ -23,3 +23,42 @@ jobs:
           persist-credentials: false
       - name: Resolve the compose file (variables, mounts, ports) without building anything
         run: docker compose -f docker-compose.yml config --quiet
+  stack:
+    name: Build the four child images and probe the node API (advisory)
+    # Builds five images from sibling checkouts, so it takes several minutes and depends on the runner's Docker; a
+    # failure is reported in the run but does not turn the baseline red. The camera container needs a real device
+    # node, so only the node itself is started; the children are built to prove their Dockerfiles still work.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 40
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Skip when Docker Compose is not available
+        id: docker
+        run: |
+          if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then echo "available=true" >> "$GITHUB_OUTPUT"; else echo "available=false" >> "$GITHUB_OUTPUT"; echo "COMPOSE_UP=SKIPPED Docker Compose is not available on this runner"; fi
+      - name: Fetch the sibling repositories the stack builds from
+        if: ${{ steps.docker.outputs.available == 'true' }}
+        run: |
+          for repository in HYDRA-UMC-VISION-STREAMER HYDRA-UMC-DETECTION-HEF HYDRA-UMC-SAFETY-ZONES HYDRA-UMC-VISUAL-SERVOING-API; do
+            git clone --quiet --depth 1 "https://github.com/JuanenRac/${repository}.git" "../${repository}"
+          done
+      - name: Build every image of the map
+        if: ${{ steps.docker.outputs.available == 'true' }}
+        run: docker compose build
+      - name: Start the node alone and probe its API
+        if: ${{ steps.docker.outputs.available == 'true' }}
+        run: |
+          docker compose up --detach --no-deps --wait --wait-timeout 300 vision-node
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-connrefused http://127.0.0.1:8094/stats
+          echo
+          echo "COMPOSE_UP=PASS"
+      - name: Show the logs when it failed
+        if: ${{ failure() && steps.docker.outputs.available == 'true' }}
+        run: docker compose logs --no-color --tail 80
+      - name: Stop the stack
+        if: ${{ always() && steps.docker.outputs.available == 'true' }}
+        run: docker compose down --volumes --remove-orphans
