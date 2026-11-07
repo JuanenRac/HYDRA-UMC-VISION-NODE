@@ -140,9 +140,9 @@ Of the 5 projects in the Vision AI Node family, this is the only one that:
 
 None of the 5 projects carries a `hardware/` or `firmware/` folder: CM5 + Hailo-8 is off-the-shelf hardware with no board of its own to design, unlike (for example) the custom STM32H745/STM32G474 boards inside [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC).
 
-### `docker-compose.yml`: the integration map, built from the four children's own Dockerfiles (never run with Docker here)
+### `docker-compose.yml`: the integration map, built from the four children's own Dockerfiles (built and started in CI)
 
-`docker-compose.yml` at the project root defines this node's own service plus all 4 children, wired together with the devices/volumes/ports they are each expected to need (the Hailo-8 device node, per-camera V4L2 devices, the gRPC ports towards the HYDRA-UMC core). It is heavily commented explaining *why* each piece is there. All 4 children now ship their own `Dockerfile` and the stack is built from them, but it has **never been built or run in an environment with Docker** (there is none in the development environment): its shape and commands were checked by hand against those Dockerfiles and the real CM5 systemd units. It exists so the integration shape is decided and documented once rather than improvised separately by each child.
+`docker-compose.yml` at the project root defines this node's own service plus all 4 children, wired together with the devices/volumes/ports they are each expected to need (the Hailo-8 device node, per-camera V4L2 devices, the gRPC ports towards the HYDRA-UMC core). It is heavily commented explaining *why* each piece is there. All 4 children now ship their own `Dockerfile` and the stack is built from them, and a CI job clones the 4 children, builds the 5 images and starts the node, then probes `/stats` (it needs `HYDRA_UMC_VISION_NODE_TOKEN` because the node listens on all addresses inside the container). It has **never run on a CM5 with the real Hailo-8 and cameras**: the device mappings were checked by hand against the real CM5 systemd units. It exists so the integration shape is decided and documented once rather than improvised separately by each child.
 
 ### Design decisions already made in this skeleton
 
@@ -334,7 +334,7 @@ HYDRA-UMC-VISION-NODE/
 
 **Known limits today**
 
-**What works today:** a real family-readiness check (`manifest.py`/`family.py`) that reads each of the 4 real children's own manifest and reports presence/version/maturity/role, a real pipeline manifest and degraded-mode detection (`pipeline.py`/`hardware.py`) that honestly probes for real camera/Hailo-8 hardware and reports exactly which pipeline stages can run, real hardware-independent frame corruption validation (`frame.py`), the `family-status`/`pipeline-status`/`validate-frame` CLI subcommands plus a `serve` subcommand exposing all three as a JSON/HTTP API (`api.py`), 399 passing tests, and a fully documented integration map for the 4 children in `docker-compose.yml` (built from the children's own Dockerfiles, never run with Docker) - see [`CHANGELOG.md`](CHANGELOG.md) for the full real build/run output.
+**What works today:** a real family-readiness check (`manifest.py`/`family.py`) that reads each of the 4 real children's own manifest and reports presence/version/maturity/role, a real pipeline manifest and degraded-mode detection (`pipeline.py`/`hardware.py`) that honestly probes for real camera/Hailo-8 hardware and reports exactly which pipeline stages can run, real hardware-independent frame corruption validation (`frame.py`), the `family-status`/`pipeline-status`/`validate-frame` CLI subcommands plus a `serve` subcommand exposing all three as a JSON/HTTP API (`api.py`), 399 passing tests, and a fully documented integration map for the 4 children in `docker-compose.yml` (built from the children's own Dockerfiles; CI builds the images and starts the node) - see [`CHANGELOG.md`](CHANGELOG.md) for the full real build/run output.
 
 **What is still open, in no particular order and with no committed timeline:**
 
@@ -342,7 +342,7 @@ HYDRA-UMC-VISION-NODE/
 * The gRPC control API towards the HYDRA-UMC core.
 * Real supervision of the 4 child services (today's `family-status` only checks presence/maturity, not runtime health; `docker-compose.yml` only documents the intended shape).
 * Multi-camera pipeline synchronization once [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) has a real capture pipeline to synchronize with.
-* Building and running `docker-compose.yml` for real in an environment with Docker (the 4 children already ship their `Dockerfile`).
+* Running `docker-compose.yml` on a CM5 with the real Hailo-8 and cameras (CI already builds the 5 images and starts the node, without devices).
 
 ## 🌍 Languages
 

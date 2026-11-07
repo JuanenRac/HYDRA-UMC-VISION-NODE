@@ -148,14 +148,14 @@ flowchart TB
 5 个项目中没有一个携带 `hardware/` 或 `firmware/` 文件夹：CM5 + Hailo-8 是现
 成硬件，没有需要自行设计的板卡，这与（例如）[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部定制的 STM32H745/STM32G474 板卡不同。
 
-### `docker-compose.yml`：集成蓝图，由各子项目自己的 Dockerfile 构建（在此从未用 Docker 运行过）
+### `docker-compose.yml`：集成蓝图，由各子项目自己的 Dockerfile 构建（在 CI 中构建并启动）
 
 项目根目录下的 `docker-compose.yml` 定义了本节点自身的服务以及全部 4 个子
 项目，并将它们各自预期所需的设备/卷/端口（Hailo-8 设备节点、每个摄像头的
 V4L2 设备、通往 HYDRA-UMC 核心的 gRPC 端口）连接在一起。文件中有大量注释
 解释*为什么*每个部分存在。4 个子项目现在都提供了自己的
-`Dockerfile`，该栈由它们构建，但它**从未在装有 Docker 的环境中构建或运行过**（开发环境里没有）：
-它的形态和命令只是对照这些 Dockerfile 和 CM5 上真实的 systemd 单元手工检查过。它的存在，是为了让
+`Dockerfile`，该栈由它们构建，并且一个 CI 作业会克隆 4 个子项目、构建 5 个镜像、启动节点，然后探测 `/stats`（需要 `HYDRA_UMC_VISION_NODE_TOKEN`，因为节点在容器内监听所有地址）。它**从未在带有真实 Hailo-8 和摄像头的 CM5 上运行过**：
+设备映射只是对照 CM5 上真实的 systemd 单元手工检查过。它的存在，是为了让
 集成方案先被决定和记录一次，而不是由每个子项目各自零散地摸索。
 
 ### 本骨架中已做出的设计决策
@@ -355,7 +355,7 @@ HYDRA-UMC-VISION-NODE/
 **当前已知限制**
 
 **今天已实现的内容：** 一个真实的家族就绪检查（`manifest.py`/`family.py`），读取 4 个真实子项目各自的清单并报告是否存在/版本/成熟度/角色，一个真实的流水线清单和真实的降级模式检测（`pipeline.py`/`hardware.py`），会诚实地探测真实的摄像头/Hailo-8 硬件并准确报告哪些流水线阶段可以运行，真实的、与硬件无关的帧损坏校验（`frame.py`），`family-status`/`pipeline-status`/`validate-frame` 这几个 CLI 子命令，外加一个将这三者以 JSON/HTTP API 形式对外提供的 `serve` 子命令（`api.py`），399 个通过的测试，以及 `docker-compose.yml` 中针对 4 个子
-项目的完整集成蓝图文档（由各子项目自己的 Dockerfile 构建，从未用 Docker 运行过）——具体的真实构建/运行输出见 [`CHANGELOG.md`](CHANGELOG.md)。
+项目的完整集成蓝图文档（由各子项目自己的 Dockerfile 构建；CI 会构建镜像并启动节点）——具体的真实构建/运行输出见 [`CHANGELOG.md`](CHANGELOG.md)。
 
 **仍待完成的内容（顺序不分先后，无既定时间表）：**
 
@@ -363,7 +363,7 @@ HYDRA-UMC-VISION-NODE/
 * 面向 HYDRA-UMC 核心的 gRPC 控制 API。
 * 对 4 个子服务的真实监督（今天的 `family-status` 只检查是否存在/成熟度，不检查运行时健康状况；`docker-compose.yml` 仅记录了预期形态）。
 * 一旦 [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) 拥有真实的采集流水线，即进行多摄像头流水线同步。
-* 在装有 Docker 的环境中真正构建并运行 `docker-compose.yml`（4 个子项目已经提供了各自的 `Dockerfile`）。
+* 在带有真实 Hailo-8 和摄像头的 CM5 上运行 `docker-compose.yml`（CI 已经构建了 5 个镜像并在没有设备的情况下启动节点）。
 
 ## 🌍 语言
 
