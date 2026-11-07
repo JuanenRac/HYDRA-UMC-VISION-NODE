@@ -148,14 +148,14 @@ flowchart TB
 5 个项目中没有一个携带 `hardware/` 或 `firmware/` 文件夹：CM5 + Hailo-8 是现
 成硬件，没有需要自行设计的板卡，这与（例如）[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部定制的 STM32H745/STM32G474 板卡不同。
 
-### `docker-compose.yml`：集成蓝图，由各子项目自己的 Dockerfile 构建（在 CI 中构建，那里只启动节点）
+### `docker-compose.yml`：集成蓝图，由各子项目自己的 Dockerfile 构建（在此从未用 Docker 运行过）
 
 项目根目录下的 `docker-compose.yml` 定义了本节点自身的服务以及全部 4 个子
 项目，并将它们各自预期所需的设备/卷/端口（Hailo-8 设备节点、每个摄像头的
 V4L2 设备、通往 HYDRA-UMC 核心的 gRPC 端口）连接在一起。文件中有大量注释
 解释*为什么*每个部分存在。4 个子项目现在都提供了自己的
-`Dockerfile`，该栈由它们构建，但它**在 CI 中用 Docker Compose 构建，节点本身也在那里启动并探测**；子容器（摄像头、Hailo 加速器）从未运行过，
-它们的形态和命令只是对照这些 Dockerfile 和 CM5 上真实的 systemd 单元手工检查过。它的存在，是为了让
+`Dockerfile`，该栈由它们构建，但它**从未在装有 Docker 的环境中构建或运行过**（开发环境里没有）：
+它的形态和命令只是对照这些 Dockerfile 和 CM5 上真实的 systemd 单元手工检查过。它的存在，是为了让
 集成方案先被决定和记录一次，而不是由每个子项目各自零散地摸索。
 
 ### 本骨架中已做出的设计决策
@@ -363,7 +363,7 @@ HYDRA-UMC-VISION-NODE/
 * 面向 HYDRA-UMC 核心的 gRPC 控制 API。
 * 对 4 个子服务的真实监督（今天的 `family-status` 只检查是否存在/成熟度，不检查运行时健康状况；`docker-compose.yml` 仅记录了预期形态）。
 * 一旦 [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) 拥有真实的采集流水线，即进行多摄像头流水线同步。
-* 真正运行 `docker-compose.yml` 的子容器（摄像头与加速器设备）；CI 已构建全部镜像并启动节点。
+* 在装有 Docker 的环境中真正构建并运行 `docker-compose.yml`（4 个子项目已经提供了各自的 `Dockerfile`）。
 
 ## 🌍 语言
 
