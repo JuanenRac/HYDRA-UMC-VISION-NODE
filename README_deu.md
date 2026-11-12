@@ -103,6 +103,8 @@ Dieses Projekt ist der **Integrations-Elternteil** der Vision-AI-Node-Familie: E
 
 **HYDRA-UMC-VISION-NODE** ist der Integrationsknoten der Vision-AI-Node-Familie. Er betreibt weder Kamera noch Beschleuniger oder Erkennung selbst: Er prüft, ob seine vier Kinder vorhanden und bereit sind, beschreibt die Wahrnehmungskette Stufe für Stufe, validiert rohe Kamerabilder und liest DataMatrix-Codes.
 
+> **Plattform:** Wo dieses README CM5 sagt, ist der Pilotprüfstand gemeint, der heute läuft; die Zielplattform von HYDRA-UMC ist ein NVIDIA Jetson Orin NX 16 GB, ein Entwurf, der weder gebaut noch getestet wurde.
+
 ## 🏛️ Architektur
 
 <p align="center">

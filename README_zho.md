@@ -109,6 +109,8 @@ API 或真实的子节点监督逻辑目前均尚未实现——它们是本项�
 
 **HYDRA-UMC-VISION-NODE** 是 Vision AI Node 系列的集成父项目。它自己不运行摄像头、加速器或检测：它检查四个子项目是否存在且就绪，逐级描述感知流水线，验证原始摄像头帧并读取 DataMatrix 码。
 
+> **平台：** 本 README 中的 CM5 指的是目前正在运行的试验台；HYDRA-UMC 的目标平台是 NVIDIA Jetson Orin NX 16 GB，这是尚未制造或测试的设计。
+
 ## 🏛️ 架构
 
 <p align="center">
