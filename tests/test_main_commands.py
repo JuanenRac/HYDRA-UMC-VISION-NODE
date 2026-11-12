@@ -8,7 +8,6 @@ and without the live check, the frame check, and every refusal of `serve` before
 recorder, so nothing here opens a socket."""
 from __future__ import annotations
 
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
