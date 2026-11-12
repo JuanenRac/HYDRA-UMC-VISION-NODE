@@ -89,7 +89,7 @@ Raspberry Pi Compute Module 5 上，并搭配 Hailo-8 M.2 AI 加速器，其预�
 * 📷 **多路流处理（计划中）：** 同时分析最多 8 路高分辨率摄像头画面，由 [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) 在上游捕获。
 * 🎯 **精准感知（计划中）：** 围绕 YOLO 系列架构设计，用于工业组件检测。
 * 🛡️ **主动安全（计划中）：** 实时占用地图输入至 [HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES) 以进行人员入侵检测。
-* 🧩 **存在的意义：** 若没有专用节点，感知工作要么会使 [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部的 STM32H745 实时核心过载（该核心没有多余算力承担此任务），要么必须将每一帧摄像头画面通过网络传输到远程 GPU，从而增加安全回路无法承受的延迟。将其运行在紧邻机器人本体的 CM5 + Hailo-8 上，可使检测 → 修正 →（必要时）E-STOP 的回路保持本地化和快速。
+* 🧩 **存在的意义：** 若没有专用节点，感知工作要么会使 [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部的 STM32H757 实时核心过载（该核心没有多余算力承担此任务），要么必须将每一帧摄像头画面通过网络传输到远程 GPU，从而增加安全回路无法承受的延迟。将其运行在紧邻机器人本体的 CM5 + Hailo-8 上，可使检测 → 修正 →（必要时）E-STOP 的回路保持本地化和快速。
 * 🖼️ **帧规格中的像素格式和行跨度:** 帧规格可以指明像素格式(`GRAY`、`RGB`、`BGR`、`RGBA`、`BGRA`、`YUYV`、`NV12`)和行跨度，期望的大小随之变化，不可能的组合会报告为 `invalid_spec`。冻结帧监视器会标出一直逐字节返回同一帧的传感器(`frozen_frame`)。
 * 🩺 **`family-status --live`(默认关闭):** 除了读取清单，还会对每个声明了服务的子项目各查询一次，超时很短，除非 `--host` 另有指定否则走回环地址，并打印各自报告的延迟和版本；有一个不响应就会失败。
 * 🎞️ **`serve --vision-sim 文件`(默认关闭，仅模拟):** 模拟的帧来源(确定性的合成生成器和一个 raw 或 PGM/PPM 帧文件夹)、声明了格式、输入尺寸、精度和设备(`cpu` 或 `hailo`)的模型注册表，以及针对主机在文件中声明的设备(不做任何检测)确定性地选出最佳模型，并给出选择和每次淘汰的理由，另有一个用假模型驱动、为延迟百分位提供数据的循环。新增 `GET /models`、`GET /sources`、`POST /models/select` 和 `POST /inference/simulate`；不开启开关时它们返回 404。没有真实推理，也没有真实摄像头：摄像头或 RTSP 来源仍然需要硬件。 每次运行都有真实时间上限(文件中的 `limits.maxRunSeconds`，默认 10 秒；零或负数会拒绝该文件)：超出后返回标有 `truncated: true` 及原因的部分结果，且同一时间只运行一个模拟(第二个返回 `409`)，其他路由继续响应。时钟在每一帧内部也会按 `limits.chunkBytes`(默认 256 KiB)分块读取，因此一次运行超出限制最多一个块。
@@ -124,7 +124,7 @@ flowchart TB
     STREAMER --> NPU["Hailo-8 NPU<br/>(HEF Model Execution)"]
     NPU --> DETECT["Detection & Segmentation"]
     DETECT --> API["VISUAL-SERVOING-API"]
-    API --> CORE["HYDRA-UMC Core (STM32H745)"]
+    API --> CORE["HYDRA-UMC Core (STM32H757)"]
     DETECT --> SAFETY["SAFETY-ZONES (E-STOP)"]
 ```
 
@@ -146,7 +146,7 @@ flowchart TB
 * 拥有 **`docker-compose.yml`**——见下文。
 
 5 个项目中没有一个携带 `hardware/` 或 `firmware/` 文件夹：CM5 + Hailo-8 是现
-成硬件，没有需要自行设计的板卡，这与（例如）[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部定制的 STM32H745/STM32G474 板卡不同。
+成硬件，没有需要自行设计的板卡，这与（例如）[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部定制的 STM32H757/STM32G474 板卡不同。
 
 ### `docker-compose.yml`：集成蓝图，由各子项目自己的 Dockerfile 构建（在 CI 中构建并启动）
 
@@ -380,7 +380,7 @@ HYDRA-UMC-VISION-NODE/
 - **[HYDRA-UMC-VISUAL-SERVOING-API](https://github.com/JuanenRac/HYDRA-UMC-VISUAL-SERVOING-API)** —— 以区域状态为授权条件的 Position-Based Visual Servoing 修正律;尚无摄像头位姿估计。
 
 **直接相关**
-- **[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC)** —— 机器人手臂主板设计——CM5 主机 + 双核 STM32H745,目标是通过 CAN-OTA/SPI-OTA 协调最多 8 条工具臂(固件处于早期阶段,尚无已组装的电路板);该节点与该固件之间的感知/E-STOP 回路尚不存在。
+- **[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC)** —— 机器人手臂主板设计——NVIDIA Jetson Orin NX 主机 + 双核 STM32H757(CM5 保留为试验台),目标是通过 CAN-OTA/SPI-OTA 协调最多 8 条工具臂(固件处于早期阶段,尚无已组装的电路板);该节点与该固件之间的感知/E-STOP 回路尚不存在。
 - **[HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)** —— 面向 Hailo-10 认知流水线(LLM/VLA/语音编排)的集成中枢,构建为直接位于本节点自身感知输出之上的语义层。
 
 **生态系统中的其他项目**

@@ -86,7 +86,7 @@ Este proyecto es el **padre de integración** de la familia Vision AI Node: no h
 * 📷 **Procesamiento Multi-flujo (previsto):** análisis simultáneo de hasta 8 fuentes de cámara de alta resolución, capturadas aguas arriba por [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER).
 * 🎯 **Percepción de Precisión (previsto):** diseñado en torno a arquitecturas de la familia YOLO para detección de componentes industriales.
 * 🛡️ **Seguridad Activa (previsto):** mapeo de ocupación en tiempo real que alimenta a [HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES) para detección de intrusiones humanas.
-* 🧩 **Por qué existe:** sin un nodo dedicado, el trabajo de percepción sobrecargaría el núcleo de tiempo real STM32H745 dentro de [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (que no tiene ciclos libres para ello), o forzaría a enviar cada fotograma por cable a una GPU remota, añadiendo una latencia que el bucle de seguridad no puede permitirse. Ejecutarlo en CM5 + Hailo-8, físicamente junto al robot, mantiene el bucle detectar → corregir → (si hace falta) E-STOP local y rápido.
+* 🧩 **Por qué existe:** sin un nodo dedicado, el trabajo de percepción sobrecargaría el núcleo de tiempo real STM32H757 dentro de [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (que no tiene ciclos libres para ello), o forzaría a enviar cada fotograma por cable a una GPU remota, añadiendo una latencia que el bucle de seguridad no puede permitirse. Ejecutarlo en CM5 + Hailo-8, físicamente junto al robot, mantiene el bucle detectar → corregir → (si hace falta) E-STOP local y rápido.
 * 🖼️ **Formato de píxel y paso de fila en las especificaciones de fotograma:** una especificación puede nombrar un formato de píxel (`GRAY`, `RGB`, `BGR`, `RGBA`, `BGRA`, `YUYV`, `NV12`) y un paso de fila; el tamaño esperado los sigue y una combinación imposible se informa como `invalid_spec`. Un vigilante de fotograma congelado marca un sensor que devuelve byte a byte el mismo fotograma (`frozen_frame`).
 * 🩺 **`family-status --live` (desactivado por defecto):** además de leer los manifiestos, pregunta una vez a cada hijo que declara un servicio, con un tiempo de espera corto y por loopback salvo que `--host` diga otra cosa, e imprime la latencia y la versión que informa cada uno; falla cuando alguno no responde.
 * 🎞️ **`serve --vision-sim FICHERO` (desactivado por defecto, solo simulación):** fuentes de cuadros simuladas (un generador sintético determinista y una carpeta de cuadros raw o PGM/PPM), un registro de modelos con formato, tamaño de entrada, precisión y dispositivo (`cpu` o `hailo`) declarados, y una elección determinista del mejor modelo para los dispositivos que el anfitrión declara en el fichero (no se detecta nada), con la razón de la elección y de cada descarte, más un bucle con un modelo falso que alimenta los percentiles de latencia. Añade `GET /models`, `GET /sources`, `POST /models/select` y `POST /inference/simulate`; sin el interruptor responden 404. No hay inferencia real ni cámara real: una fuente de cámara o RTSP sigue necesitando hardware. Cada ejecución tiene un tiempo máximo real (`limits.maxRunSeconds` del fichero, 10 s por defecto; cero o negativo rechaza el fichero): al pasarse devuelve el resultado parcial marcado `truncated: true` con el motivo, y solo corre una simulación a la vez (`409` para una segunda) mientras las demás rutas siguen respondiendo. El reloj también se lee dentro de cada fotograma, entre trozos de `limits.chunkBytes` (256 KiB por defecto), así que una ejecución se pasa del límite como mucho en un trozo.
@@ -118,7 +118,7 @@ flowchart TB
     STREAMER --> NPU["NPU Hailo-8<br/>(Ejecución de Modelos HEF)"]
     NPU --> DETECT["Detección y Segmentación"]
     DETECT --> API["VISUAL-SERVOING-API"]
-    API --> CORE["HYDRA-UMC Core (STM32H745)"]
+    API --> CORE["HYDRA-UMC Core (STM32H757)"]
     DETECT --> SAFETY["SAFETY-ZONES (E-STOP)"]
 ```
 
@@ -138,7 +138,7 @@ De los 5 proyectos de la familia Vision AI Node, este es el único que:
 * Lleva una carpeta **`models/`** — los modelos `.hef` compilados realmente cargados en la NPU Hailo-8 en tiempo de ejecución. [HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF) es donde esos modelos se *compilan y versionan*; este nodo es donde vive la *copia servida en ejecución*, porque es el proceso dueño del handle del dispositivo Hailo-8.
 * Lleva **`docker-compose.yml`** — ver abajo.
 
-Ninguno de los 5 proyectos lleva carpeta `hardware/` ni `firmware/`: CM5 + Hailo-8 es hardware ya existente sin placa propia que diseñar, a diferencia (por ejemplo) de las placas STM32H745/STM32G474 a medida dentro de [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC).
+Ninguno de los 5 proyectos lleva carpeta `hardware/` ni `firmware/`: CM5 + Hailo-8 es hardware ya existente sin placa propia que diseñar, a diferencia (por ejemplo) de las placas STM32H757/STM32G474 a medida dentro de [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC).
 
 ### `docker-compose.yml`: el mapa de integración, construido con los Dockerfile de los hijos (construido y arrancado en CI)
 
@@ -359,7 +359,7 @@ Este proyecto es parte del ecosistema de robótica HYDRA-UMC del mismo autor (Ju
 - **[HYDRA-UMC-VISUAL-SERVOING-API](https://github.com/JuanenRac/HYDRA-UMC-VISUAL-SERVOING-API)** — ley de corrección Position-Based Visual Servoing con autorización condicionada al estado de zona; todavía sin estimación de pose por cámara.
 
 **Directamente Relacionados**
-- **[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC)** — el diseño de la placa madre del brazo robótico: host CM5 + coprocesador STM32H745 de doble núcleo, pensado para coordinar hasta 8 brazos herramienta por CAN-OTA/SPI-OTA (firmware en fase temprana; todavía no hay ninguna placa poblada); todavía no existe ningún bucle de percepción/E-STOP entre este nodo y ese firmware.
+- **[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC)** — el diseño de la placa madre del brazo robótico: host NVIDIA Jetson Orin NX + STM32H757 de doble núcleo (la CM5 queda como banco piloto), pensado para coordinar hasta 8 brazos herramienta por CAN-OTA/SPI-OTA (firmware en fase temprana; todavía no hay ninguna placa poblada); todavía no existe ningún bucle de percepción/E-STOP entre este nodo y ese firmware.
 - **[HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)** — nodo de integración para el pipeline cognitivo Hailo-10 (orquestación de LLM/VLA/voz), construido como la capa semántica directamente sobre la propia salida de percepción de este nodo.
 
 **También Forma Parte del Ecosistema**

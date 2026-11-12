@@ -91,7 +91,7 @@ Raspberry Pi Compute Module 5 に Hailo-8 M.2 AI アクセラレーターを組�
 * 📷 **マルチストリーム処理（計画中）：** [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER) が上流でキャプチャした、最大 8 台の高解像度カメラフィードを同時分析します。
 * 🎯 **精密知覚（計画中）：** 産業用部品検出のために YOLO 系アーキテクチャを中心に設計されています。
 * 🛡️ **アクティブセーフティ（計画中）：** リアルタイムの占有マッピングを [HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES) に供給し、人の侵入を検知します。
-* 🧩 **存在理由：** 専用ノードがなければ、知覚処理は [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部の STM32H745 リアルタイムコア（これに割く余剰サイクルはありません）を過負荷にするか、あるいはすべてのカメラフレームをリモート GPU へ送信せざるを得ず、安全ループが許容できない遅延を追加することになります。ロボット本体のすぐそばで CM5 + Hailo-8 上で実行することで、検知 → 補正 →（必要であれば）E-STOP のループをローカルかつ高速に保ちます。
+* 🧩 **存在理由：** 専用ノードがなければ、知覚処理は [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部の STM32H757 リアルタイムコア（これに割く余剰サイクルはありません）を過負荷にするか、あるいはすべてのカメラフレームをリモート GPU へ送信せざるを得ず、安全ループが許容できない遅延を追加することになります。ロボット本体のすぐそばで CM5 + Hailo-8 上で実行することで、検知 → 補正 →（必要であれば）E-STOP のループをローカルかつ高速に保ちます。
 * 🖼️ **フレーム仕様のピクセル形式と行ストライド:** フレーム仕様にはピクセル形式(`GRAY`、`RGB`、`BGR`、`RGBA`、`BGRA`、`YUYV`、`NV12`)と行ストライドを指定でき、期待サイズはそれに従います。成り立たない組み合わせは `invalid_spec` として報告されます。フリーズ検出は、バイト単位で同じフレームを返し続けるセンサーを `frozen_frame` として知らせます。
 * 🩺 **`family-status --live`(既定ではオフ):** マニフェストを読むだけでなく、サービスを宣言している子プロジェクトごとに、短いタイムアウトで一度だけ問い合わせます(`--host` で変えない限りループバック経由)。それぞれが報告する遅延とバージョンを表示し、応答しないものがあれば失敗します。
 * 🎞️ **`serve --vision-sim FILE`(既定ではオフ、シミュレーションのみ):** 模擬フレームソース(決定的な合成ジェネレーターと、raw または PGM/PPM フレームのフォルダー)、形式・入力サイズ・精度・デバイス(`cpu` または `hailo`)を宣言したモデルレジストリ、ホストがファイルで宣言したデバイス(何も検出しません)に対する最良モデルの決定的な選択(選択と各除外の理由つき)、そして遅延パーセンタイルに値を送る偽モデルのループを備えます。`GET /models`、`GET /sources`、`POST /models/select`、`POST /inference/simulate` が加わり、スイッチがなければ 404 を返します。実際の推論も実際のカメラもありません。カメラや RTSP のソースにはハードウェアが必要です。 1 回の実行には実時間の上限があります(ファイルの `limits.maxRunSeconds`、既定は 10 秒。0 や負の値はファイルを拒否します)。超えると理由付きで `truncated: true` と記された途中結果が返り、シミュレーションは同時に 1 つだけ実行され(2 つ目は `409`)、他のルートは応答し続けます。フレームの内部でも `limits.chunkBytes`(既定 256 KiB)単位の区切りごとに時計を確認するため、実行が制限を超過するのは最大でも 1 区切り分です。
@@ -128,7 +128,7 @@ flowchart TB
     STREAMER --> NPU["Hailo-8 NPU<br/>(HEF Model Execution)"]
     NPU --> DETECT["Detection & Segmentation"]
     DETECT --> API["VISUAL-SERVOING-API"]
-    API --> CORE["HYDRA-UMC Core (STM32H745)"]
+    API --> CORE["HYDRA-UMC Core (STM32H757)"]
     DETECT --> SAFETY["SAFETY-ZONES (E-STOP)"]
 ```
 
@@ -152,7 +152,7 @@ Vision AI Node ファミリーの 5 つのプロジェクトの中で、本プ�
 * **`docker-compose.yml`** —— 下記参照。
 
 5 つのプロジェクトのいずれも `hardware/` や `firmware/` フォルダを持って
-いません。CM5 + Hailo-8 は市販のハードウェアであり、[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部のカスタム STM32H745/STM32G474 基板とは異なり、独自に設計する基板はありません。
+いません。CM5 + Hailo-8 は市販のハードウェアであり、[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) 内部のカスタム STM32H757/STM32G474 基板とは異なり、独自に設計する基板はありません。
 
 ### `docker-compose.yml`：統合マップ。子プロジェクト自身の Dockerfile から構築される（CI で構築・起動済み）
 
@@ -397,7 +397,7 @@ HYDRA-UMC-VISION-NODE/
 - **[HYDRA-UMC-VISUAL-SERVOING-API](https://github.com/JuanenRac/HYDRA-UMC-VISUAL-SERVOING-API)** — ゾーン状態を条件に承認する Position-Based Visual Servoing 補正則。カメラによる姿勢推定はまだない。
 
 **直接関連**
-- **[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC)** — ロボットアームのマザーボードの設計——CM5 ホスト + デュアルコア STM32H745、CAN-OTA/SPI-OTA 経由で最大 8 本のツールアームを統括することを目指す(ファームウェアは初期段階で、実装済みの基板はまだない)。このノードとそのファームウェアの間の知覚/E-STOP ループはまだ存在しない。
+- **[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC)** — ロボットアームのマザーボードの設計——NVIDIA Jetson Orin NX ホスト + デュアルコア STM32H757(CM5 はパイロット試験台として残る)、CAN-OTA/SPI-OTA 経由で最大 8 本のツールアームを統括することを目指す(ファームウェアは初期段階で、実装済みの基板はまだない)。このノードとそのファームウェアの間の知覚/E-STOP ループはまだ存在しない。
 - **[HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)** — Hailo-10 コグニティブパイプライン(LLM/VLA/音声オーケストレーション)の統合ハブであり、本ノード自身の知覚出力の直接上位に構築された意味層。
 
 **エコシステムの他のプロジェクト**

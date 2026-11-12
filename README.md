@@ -86,7 +86,7 @@ This project is the **integration parent** of the Vision AI Node family: it does
 * 📷 **Multi-Stream Processing (planned):** simultaneous analysis of up to 8 high-resolution camera feeds, captured upstream by [HYDRA-UMC-VISION-STREAMER](https://github.com/JuanenRac/HYDRA-UMC-VISION-STREAMER).
 * 🎯 **Precision Perception (planned):** designed around YOLO-family architectures for industrial component detection.
 * 🛡️ **Active Safety (planned):** real-time occupancy mapping feeding [HYDRA-UMC-SAFETY-ZONES](https://github.com/JuanenRac/HYDRA-UMC-SAFETY-ZONES) for human-intrusion detection.
-* 🧩 **Why it exists:** without a dedicated node, perception work would either overload the STM32H745 real-time core inside [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (which has no spare cycles for it) or force every camera frame over the wire to a remote GPU, adding latency the safety loop cannot afford. Running it on CM5 + Hailo-8, physically next to the robot, keeps the detect → correct → (if needed) E-STOP loop local and fast.
+* 🧩 **Why it exists:** without a dedicated node, perception work would either overload the STM32H757 real-time core inside [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC) (which has no spare cycles for it) or force every camera frame over the wire to a remote GPU, adding latency the safety loop cannot afford. Running it on CM5 + Hailo-8, physically next to the robot, keeps the detect → correct → (if needed) E-STOP loop local and fast.
 * 🖼️ **Pixel format and stride in frame specs:** a frame spec may name a pixel format (`GRAY`, `RGB`, `BGR`, `RGBA`, `BGRA`, `YUYV`, `NV12`) and a row stride; the expected size follows them and an impossible combination is reported as `invalid_spec`. A frozen-frame watcher flags a sensor that keeps returning byte-for-byte the same frame (`frozen_frame`).
 * 🩺 **`family-status --live` (off by default):** besides reading the manifests, it asks every child that declares a service once, with a short timeout and on loopback unless `--host` says otherwise, and prints the latency and the version each one reports; it fails when one does not answer.
 * 🎞️ **`serve --vision-sim FILE` (off by default, simulation only):** simulated frame sources (a deterministic synthetic generator and a folder of raw or PGM/PPM frames), a registry of models with declared format, input size, precision and device (`cpu` or `hailo`), and a deterministic choice of the best model for the devices the host declares in the file (nothing is detected), with the reason for the choice and for every discard, plus a loop with a fake model that feeds the latency percentiles. Adds `GET /models`, `GET /sources`, `POST /models/select` and `POST /inference/simulate`; without the switch they answer 404. There is no real inference and no real camera: a camera or RTSP source still needs hardware. A run is limited in wall-clock time (`limits.maxRunSeconds` of the file, 10 s by default; zero or negative refuses the file): past it the partial result comes back marked `truncated: true` with the reason, and only one simulation runs at a time (`409` for a second one) while the other routes keep answering. The clock is also read inside a frame, between pieces of `limits.chunkBytes` (256 KiB by default), so a run overshoots the limit by one piece at most.
@@ -118,7 +118,7 @@ flowchart TB
     STREAMER --> NPU["Hailo-8 NPU<br/>(HEF Model Execution)"]
     NPU --> DETECT["Detection & Segmentation"]
     DETECT --> API["VISUAL-SERVOING-API"]
-    API --> CORE["HYDRA-UMC Core (STM32H745)"]
+    API --> CORE["HYDRA-UMC Core (STM32H757)"]
     DETECT --> SAFETY["SAFETY-ZONES (E-STOP)"]
 ```
 
@@ -138,7 +138,7 @@ Of the 5 projects in the Vision AI Node family, this is the only one that:
 * Carries a **`models/`** folder — the compiled `.hef` models actually loaded onto the Hailo-8 NPU at runtime. [HYDRA-UMC-DETECTION-HEF](https://github.com/JuanenRac/HYDRA-UMC-DETECTION-HEF) is where those models are *compiled and versioned*; this node is where the *served, running copy* lives, because it is the process that owns the Hailo-8 device handle.
 * Carries **`docker-compose.yml`** — see below.
 
-None of the 5 projects carries a `hardware/` or `firmware/` folder: CM5 + Hailo-8 is off-the-shelf hardware with no board of its own to design, unlike (for example) the custom STM32H745/STM32G474 boards inside [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC).
+None of the 5 projects carries a `hardware/` or `firmware/` folder: CM5 + Hailo-8 is off-the-shelf hardware with no board of its own to design, unlike (for example) the custom STM32H757/STM32G474 boards inside [HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC).
 
 ### `docker-compose.yml`: the integration map, built from the four children's own Dockerfiles (built and started in CI)
 
@@ -359,7 +359,7 @@ This project is part of the HYDRA-UMC robotics ecosystem by the same author (Jua
 - **[HYDRA-UMC-VISUAL-SERVOING-API](https://github.com/JuanenRac/HYDRA-UMC-VISUAL-SERVOING-API)** — Position-Based Visual Servoing correction law with authorisation gated on the zone state; no camera pose estimation yet.
 
 **Directly Related**
-- **[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC)** — the robot-arm motherboard design: CM5 host + dual-core STM32H745, meant to orchestrate up to 8 tool arms over CAN-OTA/SPI-OTA (firmware at an early stage; no populated board yet); a perception/E-STOP loop between this node and that firmware does not exist yet.
+- **[HYDRA-UMC](https://github.com/JuanenRac/HYDRA-UMC)** — the robot-arm motherboard design: NVIDIA Jetson Orin NX host + dual-core STM32H757 (the CM5 stays as the pilot bench), meant to orchestrate up to 8 tool arms over CAN-OTA/SPI-OTA (firmware at an early stage; no populated board yet); a perception/E-STOP loop between this node and that firmware does not exist yet.
 - **[HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)** — integration hub for the Hailo-10 cognitive pipeline (LLM/VLA/voice orchestration), built as the semantic layer directly on top of this node's own perception output.
 
 **Also Part of the Ecosystem**
