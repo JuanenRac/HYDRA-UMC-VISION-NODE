@@ -1,8 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.2.3] - The command line and the shared HTTP helpers are tested: `tests/test_main_commands.py` (12 tests) calls `main()` in the same process (the family status with and without the live check, `pipeline-status` by mode, the frame check, every refusal of `serve` before
 
 - **The command line and the shared HTTP helpers are tested:** `tests/test_main_commands.py` (12 tests) calls `main()` in the same process (the family status with and without the live check, `pipeline-status` by mode, the frame check, every refusal of `serve` before the port is bound, and the start with the simulation, the loopback and the model registry on or off) and `tests/test_http_common.py` (17 tests) checks the body reader (absent, too large, drained, cut short, not JSON, NaN), the query reader, the bearer comparison, the 401 answer, the thread limit and the server that answers 503 to the request it has no thread for. Coverage of `main.py` 79 to 99 % and of `http_common.py` 71 to 98 %.
 - **The identity of the server is tested at its edges:** `tests/test_server_identity_edges.py` (60 tests) checks every reason a token is refused (shape, header, algorithm, signature, expiry, claims), the key files, the choice of key by flag or environment, the decision of `accepts` for each method and role, and the probe and its command line against a small local service. Line coverage of `server_identity.py` goes from 63 % to 98 %.
