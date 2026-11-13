@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **The coverage of the tests is measured on every change:** the workflow "Coverage floor" runs the whole suite under line and branch coverage and fails when it falls under 93 %.
+- **The health route, the shared HTTP helpers, the metrics text, the addresses the node may call and the loopback block are tested at their edges:** `tests/test_health_route_edges.py` (closed, open on loopback, the bearer token away from this machine, the identity of the server, the flag and the environment), `tests/test_http_common_edges.py`, `tests/test_service_metrics_edges.py` and `tests/test_netguard_and_loopback_edges.py` (every address that is refused and why, the remote switch, every key of the loopback block that is wrong, the boundary of the stream).
+
 - **The compose map gives the zone service what it now requires, and the servoing service the token to ask it:** `safety-zones` mounts the zones file of the cell (`HYDRA_UMC_ZONES_FILE`, read-only) and takes `SAFETY_ZONES_TOKEN` from `HYDRA_UMC_SAFETY_ZONES_TOKEN`; `visual-servoing-api` asks it at `http://safety-zones:8108` with the same token. Both variables are required and the file fails with a clear message when one is missing, so nothing starts with the zone service open on `0.0.0.0` or with zones brought by the caller. The compose workflow sets placeholders for them.
 All notable changes to this project are documented here.
 
