@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **The compose map gives the zone service what it now requires, and the servoing service the token to ask it:** `safety-zones` mounts the zones file of the cell (`HYDRA_UMC_ZONES_FILE`, read-only) and takes `SAFETY_ZONES_TOKEN` from `HYDRA_UMC_SAFETY_ZONES_TOKEN`; `visual-servoing-api` asks it at `http://safety-zones:8108` with the same token. Both variables are required and the file fails with a clear message when one is missing, so nothing starts with the zone service open on `0.0.0.0` or with zones brought by the caller. The compose workflow sets placeholders for them.
 All notable changes to this project are documented here.
 
 ## [0.2.3] - **README: the platform statement:** a note says that where the README speaks of the CM5 it means the pilot bench that runs today, and that the target platform of HYDRA-UMC, an NVIDIA Jetson Orin NX 16 GB, is a design that has not been built or tested.
