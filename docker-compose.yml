@@ -84,6 +84,13 @@ services:
     # Real-time 3D intrusion detection - triggers CAN E-STOP through
     # vision-node when a Warning/Danger zone is breached. Real HTTP API
     # (stdlib http.server) on 8108, matching the real CM5 systemd unit.
+    # It starts only with zones fixed on the machine and, off loopback, a token: the compose file asks for both and fails
+    # with a clear message when either is missing. HYDRA_UMC_ZONES_FILE is the path of YOUR zones file on the host (made from
+    # HYDRA-UMC-SAFETY-ZONES/docs/zones.separation.example.json after a risk assessment), mounted read-only.
+    volumes:
+      - ${HYDRA_UMC_ZONES_FILE:?set HYDRA_UMC_ZONES_FILE to the zones file of the cell}:/etc/hydra-umc-safety-zones/zones.json:ro
+    environment:
+      SAFETY_ZONES_TOKEN: ${HYDRA_UMC_SAFETY_ZONES_TOKEN:?set HYDRA_UMC_SAFETY_ZONES_TOKEN}
 
   visual-servoing-api:
     build: ../HYDRA-UMC-VISUAL-SERVOING-API
@@ -91,6 +98,10 @@ services:
     container_name: hydra-umc-visual-servoing-api
     ports:
       - "8116:8116"                    # HTTP API; the gRPC pose-correction feed is still future work
+    environment:
+      # the safety verdict is asked of the zone service over the compose network, with the token it requires
+      HYDRA_UMC_SAFETY_ZONES_URL: http://safety-zones:8108
+      HYDRA_UMC_SAFETY_ZONES_TOKEN: ${HYDRA_UMC_SAFETY_ZONES_TOKEN:?set HYDRA_UMC_SAFETY_ZONES_TOKEN}
     # Turns Hailo-8 visual feedback into real-time kinematic pose
     # corrections consumed by the HYDRA-UMC core (STM32H745). Real HTTP
     # API (stdlib http.server) on 8116 today, matching the real CM5
