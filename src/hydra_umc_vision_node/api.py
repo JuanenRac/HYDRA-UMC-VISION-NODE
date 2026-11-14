@@ -385,7 +385,7 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
         # below instead of silently truncating it.
         # A spec that is non-positive or beyond the node's limits has no
         # honest body at all: refuse it before reading anything (a negative
-        # width times a negative height used to give a huge positive size).
+        # width times a negative height gives a huge positive size).
         spec_is_sane = (
             0 < width <= MAX_DIMENSION and 0 < height <= MAX_DIMENSION and 0 < channels <= MAX_CHANNELS
         )
