@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
-  <img src="https://img.shields.io/badge/Tests-611%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-657%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.2.3` |
 | Reifegrad | Funktionsfähig |
-| Tests | 611 (`python -m pytest -q tests`) |
+| Tests | 657 (`python -m pytest -q tests`) |
 | Technik | Python / CM5 / Hailo-8 |
 | Ziel | Der Raspberry Pi CM5 einer HYDRA-UMC-Zelle |
 | Auf echter Hardware | Nur simuliert: gegen Emulatoren, Attrappen oder Simulatoren getestet; für diese Version ist kein Lauf auf echter Hardware vermerkt |
@@ -52,7 +52,7 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 | Bereich | Stand | Was das hier bedeutet |
 |---|---|---|
 | Software | 🟡 | Funktioniert für seinen Hauptzweck; die Ehrlichkeitsprüfung oben nennt, was noch fehlt |
-| Tests | 🟢 | 611 automatische Tests, bei jeder Änderung ausgeführt |
+| Tests | 🟢 | 657 automatische Tests, bei jeder Änderung ausgeführt |
 | Echte Hardware | 🟠 | Nur simuliert: gegen Emulatoren, Attrappen oder Simulatoren getestet; für diese Version ist kein Lauf auf echter Hardware vermerkt |
 | Schnittstelle und Protokolle | 🟡 | Die angebotenen Routen oder Nachrichten sind dokumentiert und mit einem Client getestet; noch nicht jeder Client hat sie benutzt |
 | Integration | 🟠 | Es läuft zusammen mit den anderen Diensten auf dem CM5-Prüfstand, und seine Nachrichten folgen den gemeinsamen Verträgen des SDK |
@@ -170,7 +170,7 @@ Benötigt Python 3.10 oder neuer.
 
 ## 🧪 Tests
 
-611 automatische Tests laufen mit `python -m pytest -q tests`. Sie brauchen weder Hardware noch etwas außerhalb dieses Rechners.
+657 automatische Tests laufen mit `python -m pytest -q tests`. Sie brauchen weder Hardware noch etwas außerhalb dieses Rechners.
 
 Die CI führt `HYDRA_UMC_CI=1 python tools/ci_validate.py` aus; das prüft das Manifest, die Dokumente, die acht READMEs und die Bilder.
 
@@ -193,7 +193,7 @@ Die CI führt `HYDRA_UMC_CI=1 python tools/ci_validate.py` aus; das prüft das M
 2. **Virtuelle Umgebung** — erstellt `.venv/`, falls noch nicht vorhanden (sicher erneut auszuführen; ein vorhandenes `.venv/` wird wiederverwendet, nicht neu erstellt).
 3. **Editierbare Installation** — `pip install -e .` installiert dieses Paket im "editierbaren" Modus in `.venv`, sodass Quelländerungen unter `src/` sofort wirksam werden, ohne Neuinstallation, und registriert den von `run.sh` genutzten Konsolen-Einstiegspunkt `hydra-umc-vision-node`.
 4. **Compile-Check** — `python -m compileall -q src` kompiliert jede `.py`-Datei unter `src/` zu Bytecode und findet so Syntaxfehler im gesamten Paket, auch in Dateien, die `main.py` nie tatsächlich importiert.
-5. **Echte Test-Suite** — `pytest tests/` führt alle 611 Tests aus.
+5. **Echte Test-Suite** — `pytest tests/` führt alle 657 Tests aus.
 
 Das Skript verwendet `set -euo pipefail` und stoppt beim ersten fehlschlagenden Schritt; `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) wird nur ausgegeben, wenn alle 5 Schritte erfolgreich waren.
 
@@ -304,6 +304,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── family.py                Echte Familien-Bereitschaftsprüfung über die 4 echten Kinder
 │   ├── live.py                  Live-Zustand der Kinder (--live)
 │   ├── pipeline.py              Echtes Wahrnehmungs-Pipeline-Manifest (Stufen + Hardware-Bedarf)
+│   ├── pose.py                  Posenquelle in der Simulation: eine Lochkamera über einer ebenen Arbeitsfläche liefert pro Erkennung eine PoseEstimate
 │   ├── frame.py                 Echte, hardwareunabhängige Frame-Beschädigungsprüfung
 │   ├── hardware.py              Echte Kamera-/Beschleuniger-Sonden + Logik für degradierten Modus
 │   ├── api.py                   Einfache JSON/HTTP-Oberfläche (stdlib http.server) über die 3 echten Subbefehle
@@ -311,7 +312,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── access.py                Optionales Bearer-Token für die HTTP-API (auf Loopback nicht nötig, sonst Pflicht)
 │   ├── codes.py                 Liest die DataMatrix-Codes in einem Rohbild (die Identität einer Platine in einer Bestückungszelle)
 │   └── compat_record.py         Womit ein Satz Erkennungen erzeugt wurde (Modell, Version, SHA-256, Architektur) und ob er noch passt
-├── tests/                       Echte Tests: Manifest-Lesen, Familienstatus, Pipeline, Frame, Hardware, api, CLI
+├── tests/                       Echte Tests: Manifest-Lesen, Familienstatus, Pipeline, Frame, Hardware, api, CLI, Pose
 ├── docs/                        Dokumentation und API-Referenz
 ├── images/                      Medien und Diagramme
 ├── systemd/                     Dienst-Unit
@@ -336,7 +337,7 @@ HYDRA-UMC-VISION-NODE/
 
 **Bekannte Grenzen heute**
 
-**Was heute funktioniert:** eine echte Familien-Bereitschaftsprüfung (`manifest.py`/`family.py`), ein echtes Pipeline-Manifest und eine echte Erkennung des degradierten Modus (`pipeline.py`/`hardware.py`), die ehrlich nach echter Kamera-/Hailo-8-Hardware sucht, eine echte, hardwareunabhängige Frame-Beschädigungsprüfung (`frame.py`), die CLI-Unterbefehle `family-status`/`pipeline-status`/`validate-frame` plus einen Unterbefehl `serve`, der alle drei als JSON/HTTP-API bereitstellt (`api.py`), 611 bestandene echte Tests (siehe [`CHANGELOG.md`](CHANGELOG.md) für die genau erfasste Build-/Run-Ausgabe).
+**Was heute funktioniert:** eine echte Familien-Bereitschaftsprüfung (`manifest.py`/`family.py`), ein echtes Pipeline-Manifest und eine echte Erkennung des degradierten Modus (`pipeline.py`/`hardware.py`), die ehrlich nach echter Kamera-/Hailo-8-Hardware sucht, eine echte, hardwareunabhängige Frame-Beschädigungsprüfung (`frame.py`), die CLI-Unterbefehle `family-status`/`pipeline-status`/`validate-frame` plus einen Unterbefehl `serve`, der alle drei als JSON/HTTP-API bereitstellt (`api.py`), 657 bestandene echte Tests (siehe [`CHANGELOG.md`](CHANGELOG.md) für die genau erfasste Build-/Run-Ausgabe).
 
 **Was noch offen ist, ohne bestimmte Reihenfolge und ohne verbindlichen Zeitplan:**
 
