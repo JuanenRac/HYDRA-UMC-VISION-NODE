@@ -124,6 +124,29 @@
           }
         },
         {
+          "name": "pose.py",
+          "desc": {
+            "en": "Pose source in simulation: pinhole",
+            "es": "Fuente de pose en simulación: estenopeico",
+            "de": "Posenquelle in der Simulation: Lochkamera",
+            "fr": "Source de pose en simulation : sténopé",
+            "it": "Fonte di posa in simulazione: stenopeico",
+            "ja": "シミュレーションの姿勢ソース：ピンホール",
+            "zh": "仿真姿态来源：针孔相机",
+            "pt": "Fonte de pose em simulação: pinhole"
+          },
+          "tree_desc": {
+            "en": "Pose source in simulation: a pinhole camera over a flat work surface gives a PoseEstimate per detection",
+            "es": "Fuente de pose en simulación: una cámara estenopeica sobre una superficie plana da una PoseEstimate por detección",
+            "de": "Posenquelle in der Simulation: eine Lochkamera über einer ebenen Arbeitsfläche liefert pro Erkennung eine PoseEstimate",
+            "fr": "Source de pose en simulation : un sténopé au-dessus d'une surface plane donne une PoseEstimate par détection",
+            "it": "Fonte di posa in simulazione: una camera stenopeica su una superficie piana dà una PoseEstimate per rilevamento",
+            "ja": "シミュレーションの姿勢ソース：平らな作業面を見下ろすピンホールカメラが検出ごとにPoseEstimateを返す",
+            "zh": "仿真姿态来源：俯视平整工作面的针孔相机为每个检测给出一个PoseEstimate",
+            "pt": "Fonte de pose em simulação: uma câmara pinhole sobre uma superfície plana dá uma PoseEstimate por deteção"
+          }
+        },
+        {
           "name": "frame.py",
           "desc": {
             "en": "Real hardware-independent frame corruption",
@@ -336,14 +359,14 @@
             "pt": "Testes reais: leitura de manifestos"
           },
           "tree_desc": {
-            "en": "Real tests: manifest reading, family status, pipeline, frame, hardware, api, CLI",
-            "es": "Tests reales: manifiesto, family status, pipeline, frame, hardware, api, CLI",
-            "de": "Echte Tests: Manifest-Lesen, Familienstatus, Pipeline, Frame, Hardware, api, CLI",
-            "fr": "Vrais tests : lecture de manifeste, statut famille, pipeline, frame, matériel, api, CLI",
-            "it": "Test reali: lettura manifesto, stato famiglia, pipeline, frame, hardware, api, CLI",
-            "ja": "実際のテスト：マニフェスト読み込み、ファミリーステータス、pipeline、frame、hardware、api、CLI",
-            "zh": "真实测试：清单读取、家族状态、pipeline、frame、hardware、api、CLI",
-            "pt": "Testes reais: leitura de manifestos, estado da família, pipeline, trama, hardware, api, CLI"
+            "en": "Real tests: manifest reading, family status, pipeline, frame, hardware, api, CLI, pose",
+            "es": "Tests reales: manifiesto, family status, pipeline, frame, hardware, api, CLI, pose",
+            "de": "Echte Tests: Manifest-Lesen, Familienstatus, Pipeline, Frame, Hardware, api, CLI, Pose",
+            "fr": "Vrais tests : lecture de manifeste, statut famille, pipeline, frame, matériel, api, CLI, pose",
+            "it": "Test reali: lettura manifesto, stato famiglia, pipeline, frame, hardware, api, CLI, posa",
+            "ja": "実際のテスト：マニフェスト読み込み、ファミリーステータス、pipeline、frame、hardware、api、CLI、pose",
+            "zh": "真实测试：清单读取、家族状态、pipeline、frame、hardware、api、CLI、pose",
+            "pt": "Testes reais: leitura de manifestos, estado da família, pipeline, trama, hardware, api, CLI, pose"
           }
         },
         {

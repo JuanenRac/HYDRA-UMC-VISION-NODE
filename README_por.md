@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Hardware-CM5%20%2B%20Hailo--8-orange.svg" alt="Hardware">
   <img src="https://img.shields.io/badge/Performance-26%20TOPS-green.svg" alt="Performance">
   <img src="https://img.shields.io/badge/Stage-Functional%20v0-yellow.svg" alt="Stage">
-  <img src="https://img.shields.io/badge/Tests-611%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-657%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.2.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versão | `0.2.3` |
 | Maturidade | Funcional |
-| Testes | 611 (`python -m pytest -q tests`) |
+| Testes | 657 (`python -m pytest -q tests`) |
 | Tecnologia | Python / CM5 / Hailo-8 |
 | Destino | O Raspberry Pi CM5 de uma célula HYDRA-UMC |
 | Em hardware real | Só simulado: testado com emuladores, dublês de teste ou simuladores; não há registo de execução em hardware real para esta versão |
@@ -52,7 +52,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 | Área | Estado | O que significa aqui |
 |---|---|---|
 | Software | 🟡 | Funciona para o seu propósito principal; a verificação de honestidade acima lista o que ainda falta |
-| Testes | 🟢 | 611 testes automáticos, executados a cada alteração |
+| Testes | 🟢 | 657 testes automáticos, executados a cada alteração |
 | Hardware real | 🟠 | Só simulado: testado com emuladores, dublês de teste ou simuladores; não há registo de execução em hardware real para esta versão |
 | Interface e protocolos | 🟡 | As rotas ou mensagens que oferece estão documentadas e testadas com um cliente; ainda nem todos os clientes as usaram |
 | Integração | 🟠 | Funciona em conjunto com os outros serviços na bancada de testes da CM5 e as suas mensagens seguem os contratos partilhados do SDK |
@@ -170,7 +170,7 @@ Requer Python 3.10 ou superior.
 
 ## 🧪 Testes
 
-611 testes automáticos correm com `python -m pytest -q tests`. Não precisam de hardware nem de nada fora desta máquina.
+657 testes automáticos correm com `python -m pytest -q tests`. Não precisam de hardware nem de nada fora desta máquina.
 
 A CI executa `HYDRA_UMC_CI=1 python tools/ci_validate.py`, que verifica o manifesto, os documentos, os oito README e as imagens.
 
@@ -193,7 +193,7 @@ A CI executa `HYDRA_UMC_CI=1 python tools/ci_validate.py`, que verifica o manife
 2. **Ambiente virtual** — cria o `.venv/` se ainda não existir (seguro voltar a executar; um `.venv/` existente é reutilizado, não recriado).
 3. **Instalação editável (com extras de desenvolvimento)** — o `pip install -e ".[dev]"` instala este pacote no `.venv` em modo "editável", para que as edições em `src/` tenham efeito de imediato sem reinstalar, traz o `pytest` e regista o ponto de entrada de consola `hydra-umc-vision-node` usado pelo `run.sh`.
 4. **Verificação de compilação** — `python -m compileall -q src` compila para bytecode todos os ficheiros `.py` de `src/`, apanhando erros de sintaxe em todo o pacote mesmo em ficheiros nunca importados pelo `main.py`.
-5. **Suite de testes real** — `pytest tests/` executa todos os 611 testes.
+5. **Suite de testes real** — `pytest tests/` executa todos os 657 testes.
 
 O script usa `set -euo pipefail` e pára no primeiro passo que falhar, imprimindo `Build complete.` (`build.sh`) / `== Build OK ==` (`build.bat`) apenas se todos os passos tiverem êxito.
 
@@ -304,6 +304,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── family.py                Verificação real de prontidão da família sobre os 4 filhos reais
 │   ├── live.py                  Estado em direto dos filhos (--live)
 │   ├── pipeline.py              Manifesto real do pipeline de perceção (etapas + necessidades de hardware)
+│   ├── pose.py                  Fonte de pose em simulação: uma câmara pinhole sobre uma superfície plana dá uma PoseEstimate por deteção
 │   ├── frame.py                 Validação real, independente do hardware, de corrupção de tramas
 │   ├── hardware.py              Sondas reais de câmara/acelerador + lógica de modo degradado
 │   ├── api.py                   Superfície JSON/HTTP simples (http.server da biblioteca padrão) sobre os 3 subcomandos reais
@@ -311,7 +312,7 @@ HYDRA-UMC-VISION-NODE/
 │   ├── access.py                Token Bearer opcional para a API HTTP (dispensável em loopback, obrigatório fora dele)
 │   ├── codes.py                 Lê os códigos DataMatrix de uma imagem em bruto (a identidade de uma placa numa célula de pick-and-place)
 │   └── compat_record.py         Com o que um conjunto de deteções foi produzido (modelo, versão, SHA-256, arquitetura) e se ainda serve
-├── tests/                       Testes reais: leitura de manifestos, estado da família, pipeline, trama, hardware, api, CLI
+├── tests/                       Testes reais: leitura de manifestos, estado da família, pipeline, trama, hardware, api, CLI, pose
 ├── docs/                        Documentação e referência da API
 ├── images/                      Multimédia e diagramas
 ├── systemd/                     unidade de serviço
@@ -336,7 +337,7 @@ HYDRA-UMC-VISION-NODE/
 
 **Limites conhecidos hoje**
 
-**O que funciona hoje:** uma verificação real de prontidão da família (`manifest.py`/`family.py`) que lê o manifesto próprio de cada um dos 4 filhos reais e reporta presença/versão/maturidade/papel, um manifesto real do pipeline e deteção de modo degradado (`pipeline.py`/`hardware.py`) que sonda honestamente a existência de hardware real de câmara/Hailo-8 e reporta exatamente que etapas do pipeline podem correr, validação real e independente do hardware de corrupção de tramas (`frame.py`), os subcomandos de CLI `family-status`/`pipeline-status`/`validate-frame` mais um subcomando `serve` que expõe os três como uma API JSON/HTTP (`api.py`), 611 testes a passar, e um mapa de integração totalmente documentado para os 4 filhos no `docker-compose.yml` (construído a partir dos Dockerfiles dos próprios filhos, construído e arrancado na CI) - veja o [`CHANGELOG.md`](CHANGELOG.md) para a saída real completa de compilação/execução.
+**O que funciona hoje:** uma verificação real de prontidão da família (`manifest.py`/`family.py`) que lê o manifesto próprio de cada um dos 4 filhos reais e reporta presença/versão/maturidade/papel, um manifesto real do pipeline e deteção de modo degradado (`pipeline.py`/`hardware.py`) que sonda honestamente a existência de hardware real de câmara/Hailo-8 e reporta exatamente que etapas do pipeline podem correr, validação real e independente do hardware de corrupção de tramas (`frame.py`), os subcomandos de CLI `family-status`/`pipeline-status`/`validate-frame` mais um subcomando `serve` que expõe os três como uma API JSON/HTTP (`api.py`), 657 testes a passar, e um mapa de integração totalmente documentado para os 4 filhos no `docker-compose.yml` (construído a partir dos Dockerfiles dos próprios filhos, construído e arrancado na CI) - veja o [`CHANGELOG.md`](CHANGELOG.md) para a saída real completa de compilação/execução.
 
 **O que continua em aberto, sem ordem particular e sem calendário comprometido:**
 
