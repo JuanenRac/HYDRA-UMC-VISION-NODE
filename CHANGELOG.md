@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+
+## [0.2.4]
+
 - **The pose stage has a source of data in simulation (`src/hydra_umc_vision_node/pose.py`, the `pose` block of `loopback` in the `--vision-sim` file, off by default):** with the block on, each frame of `POST /loopback/run` also answers a validated `PoseEstimate` next to its `DetectionFrame`, and the summary counts the poses. The source is a pinhole camera that looks straight down at a flat work surface: the intrinsics, the picture they were calibrated on, the distance to the surface and the minimum score are all in the file, the centre of each box is taken along its ray to the surface, a frame of another size is scaled to the calibration, and a detection under the minimum score or with its centre outside the picture gets no estimate. The orientation is the identity because a box carries none. It is tested on the host (the geometry, the refusals of the block, the messages against the contract and the route); there is no depth sensor behind it, and what a real camera and a real work surface give is for the bench.
 
 - **The SDK pin and the shared tools are up to date:** the SDK dependency names the newest release tag, and the shared tools are the canonical copies again.
@@ -12,6 +15,8 @@
 
 - **The compose map gives the zone service what it now requires, and the servoing service the token to ask it:** `safety-zones` mounts the zones file of the cell (`HYDRA_UMC_ZONES_FILE`, read-only) and takes `SAFETY_ZONES_TOKEN` from `HYDRA_UMC_SAFETY_ZONES_TOKEN`; `visual-servoing-api` asks it at `http://safety-zones:8108` with the same token. Both variables are required and the file fails with a clear message when one is missing, so nothing starts with the zone service open on `0.0.0.0` or with zones brought by the caller. The compose workflow sets placeholders for them.
 All notable changes to this project are documented here.
+
+- Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
 
 ## [0.2.3] - **README: the platform statement:** a note says that where the README speaks of the CM5 it means the pilot bench that runs today, and that the target platform of HYDRA-UMC, an NVIDIA Jetson Orin NX 16 GB, is a design that has not been built or tested.
 - The command line and the shared HTTP helpers are tested: `tests/test_main_commands.py` (12 tests) calls `main()` in the same process (the family status with and without the live check, `pipeline-status` by mode, the frame check, every refusal of `serve` before
