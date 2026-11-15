@@ -7,5 +7,9 @@
   "sources": [
     {"name": "cam0", "kind": "synthetic", "width": 16, "height": 8, "channels": 3, "seed": 3, "frames": 20}
   ],
-  "limits": {"maxRunSeconds": 10}
+  "limits": {"maxRunSeconds": 10},
+  "loopback": {
+    "enabled": false,
+    "pose": {"enabled": false, "camera": {"fx": 600, "fy": 600, "cx": 320, "cy": 240, "width": 640, "height": 480}, "plane": {"distanceM": 0.5}, "minScore": 0.5}
+  }
 }

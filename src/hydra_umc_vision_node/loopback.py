@@ -29,10 +29,11 @@ from dataclasses import dataclass
 from typing import Any
 
 from .compat_record import CompatibilityRecord
-from .contract import ContractError, build_detection_frame, build_frame_meta, iso_utc
+from .contract import ContractError, build_detection_frame, build_frame_meta, build_pose_estimate, check_estimates_match_detections, iso_utc
 from .latency import LatencyError, LatencyRecorder
 from .netguard import EndpointError, parse_endpoint
 from .pipeline import PIPELINE_VERSION
+from .pose import PoseError, PoseSettings, estimate_poses, parse_pose_config
 from .sources import MAX_SOURCE_FRAME_BYTES, Frame, FrameSource, SourceError
 
 MAX_RUN_FRAMES = 100
@@ -44,7 +45,7 @@ DETECTOR_ARCH = "cpu"
 DEFAULT_STREAM_SECONDS = 5.0
 MAX_STREAM_SECONDS = 60.0
 _LABEL = re.compile(r"[A-Za-z0-9_.:-]{1,64}")
-_KEYS = {"enabled", "detector", "streamer"}
+_KEYS = {"enabled", "detector", "streamer", "pose"}
 _DETECTOR_KEYS = {"threshold", "cell", "minCells", "maxDetections", "label"}
 _STREAMER_KEYS = {"url", "allowRemote", "timeoutSeconds", "maxFrameBytes"}
 
@@ -92,10 +93,15 @@ class LoopbackConfig:
     enabled: bool
     detector: DetectorSettings
     streamer: StreamerSettings | None
+    pose: PoseSettings | None = None
 
     def describe(self) -> dict:
         return {"enabled": self.enabled, "detector": self.detector.describe(), "streamer": self.streamer.describe() if self.streamer else None,
-                "model": self.detector.identity().to_dict()}
+                "model": self.detector.identity().to_dict(), "pose": self.pose.describe() if self.pose else None}
+
+    @property
+    def pose_on(self) -> bool:
+        return self.pose is not None and self.pose.enabled
 
 
 def _bounded_int(block: dict, key: str, default: int, low: int, high: int) -> int:
@@ -141,7 +147,11 @@ def parse_loopback_config(config: object) -> LoopbackConfig | None:
             raise LoopbackError(f"loopback.streamer.timeoutSeconds must be a number above 0 and at most {MAX_STREAM_SECONDS:g}")
         streamer = StreamerSettings(endpoint.host, endpoint.port, endpoint.path, float(seconds),
                                     _bounded_int(raw, "maxFrameBytes", MAX_SOURCE_FRAME_BYTES, 1024, MAX_SOURCE_FRAME_BYTES))
-    return LoopbackConfig(enabled, detector, streamer)
+    try:
+        pose = parse_pose_config(config.get("pose"))
+    except PoseError as error:
+        raise LoopbackError(str(error)) from None
+    return LoopbackConfig(enabled, detector, streamer, pose)
 
 
 # ---------------------------------------------------------------------------------------------------------------- detector
@@ -318,6 +328,7 @@ def run_loopback(
     model = config.detector.identity().to_dict()
     published: list[dict[str, Any]] = []
     total = 0
+    poses = 0
     for sequence, (frame, frame_id, captured_at, session_id) in enumerate(items):
         if sequence >= limit:
             break
@@ -330,6 +341,10 @@ def run_loopback(
             detections = detect(frame, config.detector)
             stamps["inference"] = clock()
             result = build_detection_frame(frame_id, capture_ts, "pixel", detections, model=model, session_id=session_id)
+            pose_message = None
+            if config.pose is not None and config.pose_on:
+                pose_message = build_pose_estimate(frame_id, capture_ts, estimate_poses(detections, "pixel", frame.width, frame.height, config.pose), session_id=session_id)
+                check_estimates_match_detections(pose_message, result)
             stamps["postprocess"] = clock()
         except ContractError as error:
             raise LoopbackError(f"frame {frame_id} does not fit the contract: {error}") from None
@@ -340,9 +355,16 @@ def run_loopback(
             except LatencyError:
                 pass
         total += len(detections)
-        published.append({"meta": meta, "detections": result})
-    return {"simulated": True, "pipeline": "loopback", "source": source_id, "frames": len(published), "detections": total, "model": model,
-            "messages": published}
+        entry = {"meta": meta, "detections": result}
+        if pose_message is not None:
+            entry["pose"] = pose_message
+            poses += len(pose_message["estimates"])
+        published.append(entry)
+    answer = {"simulated": True, "pipeline": "loopback", "source": source_id, "frames": len(published), "detections": total, "model": model,
+              "messages": published}
+    if config.pose_on:
+        answer["poses"] = poses
+    return answer
 
 
 def source_items(source: FrameSource, limit: int, wall_clock: Callable[[], float] = time.time) -> Iterator[tuple[Frame, str, float, str | None]]:
