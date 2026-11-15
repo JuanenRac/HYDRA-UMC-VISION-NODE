@@ -14,6 +14,7 @@ hydra-umc-vision-node serve --vision-sim docs/examples/vision-sim.example.json -
 The switch is off by default. With it, the API adds `GET /models`, `GET /sources`, `POST /models/select` and `POST /inference/simulate`; without it they answer 404.
 The example file declares a host with a CPU only, a model that needs the accelerator (discarded, with the reason) and a CPU model, and one synthetic source of 20 frames.
 A second block, `loopback`, turns on `POST /loopback/run` (a trivial CPU detector on simulated frames); see the README for its fields.
+Inside it, the optional `pose` block adds the third stage of the pipeline contract: for each frame the run also answers a `PoseEstimate` with the position in meters of the detections whose score reaches `minScore`. The source of those poses is a model, not a sensor: a pinhole camera (`camera`: `fx`, `fy`, `cx`, `cy` and the `width` x `height` of the picture it was calibrated on) that looks straight down at a flat work surface at `plane.distanceM` meters; the centre of each box is taken along its ray to that surface. The orientation is always the identity, because a box carries none, and a detection whose centre is outside the picture gets no estimate. The block ships off (`enabled: false`) and the numbers of the example are starting values, not a calibration.
 
 ## What the checks run
 
@@ -25,6 +26,7 @@ The test files below run on every change in the normal checks and again in the w
 | `tests/test_simulation_limits.py` | the time limit of a run, the truncated result, a second run refused while one is running |
 | `tests/test_sources.py` | the synthetic generator and the folder of frames, with corrupt and oversize input |
 | `tests/test_loopback.py` | the loopback pipeline with a fake streamer and decoder |
+| `tests/test_pose.py` | the pinhole model of the pose stage, its refusals and the `PoseEstimate` messages of the loopback run |
 | `tests/test_pipeline.py`, `tests/test_hardware.py` | the pipeline manifest and the degraded-mode report when no device is present |
 | `tests/test_latency.py`, `tests/test_live.py` | the percentiles per stage and the live family check |
 
