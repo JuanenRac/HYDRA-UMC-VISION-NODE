@@ -50,13 +50,13 @@ cd /d "%~dp0"
 echo == HYDRA-UMC-VISION-NODE :: build ==
 
 REM HYDRA_UMC_SCRIPT_STANDARD_VERSION_STEP
-echo [1/3] Reading the project version (building never changes it)...
+echo [1/5] Reading the project version (building never changes it)...
 for /f "usebackq delims=" %%V in (`python -c "import json; print(json.load(open(r'%~dp0hydra-umc.project.json', encoding='utf-8'))['version'])"`) do set "HYDRA_UMC_VERSION_BUILT=%%V"
 if not defined HYDRA_UMC_VERSION_BUILT set "HYDRA_UMC_VERSION_BUILT=unknown"
 echo       Building v%HYDRA_UMC_VERSION_BUILT% (building never changes the version)
 echo.
 echo.
-echo -- Creating/using virtual environment (.venv) --
+echo [2/5] Creating/activating virtual environment (.venv)...
 if not exist ".venv" (
     python -m venv .venv
     if errorlevel 1 goto :error
@@ -64,17 +64,17 @@ if not exist ".venv" (
 
 set VENV_PY=.venv\Scripts\python.exe
 
-echo -- Installing project + dev dependencies (editable) --
+echo [3/5] Installing project (editable, with dev extras) into the venv...
 "%VENV_PY%" -m pip install --quiet --upgrade pip
 if errorlevel 1 goto :error
 "%VENV_PY%" -m pip install --quiet -e ".[dev]"
 if errorlevel 1 goto :error
 
-echo -- Compile-check every source file (python -m compileall) --
+echo [4/5] Verifying the package compiles without errors (python -m compileall)...
 "%VENV_PY%" -m compileall -q src
 if errorlevel 1 goto :error
 
-echo -- Running the real test suite (pytest) --
+echo [5/5] Running the real test suite (pytest)...
 "%VENV_PY%" -m pytest tests/ -q
 if errorlevel 1 goto :error
 

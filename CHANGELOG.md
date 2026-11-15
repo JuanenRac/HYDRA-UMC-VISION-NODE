@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **`PoseEstimate`, the third stage of the pipeline contract:** `contract.py` checks and builds the message that carries the pose in meters of some of the detections of a frame (`validate_pose_estimate`, `build_pose_estimate`, `check_estimates_match_detections`), with the rules of the SDK and a test that compares them with the SDK when it is at hand. A detection whose pose could not be found has no estimate; a pose is never made up.
+- **The Windows build script counts its steps like the shell script:** `build.bat` numbers its five steps `[1/5]` to `[5/5]` instead of announcing three and printing unnumbered titles.
 - **The coverage of the tests is measured on every change:** the workflow "Coverage floor" runs the whole suite under line and branch coverage and fails when it falls under 93 %.
 - **The health route, the shared HTTP helpers, the metrics text, the addresses the node may call and the loopback block are tested at their edges:** `tests/test_health_route_edges.py` (closed, open on loopback, the bearer token away from this machine, the identity of the server, the flag and the environment), `tests/test_http_common_edges.py`, `tests/test_service_metrics_edges.py` and `tests/test_netguard_and_loopback_edges.py` (every address that is refused and why, the remote switch, every key of the loopback block that is wrong, the boundary of the stream).
 
