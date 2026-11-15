@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **The SDK pin and the shared tools are up to date:** the SDK dependency names the newest release tag, and the shared tools are the canonical copies again.
 - **`PoseEstimate`, the third stage of the pipeline contract:** `contract.py` checks and builds the message that carries the pose in meters of some of the detections of a frame (`validate_pose_estimate`, `build_pose_estimate`, `check_estimates_match_detections`), with the rules of the SDK and a test that compares them with the SDK when it is at hand. A detection whose pose could not be found has no estimate; a pose is never made up.
 - **The Windows build script counts its steps like the shell script:** `build.bat` numbers its five steps `[1/5]` to `[5/5]` instead of announcing three and printing unnumbered titles.
 - **The coverage of the tests is measured on every change:** the workflow "Coverage floor" runs the whole suite under line and branch coverage and fails when it falls under 93 %.
