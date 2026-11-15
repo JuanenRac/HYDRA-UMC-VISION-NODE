@@ -17,9 +17,12 @@ from hydra_umc_vision_node.contract import (
     box_to_pixels,
     build_detection_frame,
     build_frame_meta,
+    build_pose_estimate,
+    check_estimates_match_detections,
     iso_utc,
     validate_detection_frame,
     validate_frame_meta,
+    validate_pose_estimate,
 )
 
 TS = "2026-01-02T03:04:05.678Z"
@@ -111,3 +114,56 @@ def test_the_constants_and_the_rules_are_those_of_the_sdk(monkeypatch: pytest.Mo
     frame = build_detection_frame("cam0-1", TS, "pixel", [ITEM], model=MODEL, session_id="s1")
     sdk.validate_frame_meta(meta)
     sdk.validate_detection_frame(frame)
+
+
+POSE = {"detection_index": 0, "position": {"x": 0.12, "y": -0.05, "z": 0.8}, "orientation": {"w": 1, "x": 0, "y": 0, "z": 0}, "confidence": 0.93}
+
+
+def test_a_pose_estimate_is_built_and_validated() -> None:
+    message = build_pose_estimate("cam0-1", TS, [POSE], session_id="s1")
+    assert message["schema_version"] == "1.0" and message["estimates"] == [POSE]
+    validate_pose_estimate(message)
+    assert build_pose_estimate("cam0-1", TS, [])["estimates"] == []
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda m: m.update(extra=1),
+        lambda m: m.update(frame_id="bad id"),
+        lambda m: m["estimates"][0].update(detection_index=1000),
+        lambda m: m["estimates"][0]["orientation"].update(w=0.5),
+        lambda m: m["estimates"][0]["position"].update(x=float("nan")),
+        lambda m: m["estimates"][0].update(confidence=1.5),
+        lambda m: m["estimates"].append(copy.deepcopy(m["estimates"][0])),
+        lambda m: m.update(estimates="none"),
+    ],
+)
+def test_a_pose_estimate_that_breaks_the_contract_is_refused(mutate) -> None:
+    message = build_pose_estimate("cam0-1", TS, [copy.deepcopy(POSE)])
+    mutate(message)
+    with pytest.raises(ContractError):
+        validate_pose_estimate(message)
+
+
+def test_the_estimates_must_belong_to_the_detections_of_the_same_frame() -> None:
+    detections = build_detection_frame("cam0-1", TS, "pixel", [ITEM])
+    check_estimates_match_detections(build_pose_estimate("cam0-1", TS, [POSE]), detections)
+    with pytest.raises(ContractError, match="same frame"):
+        check_estimates_match_detections(build_pose_estimate("cam0-2", TS, [POSE]), detections)
+    with pytest.raises(ContractError, match="points past"):
+        check_estimates_match_detections(build_pose_estimate("cam0-1", TS, [{**POSE, "detection_index": 1}]), detections)
+
+
+def test_the_pose_estimate_rules_are_those_of_the_sdk(monkeypatch: pytest.MonkeyPatch) -> None:
+    sdk = _sdk_module(monkeypatch)
+    assert contract.QUATERNION_TOLERANCE == sdk.QUATERNION_TOLERANCE
+    message = build_pose_estimate("cam0-1", TS, [POSE], session_id="s1")
+    sdk.validate_pose_estimate(message)
+    sdk.check_estimates_match_detections(message, build_detection_frame("cam0-1", TS, "pixel", [ITEM]))
+    bad = copy.deepcopy(message)
+    bad["estimates"][0]["orientation"]["w"] = 0.5
+    with pytest.raises(ValueError):
+        sdk.validate_pose_estimate(bad)
+    with pytest.raises(ContractError):
+        validate_pose_estimate(bad)

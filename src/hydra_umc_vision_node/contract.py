@@ -3,7 +3,7 @@
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 # GPL-3.0-or-later - see LICENSE
 # =============================================================================
-"""The data contract of the vision pipeline, as this node writes it: `FrameMeta` (which frame it is) and `DetectionFrame` (what a model found in it).
+"""The data contract of the vision pipeline, as this node writes it: `FrameMeta` (which frame it is), `DetectionFrame` (what a model found in it) and `PoseEstimate` (where, in meters, the camera sees some of those detections).
 
 The contract is the one the SDK publishes as `frame-meta` and `detection-frame` (JSON Schema v1, closed): ids of 1 to 64 safe characters, the instant
 the frame was captured as an RFC 3339 date-time, boxes by their corners `x_min`, `y_min`, `x_max`, `y_max` with the origin at the top left corner of the
@@ -34,6 +34,10 @@ _FRAME_OPTIONAL = ("session_id", "source_id", "stride", "sequence")
 _DETECTION_REQUIRED = ("schema_version", "frame_id", "capture_ts_utc", "box_unit", "detections")
 _DETECTION_OPTIONAL = ("session_id", "model")
 _ITEM_REQUIRED = ("class_id", "label", "score", "box")
+_POSE_REQUIRED = ("schema_version", "frame_id", "capture_ts_utc", "estimates")
+_POSE_OPTIONAL = ("session_id",)
+_ESTIMATE_FIELDS = ("detection_index", "position", "orientation", "confidence")
+QUATERNION_TOLERANCE = 1e-6
 
 
 class ContractError(ValueError):
@@ -178,4 +182,55 @@ def build_detection_frame(frame_id: str, capture_ts_utc: str, box_unit: str, det
     if session_id is not None:
         message["session_id"] = session_id
     validate_detection_frame(message)
+    return message
+
+
+def validate_pose_estimate(payload: Any) -> None:
+    """The checks of the PoseEstimate contract: the shape, finite numbers, a unit quaternion and no detection estimated twice."""
+    _fields(payload, _POSE_REQUIRED, _POSE_OPTIONAL, "PoseEstimate")
+    _identifier(payload, "frame_id")
+    if "session_id" in payload:
+        _identifier(payload, "session_id")
+    _date_time(payload, "capture_ts_utc")
+    estimates = payload["estimates"]
+    if not isinstance(estimates, list) or len(estimates) > MAX_DETECTIONS:
+        raise ContractError(f"estimates must be an array of at most {MAX_DETECTIONS} estimates")
+    seen: set[int] = set()
+    for index, item in enumerate(estimates):
+        label = f"estimates[{index}]"
+        _fields(item, _ESTIMATE_FIELDS, (), label)
+        _whole(item, "detection_index", 0, MAX_DETECTIONS - 1)
+        if item["detection_index"] in seen:
+            raise ContractError(f"{label}.detection_index repeats the one of an earlier estimate")
+        seen.add(item["detection_index"])
+        position, orientation = item["position"], item["orientation"]
+        _fields(position, ("x", "y", "z"), (), f"{label}.position")
+        _fields(orientation, ("w", "x", "y", "z"), (), f"{label}.orientation")
+        for name in ("x", "y", "z"):
+            _number(position, name)
+        for name in ("w", "x", "y", "z"):
+            _number(orientation, name, -1, 1)
+        if abs(sum(orientation[name] ** 2 for name in ("w", "x", "y", "z")) - 1.0) > QUATERNION_TOLERANCE:
+            raise ContractError(f"{label}.orientation must be a unit quaternion")
+        _number(item, "confidence", 0, 1)
+
+
+def check_estimates_match_detections(estimate: Any, detections: Any) -> None:
+    """What the two schemas cannot say together: the estimates are of the same frame as the detections and each one points at a detection that exists."""
+    validate_pose_estimate(estimate)
+    validate_detection_frame(detections)
+    if estimate["frame_id"] != detections["frame_id"] or estimate["capture_ts_utc"] != detections["capture_ts_utc"]:
+        raise ContractError("the estimates and the detections are not of the same frame")
+    count = len(detections["detections"])
+    for item in estimate["estimates"]:
+        if item["detection_index"] >= count:
+            raise ContractError(f"detection_index {item['detection_index']} points past the {count} detections of the frame")
+
+
+def build_pose_estimate(frame_id: str, capture_ts_utc: str, estimates: list[dict[str, Any]], *, session_id: str | None = None) -> dict[str, Any]:
+    """A validated PoseEstimate message. A detection whose pose could not be found has no estimate: a pose is never made up."""
+    message: dict[str, Any] = {"schema_version": SCHEMA_VERSION, "frame_id": frame_id, "capture_ts_utc": capture_ts_utc, "estimates": estimates}
+    if session_id is not None:
+        message["session_id"] = session_id
+    validate_pose_estimate(message)
     return message
