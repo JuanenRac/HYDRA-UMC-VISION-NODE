@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **The folder that is checked for `?workspace=` is the folder that is used:** the request path is resolved once, tested against the workspace of the server and then used as resolved, so a link that changes between the check and the use cannot lead outside it.
 
 ## [0.2.4]
 
