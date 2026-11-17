@@ -131,13 +131,15 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
             # server was started with, never at an arbitrary path.
             requested = Path(params["workspace"])
             try:
-                inside = requested.resolve().is_relative_to(self.server.workspace.resolve())
+                # the folder that was checked is the folder that is used
+                resolved = requested.resolve()
+                inside = resolved.is_relative_to(self.server.workspace.resolve())
             except OSError:
                 inside = False
             if not inside:
                 _write_error(self, 400, "workspace must be inside the workspace this server was started with")
                 return
-            workspace = requested
+            workspace = resolved
         statuses = check_family_status(workspace)
         missing = [s.name for s in statuses if not s.present]
         _write_json(self, 200, {

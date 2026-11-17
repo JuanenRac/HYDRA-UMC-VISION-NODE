@@ -231,3 +231,12 @@ def test_family_status_workspace_override_must_stay_inside_the_server_workspace(
         assert "error" in body
         status, _ = _get(f"{base}/family-status?workspace={workspace / '..' / 'elsewhere'}")
         assert status == 400
+
+
+def test_the_folder_that_was_checked_is_the_folder_that_is_used(tmp_path: Path) -> None:
+    workspace = tmp_path / "ws"
+    (workspace / "sub").mkdir(parents=True)
+    with running_server(workspace) as base:
+        status, body = _get(f"{base}/family-status?workspace={workspace / 'sub' / '..'}")
+        assert status == 200
+        assert body["workspace"] == str(workspace.resolve())
