@@ -21,7 +21,7 @@
 # family-readiness HTTP API only) - not wired into CMD here for that
 # reason; nothing to start yet beyond `serve`.
 
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 WORKDIR /app
 COPY pyproject.toml README.md LICENSE.md ./
