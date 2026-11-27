@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **Token and password files saved with a byte order mark are read:** a file written by an editor of Windows as "UTF-8 with BOM" kept the mark in front of the secret, so the credential was refused or could not be sent in a header. The mark is dropped now; a file in another encoding (UTF-16) is refused with a clear message. The same holds for the identity key file of the server (shared module of the SDK).
 - **The folder that is checked for `?workspace=` is the folder that is used:** the request path is resolved once, tested against the workspace of the server and then used as resolved, so a link that changes between the check and the use cannot lead outside it.
 
 ## [0.2.4]

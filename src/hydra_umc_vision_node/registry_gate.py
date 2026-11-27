@@ -204,9 +204,9 @@ def report_loaded(config: RegistryConfig, result: GateResult | None, post: Post 
     token = ""
     if config.token_file:
         try:
-            with open(config.token_file, encoding="utf-8") as handle:
+            with open(config.token_file, encoding="utf-8-sig") as handle:  # a byte order mark is not part of the token
                 token = handle.read(4096).strip()
-        except OSError:
+        except (OSError, UnicodeDecodeError):
             return {"state": "token_unreadable"}
     model = result.model
     body = json.dumps({"node": config.node_name, "model_name": model["name"], "model_version": model["version"],
